@@ -100,7 +100,6 @@ const Calendar = () => {
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-        const { hasWorkout, mealsCount, hasWeight } = getDayData(day);
         const isToday = new Date().getDate() === day && 
                         new Date().getMonth() === month && 
                         new Date().getFullYear() === year;
@@ -117,26 +116,12 @@ const Calendar = () => {
                 } bg-oxygym-darkGrey`}
                 onClick={() => handleDayClick(day)}
             >
-                <CardContent className="p-1.5 h-full flex flex-col items-center justify-between overflow-hidden">
-                    <span className={`text-sm font-semibold ${
+                <CardContent className="p-2 h-full flex items-center justify-center">
+                    <span className={`text-lg font-semibold ${
                         isSelected || isToday ? 'text-oxygym-yellow' : 'text-white'
                     }`}>
                         {day}
                     </span>
-                    <div className="flex gap-0.5 items-center justify-center min-h-[16px]">
-                        {hasWorkout && (
-                            <Dumbbell className="w-3 h-3 text-green-400" />
-                        )}
-                        {mealsCount > 0 && (
-                            <div className="flex items-center gap-0.5">
-                                <Utensils className="w-3 h-3 text-oxygym-yellow" />
-                                <span className="text-[10px] text-oxygym-yellow leading-none">{mealsCount}</span>
-                            </div>
-                        )}
-                        {hasWeight && (
-                            <Scale className="w-3 h-3 text-purple-400" />
-                        )}
-                    </div>
                 </CardContent>
             </Card>
         );
