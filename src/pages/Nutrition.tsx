@@ -6,6 +6,7 @@ import { CalorieChart } from '@/components/CalorieChart';
 import { Droplet, Moon, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { NutritionLog } from '@/entities';
+import { useQuery } from '@tanstack/react-query';
 
 interface MealData {
     calories: number;
@@ -22,6 +23,55 @@ const Nutrition = () => {
     const [meal4Data, setMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data: todayMeals } = useQuery({
+        queryKey: ['nutrition-logs', today],
+        queryFn: async () => {
+            try {
+                const logs = await NutritionLog.filter({ date: today });
+                console.log('Loaded nutrition logs for today:', logs);
+                return logs;
+            } catch (error) {
+                console.error('Error loading nutrition logs:', error);
+                return [];
+            }
+        },
+    });
+
+    useEffect(() => {
+        if (todayMeals && todayMeals.length > 0 && !isLoaded) {
+            console.log('Setting meal data from database:', todayMeals);
+            
+            todayMeals.forEach((log: any) => {
+                const mealData = {
+                    calories: log.total_calories || 0,
+                    protein: log.protein || 0,
+                    carbs: log.carbs || 0,
+                    fat: log.fat || 0,
+                };
+
+                switch (log.meal_number) {
+                    case 1:
+                        setMeal1Data(mealData);
+                        break;
+                    case 2:
+                        setMeal2Data(mealData);
+                        break;
+                    case 3:
+                        setMeal3Data(mealData);
+                        break;
+                    case 4:
+                        setMeal4Data(mealData);
+                        break;
+                }
+            });
+            
+            setIsLoaded(true);
+        }
+    }, [todayMeals, isLoaded]);
 
     const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories;
     const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein;
@@ -67,10 +117,13 @@ const Nutrition = () => {
                 meal2: meal2Data,
                 meal3: meal3Data,
                 meal4: meal4Data,
-                date: new Date().toISOString().split('T')[0]
+                date: today
             }));
 
-            const today = new Date().toISOString().split('T')[0];
+            const existingLogs = await NutritionLog.filter({ date: today });
+            for (const log of existingLogs) {
+                await NutritionLog.delete(log.id);
+            }
 
             const meals = [
                 { number: 1, data: meal1Data },
