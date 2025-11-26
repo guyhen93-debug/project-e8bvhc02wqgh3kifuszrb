@@ -1,8 +1,11 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseRow } from '@/components/ExerciseRow';
-import { ArrowRight, Save, X } from 'lucide-react';
+import { ArrowRight, Save, X, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WorkoutLog } from '@/entities';
 
@@ -10,6 +13,7 @@ const WorkoutC = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
+    const [cardioMinutes, setCardioMinutes] = useState(0);
     const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
 
@@ -28,6 +32,12 @@ const WorkoutC = () => {
         setExerciseData(prev => ({ ...prev, [data.name]: data }));
         setHasChanges(true);
     }, []);
+
+    const handleCardioChange = (value: string) => {
+        const minutes = parseInt(value) || 0;
+        setCardioMinutes(minutes);
+        setHasChanges(true);
+    };
 
     const handleSave = async () => {
         try {
@@ -52,7 +62,7 @@ const WorkoutC = () => {
                     weight: data.weight,
                 })),
                 completed: completed,
-                duration_minutes: 0,
+                duration_minutes: cardioMinutes,
             });
 
             setHasChanges(false);
@@ -75,6 +85,8 @@ const WorkoutC = () => {
     const handleCancel = () => {
         window.location.reload();
     };
+
+    const cardioPercentage = Math.min((cardioMinutes / 20) * 100, 100);
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-32">
@@ -99,6 +111,38 @@ const WorkoutC = () => {
                     />
                     <p className="text-center text-muted-foreground">יום גב וטריצפס</p>
                 </div>
+
+                <Card className="bg-oxygym-darkGrey border-border mb-6">
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                            <Activity className="w-6 h-6 text-orange-400" />
+                            <div className="flex-1">
+                                <Label htmlFor="cardio" className="text-white font-semibold">פעילות אירובית</Label>
+                                <p className="text-xs text-muted-foreground">יעד: 20 דקות</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    id="cardio"
+                                    type="number"
+                                    value={cardioMinutes || ''}
+                                    onChange={(e) => handleCardioChange(e.target.value)}
+                                    placeholder="0"
+                                    className="w-20 h-10 text-center bg-black border-border text-white"
+                                />
+                                <span className="text-sm text-muted-foreground">דקות</span>
+                            </div>
+                        </div>
+                        <div className="w-full bg-black rounded-full h-2">
+                            <div 
+                                className="bg-orange-400 h-2 rounded-full transition-all duration-500"
+                                style={{ width: `${cardioPercentage}%` }}
+                            />
+                        </div>
+                        <p className="text-xs text-center text-muted-foreground mt-2">
+                            {cardioMinutes} דקות מתוך 20
+                        </p>
+                    </CardContent>
+                </Card>
 
                 <div className="space-y-6 mb-6">
                     {exercises.map((exercise, index) => (

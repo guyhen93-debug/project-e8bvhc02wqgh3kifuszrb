@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
-import { Droplet, Moon, Save, X } from 'lucide-react';
+import { WaterTracker } from '@/components/WaterTracker';
+import { Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { NutritionLog } from '@/entities';
 import { useQuery } from '@tanstack/react-query';
@@ -180,25 +181,8 @@ const Nutrition = () => {
                     totalCalories={totalCalories}
                 />
 
-                <div className="grid grid-cols-2 gap-4 my-6">
-                    <Card className="bg-oxygym-darkGrey border-border">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <Droplet className="w-8 h-8 text-blue-400" />
-                            <div>
-                                <p className="text-white font-semibold">3 ליטר מים</p>
-                                <p className="text-sm text-muted-foreground">יעד יומי</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-oxygym-darkGrey border-border">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <Moon className="w-8 h-8 text-purple-400" />
-                            <div>
-                                <p className="text-white font-semibold">7-9 שעות</p>
-                                <p className="text-sm text-muted-foreground">שינה</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                <div className="my-6">
+                    <WaterTracker />
                 </div>
 
                 <div className="space-y-6 mb-6">

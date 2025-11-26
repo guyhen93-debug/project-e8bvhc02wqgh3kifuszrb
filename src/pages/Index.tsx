@@ -1,20 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
-import { Dumbbell, Droplet, Utensils } from 'lucide-react';
+import { Dumbbell, Utensils } from 'lucide-react';
 import { StatsCard } from '@/components/StatsCard';
 import { WeightChart } from '@/components/WeightChart';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WeightDialog } from '@/components/WeightDialog';
-import { WaterTracker } from '@/components/WaterTracker';
+import { SleepTracker } from '@/components/SleepTracker';
 import { WorkoutLog, NutritionLog } from '@/entities';
 
 const Index = () => {
     const today = new Date().toISOString().split('T')[0];
 
-    const { data: todayWorkouts } = useQuery({
-        queryKey: ['today-workouts', today],
+    const getStartOfWeek = () => {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const diff = dayOfWeek === 0 ? 0 : dayOfWeek;
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - diff);
+        startOfWeek.setHours(0, 0, 0, 0);
+        return startOfWeek.toISOString().split('T')[0];
+    };
+
+    const startOfWeek = getStartOfWeek();
+
+    const { data: weekWorkouts } = useQuery({
+        queryKey: ['week-workouts', startOfWeek],
         queryFn: async () => {
             try {
-                const logs = await WorkoutLog.filter({ date: today });
+                const logs = await WorkoutLog.query()
+                    .gte('date', startOfWeek)
+                    .lte('date', today)
+                    .exec();
                 return logs || [];
             } catch (error) {
                 console.error('Error fetching workouts:', error);
@@ -41,7 +56,7 @@ const Index = () => {
     const totalCarbs = todayNutrition?.reduce((sum, log) => sum + (log.carbs || 0), 0) || 0;
     const totalFat = todayNutrition?.reduce((sum, log) => sum + (log.fat || 0), 0) || 0;
 
-    const completedWorkouts = todayWorkouts?.filter(w => w.completed).length || 0;
+    const completedWorkouts = weekWorkouts?.filter(w => w.completed).length || 0;
     const mealsToday = todayNutrition?.length || 0;
 
     return (
@@ -62,15 +77,15 @@ const Index = () => {
                 </div>
 
                 <div className="mb-6">
-                    <WaterTracker />
+                    <SleepTracker />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
                     <StatsCard
                         icon={Dumbbell}
-                        title="אימונים היום"
+                        title="אימונים השבוע"
                         value={`${completedWorkouts}/3`}
-                        subtitle="השבוע"
+                        subtitle="יעד שבועי"
                         color="text-blue-400"
                     />
                     <StatsCard
