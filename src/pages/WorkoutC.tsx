@@ -11,7 +11,7 @@ const WorkoutC = () => {
     const { toast } = useToast();
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
     const [hasChanges, setHasChanges] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     const exercises = [
         { name: 'פולי עליון רחב (מכונה 19)', sets: 4, reps: '8-12' },
@@ -29,45 +29,45 @@ const WorkoutC = () => {
     }, []);
 
     const handleSave = async () => {
-        setIsSaving(true);
         try {
+            setSaving(true);
+            
             Object.entries(exerciseData).forEach(([name, data]) => {
                 localStorage.setItem(`exercise-${name}`, JSON.stringify(data));
             });
 
-            const today = new Date().toISOString().split('T')[0];
-            const exercisesCompleted = Object.entries(exerciseData).map(([name, data]: [string, any]) => ({
-                name,
-                sets: data.sets,
-                weight: data.weight,
-            }));
-
-            const allCompleted = Object.values(exerciseData).every((data: any) => 
+            const completed = Object.values(exerciseData).every((data: any) => 
                 data.sets.every((set: any) => set.completed)
             );
 
+            const today = new Date().toISOString().split('T')[0];
+            
             await WorkoutLog.create({
                 date: today,
                 workout_type: 'C',
-                exercises_completed: exercisesCompleted,
-                completed: allCompleted,
-                duration_minutes: 60,
+                exercises_completed: Object.entries(exerciseData).map(([name, data]: any) => ({
+                    name,
+                    sets: data.sets,
+                    weight: data.weight,
+                })),
+                completed: completed,
+                duration_minutes: 0,
             });
 
             setHasChanges(false);
             toast({
                 title: "נשמר בהצלחה! ✅",
-                description: "האימון נשמר במערכת",
+                description: "אימון C נשמר במערכת",
             });
         } catch (error) {
             console.error('Error saving workout:', error);
             toast({
-                title: "שגיאה בשמירה",
-                description: "אנא נסה שוב",
+                title: "שגיאה",
+                description: "לא הצלחנו לשמור את האימון. נסה שוב.",
                 variant: "destructive",
             });
         } finally {
-            setIsSaving(false);
+            setSaving(false);
         }
     };
 
@@ -116,15 +116,14 @@ const WorkoutC = () => {
                         <div className="container mx-auto max-w-3xl flex gap-3">
                             <Button
                                 onClick={handleSave}
-                                disabled={isSaving}
+                                disabled={saving}
                                 className="flex-1 bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
                             >
                                 <Save className="w-4 h-4 ml-2" />
-                                {isSaving ? 'שומר...' : 'שמור שינויים'}
+                                {saving ? 'שומר...' : 'שמור שינויים'}
                             </Button>
                             <Button
                                 onClick={handleCancel}
-                                disabled={isSaving}
                                 variant="outline"
                                 className="flex-1 border-border text-white hover:bg-red-600 hover:text-white"
                             >

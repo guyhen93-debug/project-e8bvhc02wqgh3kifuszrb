@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { WorkoutLog, NutritionLog, WeightLog } from '@/entities';
-import { DayDetailsDialog } from '@/components/DayDetailsDialog';
+import { DayDetailsModal } from '@/components/DayDetailsModal';
 
 const Calendar = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
 
     const { data: workoutLogs } = useQuery({
         queryKey: ['workout-logs'],
@@ -77,32 +77,22 @@ const Calendar = () => {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const workouts = workoutLogs?.filter(log => log.date === dateStr) || [];
         const meals = nutritionLogs?.filter(log => log.date === dateStr) || [];
-        const weights = weightLogs?.filter(log => log.date === dateStr) || [];
+        const weight = weightLogs?.find(log => log.date === dateStr);
         
         return {
-            hasWorkout: workouts.some(w => w.completed),
-            mealsCount: meals.length,
-            hasWeight: weights.length > 0,
             workouts,
             meals,
-            weights,
+            weight,
+            hasWorkout: workouts.some(w => w.completed),
+            mealsCount: meals.length,
+            hasWeight: !!weight,
         };
     };
 
     const handleDayClick = (day: number) => {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        setSelectedDate(dateStr);
-        setDialogOpen(true);
-    };
-
-    const getSelectedDayData = () => {
-        if (!selectedDate) return { workouts: [], meals: [], weights: [] };
-        
-        return {
-            workouts: workoutLogs?.filter(log => log.date === selectedDate) || [],
-            meals: nutritionLogs?.filter(log => log.date === selectedDate) || [],
-            weights: weightLogs?.filter(log => log.date === selectedDate) || [],
-        };
+        const date = new Date(year, month, day);
+        setSelectedDate(date);
+        setModalOpen(true);
     };
 
     const days = [];
@@ -119,7 +109,7 @@ const Calendar = () => {
         days.push(
             <Card 
                 key={day} 
-                className={`aspect-square cursor-pointer hover:border-oxygym-yellow transition-colors ${
+                className={`aspect-square cursor-pointer hover:border-oxygym-yellow transition-all ${
                     isToday ? 'border-oxygym-yellow border-2' : 'border-border'
                 } bg-oxygym-darkGrey`}
                 onClick={() => handleDayClick(day)}
@@ -139,7 +129,7 @@ const Calendar = () => {
                             </div>
                         )}
                         {hasWeight && (
-                            <Scale className="w-3 h-3 text-blue-400" />
+                            <Scale className="w-3 h-3 text-purple-400" />
                         )}
                     </div>
                 </CardContent>
@@ -147,13 +137,15 @@ const Calendar = () => {
         );
     }
 
-    const selectedDayData = getSelectedDayData();
+    const selectedDayData = selectedDate 
+        ? getDayData(selectedDate.getDate())
+        : { workouts: [], meals: [], weight: null };
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-20">
             <div className="container mx-auto px-4 py-8 max-w-3xl">
                 <h1 className="text-3xl font-bold text-white mb-2">לוח שנה</h1>
-                <p className="text-muted-foreground mb-8">מעקב אימונים ותזונה</p>
+                <p className="text-muted-foreground mb-8">לחץ על יום כדי לראות פרטים</p>
 
                 <Card className="bg-oxygym-darkGrey border-border mb-6">
                     <CardContent className="p-4">
@@ -212,7 +204,7 @@ const Calendar = () => {
                     </Card>
                     <Card className="bg-oxygym-darkGrey border-border">
                         <CardContent className="p-4 flex items-center gap-3">
-                            <Scale className="w-6 h-6 text-blue-400" />
+                            <Scale className="w-6 h-6 text-purple-400" />
                             <div>
                                 <p className="text-white font-semibold text-sm">משקל</p>
                             </div>
@@ -221,16 +213,14 @@ const Calendar = () => {
                 </div>
             </div>
 
-            {selectedDate && (
-                <DayDetailsDialog
-                    open={dialogOpen}
-                    onOpenChange={setDialogOpen}
-                    date={selectedDate}
-                    workouts={selectedDayData.workouts}
-                    meals={selectedDayData.meals}
-                    weights={selectedDayData.weights}
-                />
-            )}
+            <DayDetailsModal
+                open={modalOpen}
+                onOpenChange={setModalOpen}
+                date={selectedDate}
+                workouts={selectedDayData.workouts}
+                meals={selectedDayData.meals}
+                weight={selectedDayData.weight}
+            />
         </div>
     );
 };

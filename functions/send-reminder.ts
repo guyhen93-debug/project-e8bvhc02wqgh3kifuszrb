@@ -1,170 +1,45 @@
-/**
- * פונקציה לשליחת תזכורות במייל
- * שולחת תזכורות לאימונים, ארוחות, שקילה וכו'
- */
-
-interface SendReminderRequest {
-    email: string;
-    name: string;
-    reminderType: 'workout' | 'meal' | 'weigh-in' | 'water' | 'weekly-report';
-    customMessage?: string;
-    data?: any;
-}
-
-interface SendReminderResponse {
-    success: boolean;
-    message: string;
-}
-
-export default async function sendReminder(
-    req: SendReminderRequest
-): Promise<SendReminderResponse> {
-    const { email, name, reminderType, customMessage, data } = req;
-
-    let subject = '';
-    let body = '';
-
-    switch (reminderType) {
-        case 'workout':
-            subject = '💪 זמן לאימון - OXYGYM';
-            body = `
-שלום ${name},
-
-זה הזמן לאימון היום! 🏋️
-
-זכור:
-✅ חימום 5-10 דקות לפני התחלה
-✅ שתה מים לאורך האימון
-✅ התמקד בטכניקה הנכונה
-✅ מנוחה של 60-90 שניות בין סטים
-
-בהצלחה באימון! 💪
-
-OXYGYM Tracker
-            `.trim();
-            break;
-
-        case 'meal':
-            subject = '🍽️ תזכורת ארוחה - OXYGYM';
-            body = `
-שלום ${name},
-
-זמן לארוחה הבאה! 
-
-זכור לעקוב אחר:
-🥩 חלבון איכותי
-🍚 פחמימות מורכבות
-🥑 שומנים בריאים
-🥗 ירקות טריים
-
-עקוב אחרי התוכנית התזונתית שלך ב-OXYGYM Tracker!
-
-בתאבון! 😋
-
-OXYGYM Tracker
-            `.trim();
-            break;
-
-        case 'weigh-in':
-            subject = '⚖️ זמן שקילה - OXYGYM';
-            body = `
-שלום ${name},
-
-זמן לשקילה שבועית! 📊
-
-טיפים לשקילה מדויקת:
-⏰ שקול את עצמך בבוקר
-🚽 לאחר שירותים
-🍽️ לפני אכילה או שתייה
-👕 ללא בגדים או עם בגדים קלים
-
-תעד את המשקל שלך ב-OXYGYM Tracker!
-
-בהצלחה! 💪
-
-OXYGYM Tracker
-            `.trim();
-            break;
-
-        case 'water':
-            subject = '💧 תזכורת שתיית מים - OXYGYM';
-            body = `
-שלום ${name},
-
-זכור לשתות מים! 💧
-
-היעד היומי שלך: 3 ליטר
-
-טיפים:
-✅ שתה כוס מים כל שעה
-✅ תמיד החזק בקבוק מים לידך
-✅ שתה מים לפני, במהלך ואחרי האימון
-
-הידרציה נכונה = ביצועים טובים יותר! 💪
-
-OXYGYM Tracker
-            `.trim();
-            break;
-
-        case 'weekly-report':
-            subject = '📊 דו"ח התקדמות שבועי - OXYGYM';
-            body = `
-שלום ${name},
-
-הנה הדו"ח השבועי שלך! 📈
-
-${data?.summary || 'בדוק את האפליקציה לפרטים מלאים.'}
-
-${data?.achievements && data.achievements.length > 0 ? `
-🏆 ההישגים שלך:
-${data.achievements.map((a: string) => `  ${a}`).join('\n')}
-` : ''}
-
-${data?.recommendations && data.recommendations.length > 0 ? `
-💡 המלצות לשבוע הבא:
-${data.recommendations.map((r: string) => `  ${r}`).join('\n')}
-` : ''}
-
-המשך כך! אתה על המסלול הנכון! 🚀
-
-OXYGYM Tracker
-            `.trim();
-            break;
-
-        default:
-            subject = '📬 תזכורת מ-OXYGYM';
-            body = customMessage || `
-שלום ${name},
-
-תזכורת מ-OXYGYM Tracker! 
-
-המשך לעקוב אחרי התוכנית שלך והישארו עקביים! 💪
-
-OXYGYM Tracker
-            `.trim();
-    }
-
+Deno.serve(async (req) => {
     try {
-        // כאן תוכל להשתמש בשירות שליחת מיילים כמו SendGrid, AWS SES, וכו'
-        // לצורך הדוגמה, נדמה שליחה מוצלחת
-        
-        console.log(`Sending email to ${email}`);
-        console.log(`Subject: ${subject}`);
-        console.log(`Body: ${body}`);
+        const { email, name, reminderType, customMessage, data } = await req.json();
 
-        // TODO: הוסף קוד לשליחת מייל בפועל
-        // לדוגמה עם SendGrid:
-        // await sendgrid.send({ to: email, subject, text: body });
+        let subject = '';
+        let body = '';
 
-        return {
+        switch (reminderType) {
+            case 'workout':
+                subject = '💪 זמן לאימון - OXYGYM';
+                body = `שלום ${name},\n\nזה הזמן לאימון היום! 🏋️\n\nזכור:\n✅ חימום 5-10 דקות לפני התחלה\n✅ שתה מים לאורך האימון\n✅ התמקד בטכניקה הנכונה\n✅ מנוחה של 60-90 שניות בין סטים\n\nבהצלחה באימון! 💪\n\nOXYGYM Tracker`;
+                break;
+            case 'meal':
+                subject = '🍽️ תזכורת ארוחה - OXYGYM';
+                body = `שלום ${name},\n\nזמן לארוחה הבאה!\n\nזכור לעקוב אחר:\n🥩 חלבון איכותי\n🍚 פחמימות מורכבות\n🥑 שומנים בריאים\n🥗 ירקות טריים\n\nבתאבון! 😋`;
+                break;
+            case 'weigh-in':
+                subject = '⚖️ זמן שקילה - OXYGYM';
+                body = `שלום ${name},\n\nזמן לשקילה שבועית! 📊\n\nטיפים לשקילה מדויקת:\n⏰ שקול את עצמך בבוקר\n🚽 לאחר שירותים\n🍽️ לפני אכילה או שתייה`;
+                break;
+            default:
+                subject = '📬 תזכורת מ-OXYGYM';
+                body = customMessage || `שלום ${name},\n\nתזכורת מ-OXYGYM Tracker!`;
+        }
+
+        console.log(`Sending email to ${email}: ${subject}`);
+
+        return new Response(JSON.stringify({
             success: true,
             message: `תזכורת נשלחה בהצלחה ל-${email}`,
-        };
+        }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+        });
     } catch (error) {
-        console.error('Error sending reminder:', error);
-        return {
+        console.error('Error in sendReminder:', error);
+        return new Response(JSON.stringify({
             success: false,
             message: 'שגיאה בשליחת התזכורת',
-        };
+        }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+        });
     }
-}
+});

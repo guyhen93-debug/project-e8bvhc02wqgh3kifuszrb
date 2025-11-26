@@ -21,7 +21,7 @@ const Nutrition = () => {
     const [meal3Data, setMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal4Data, setMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [hasChanges, setHasChanges] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories;
     const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein;
@@ -59,11 +59,19 @@ const Nutrition = () => {
     };
 
     const handleSave = async () => {
-        setIsSaving(true);
         try {
-            const today = new Date().toISOString().split('T')[0];
+            setSaving(true);
             
-            // שמירת כל ארוחה למסד הנתונים
+            localStorage.setItem('nutrition-data', JSON.stringify({
+                meal1: meal1Data,
+                meal2: meal2Data,
+                meal3: meal3Data,
+                meal4: meal4Data,
+                date: new Date().toISOString().split('T')[0]
+            }));
+
+            const today = new Date().toISOString().split('T')[0];
+
             const meals = [
                 { number: 1, data: meal1Data },
                 { number: 2, data: meal2Data },
@@ -76,7 +84,7 @@ const Nutrition = () => {
                     await NutritionLog.create({
                         date: today,
                         meal_number: meal.number,
-                        items_consumed: [], // ניתן להוסיף מידע נוסף בעתיד
+                        items_consumed: [],
                         total_calories: meal.data.calories,
                         protein: meal.data.protein,
                         carbs: meal.data.carbs,
@@ -84,15 +92,6 @@ const Nutrition = () => {
                     });
                 }
             }
-
-            // שמירה גם ל-localStorage
-            localStorage.setItem('nutrition-data', JSON.stringify({
-                meal1: meal1Data,
-                meal2: meal2Data,
-                meal3: meal3Data,
-                meal4: meal4Data,
-                date: today
-            }));
 
             setHasChanges(false);
             toast({
@@ -102,12 +101,12 @@ const Nutrition = () => {
         } catch (error) {
             console.error('Error saving nutrition:', error);
             toast({
-                title: "שגיאה בשמירה",
-                description: "אנא נסה שוב",
+                title: "שגיאה",
+                description: "לא הצלחנו לשמור את התזונה. נסה שוב.",
                 variant: "destructive",
             });
         } finally {
-            setIsSaving(false);
+            setSaving(false);
         }
     };
 
@@ -308,15 +307,14 @@ const Nutrition = () => {
                         <div className="container mx-auto max-w-3xl flex gap-3">
                             <Button
                                 onClick={handleSave}
-                                disabled={isSaving}
+                                disabled={saving}
                                 className="flex-1 bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
                             >
                                 <Save className="w-4 h-4 ml-2" />
-                                {isSaving ? 'שומר...' : 'שמור תזונה'}
+                                {saving ? 'שומר...' : 'שמור תזונה'}
                             </Button>
                             <Button
                                 onClick={handleCancel}
-                                disabled={isSaving}
                                 variant="outline"
                                 className="flex-1 border-border text-white hover:bg-red-600 hover:text-white"
                             >
