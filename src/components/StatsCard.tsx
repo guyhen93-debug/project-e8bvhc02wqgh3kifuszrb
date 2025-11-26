@@ -1,8 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { LucideIcon } from 'lucide-react';
+import { ComponentType } from 'react';
 
 interface StatsCardProps {
-    icon: LucideIcon;
+    icon: ComponentType<{ className?: string }>;
     title: string;
     value: string;
     subtitle?: string;
