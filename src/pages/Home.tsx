@@ -47,9 +47,9 @@ const Home = () => {
             <div className="container mx-auto px-4 py-8 max-w-3xl">
                 <div className="flex items-center justify-center mb-8">
                     <img 
-                        src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/chat-generated-images/project-e8bvhc02wqgh3kifuszrb/69e66df0-f040-4cc8-b3fa-00d6cbd9d70e.png" 
+                        src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764155003407-OXYGYM5.jpg" 
                         alt="OXYGYM Logo" 
-                        className="w-20 h-20 mb-4"
+                        className="w-32 h-32 mb-4 rounded-full"
                     />
                 </div>
                 <h1 className="text-4xl font-bold text-center text-white mb-2">OXYGYM Tracker</h1>
