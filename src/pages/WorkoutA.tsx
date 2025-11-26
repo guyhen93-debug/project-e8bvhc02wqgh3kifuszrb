@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { ExerciseRow } from '@/components/ExerciseRow';
 import { ArrowRight, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { WorkoutLog } from '@/entities';
 
 const WorkoutA = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
     const [hasChanges, setHasChanges] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const exercises = [
         { name: 'לחיצת רגליים במכונה (מכונה 27)', sets: 4, reps: '8-12' },
@@ -27,15 +29,49 @@ const WorkoutA = () => {
         setHasChanges(true);
     }, []);
 
-    const handleSave = () => {
-        Object.entries(exerciseData).forEach(([name, data]) => {
-            localStorage.setItem(`exercise-${name}`, JSON.stringify(data));
-        });
-        setHasChanges(false);
-        toast({
-            title: "נשמר בהצלחה! ✅",
-            description: "האימון נשמר במערכת",
-        });
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            // שמירה ל-localStorage
+            Object.entries(exerciseData).forEach(([name, data]) => {
+                localStorage.setItem(`exercise-${name}`, JSON.stringify(data));
+            });
+
+            // שמירה למסד הנתונים
+            const today = new Date().toISOString().split('T')[0];
+            const exercisesCompleted = Object.entries(exerciseData).map(([name, data]: [string, any]) => ({
+                name,
+                sets: data.sets,
+                weight: data.weight,
+            }));
+
+            const allCompleted = Object.values(exerciseData).every((data: any) => 
+                data.sets.every((set: any) => set.completed)
+            );
+
+            await WorkoutLog.create({
+                date: today,
+                workout_type: 'A',
+                exercises_completed: exercisesCompleted,
+                completed: allCompleted,
+                duration_minutes: 60, // ניתן לשנות בעתיד
+            });
+
+            setHasChanges(false);
+            toast({
+                title: "נשמר בהצלחה! ✅",
+                description: "האימון נשמר במערכת",
+            });
+        } catch (error) {
+            console.error('Error saving workout:', error);
+            toast({
+                title: "שגיאה בשמירה",
+                description: "אנא נסה שוב",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleCancel = () => {
@@ -83,13 +119,15 @@ const WorkoutA = () => {
                         <div className="container mx-auto max-w-3xl flex gap-3">
                             <Button
                                 onClick={handleSave}
+                                disabled={isSaving}
                                 className="flex-1 bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
                             >
                                 <Save className="w-4 h-4 ml-2" />
-                                שמור שינויים
+                                {isSaving ? 'שומר...' : 'שמור שינויים'}
                             </Button>
                             <Button
                                 onClick={handleCancel}
+                                disabled={isSaving}
                                 variant="outline"
                                 className="flex-1 border-border text-white hover:bg-red-600 hover:text-white"
                             >

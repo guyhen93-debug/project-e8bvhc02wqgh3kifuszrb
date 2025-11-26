@@ -3,6 +3,7 @@ import { Dumbbell, Droplet, Utensils } from 'lucide-react';
 import { StatsCard } from '@/components/StatsCard';
 import { WeightChart } from '@/components/WeightChart';
 import { CalorieChart } from '@/components/CalorieChart';
+import { WeightDialog } from '@/components/WeightDialog';
 import { WorkoutLog, NutritionLog } from '@/entities';
 
 const Home = () => {
@@ -55,6 +56,10 @@ const Home = () => {
                 <h1 className="text-4xl font-bold text-center text-white mb-2">OXYGYM Tracker</h1>
                 <p className="text-center text-muted-foreground mb-8">סטטיסטיקות והתקדמות</p>
                 
+                <div className="mb-6">
+                    <WeightDialog />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4 mb-6">
                     <StatsCard
                         icon={Dumbbell}

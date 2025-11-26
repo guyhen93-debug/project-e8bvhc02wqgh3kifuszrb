@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Dumbbell, Utensils } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { WorkoutLog, NutritionLog } from '@/entities';
+import { WorkoutLog, NutritionLog, WeightLog } from '@/entities';
+import { DayDetailsDialog } from '@/components/DayDetailsDialog';
 
 const Calendar = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     const { data: workoutLogs } = useQuery({
         queryKey: ['workout-logs'],
@@ -27,6 +30,18 @@ const Calendar = () => {
                 return await NutritionLog.list('-date', 100);
             } catch (error) {
                 console.error('Error fetching nutrition:', error);
+                return [];
+            }
+        },
+    });
+
+    const { data: weightLogs } = useQuery({
+        queryKey: ['weight-logs'],
+        queryFn: async () => {
+            try {
+                return await WeightLog.list('-date', 100);
+            } catch (error) {
+                console.error('Error fetching weights:', error);
                 return [];
             }
         },
@@ -62,10 +77,31 @@ const Calendar = () => {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const workouts = workoutLogs?.filter(log => log.date === dateStr) || [];
         const meals = nutritionLogs?.filter(log => log.date === dateStr) || [];
+        const weights = weightLogs?.filter(log => log.date === dateStr) || [];
         
         return {
             hasWorkout: workouts.some(w => w.completed),
             mealsCount: meals.length,
+            hasWeight: weights.length > 0,
+            workouts,
+            meals,
+            weights,
+        };
+    };
+
+    const handleDayClick = (day: number) => {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        setSelectedDate(dateStr);
+        setDialogOpen(true);
+    };
+
+    const getSelectedDayData = () => {
+        if (!selectedDate) return { workouts: [], meals: [], weights: [] };
+        
+        return {
+            workouts: workoutLogs?.filter(log => log.date === selectedDate) || [],
+            meals: nutritionLogs?.filter(log => log.date === selectedDate) || [],
+            weights: weightLogs?.filter(log => log.date === selectedDate) || [],
         };
     };
 
@@ -75,7 +111,7 @@ const Calendar = () => {
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-        const { hasWorkout, mealsCount } = getDayData(day);
+        const { hasWorkout, mealsCount, hasWeight } = getDayData(day);
         const isToday = new Date().getDate() === day && 
                         new Date().getMonth() === month && 
                         new Date().getFullYear() === year;
@@ -83,13 +119,16 @@ const Calendar = () => {
         days.push(
             <Card 
                 key={day} 
-                className={`aspect-square ${isToday ? 'border-oxygym-yellow border-2' : 'border-border'} bg-oxygym-darkGrey`}
+                className={`aspect-square cursor-pointer hover:border-oxygym-yellow transition-colors ${
+                    isToday ? 'border-oxygym-yellow border-2' : 'border-border'
+                } bg-oxygym-darkGrey`}
+                onClick={() => handleDayClick(day)}
             >
                 <CardContent className="p-2 h-full flex flex-col items-center justify-center">
                     <span className={`text-sm font-semibold mb-1 ${isToday ? 'text-oxygym-yellow' : 'text-white'}`}>
                         {day}
                     </span>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-wrap justify-center">
                         {hasWorkout && (
                             <Dumbbell className="w-3 h-3 text-green-400" />
                         )}
@@ -99,11 +138,16 @@ const Calendar = () => {
                                 <span className="text-xs text-oxygym-yellow">{mealsCount}</span>
                             </div>
                         )}
+                        {hasWeight && (
+                            <Scale className="w-3 h-3 text-blue-400" />
+                        )}
                     </div>
                 </CardContent>
             </Card>
         );
     }
+
+    const selectedDayData = getSelectedDayData();
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-20">
@@ -149,13 +193,12 @@ const Calendar = () => {
                     </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                     <Card className="bg-oxygym-darkGrey border-border">
                         <CardContent className="p-4 flex items-center gap-3">
                             <Dumbbell className="w-6 h-6 text-green-400" />
                             <div>
-                                <p className="text-white font-semibold">התאמנתי</p>
-                                <p className="text-xs text-muted-foreground">סימון ירוק</p>
+                                <p className="text-white font-semibold text-sm">אימון</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -163,13 +206,31 @@ const Calendar = () => {
                         <CardContent className="p-4 flex items-center gap-3">
                             <Utensils className="w-6 h-6 text-oxygym-yellow" />
                             <div>
-                                <p className="text-white font-semibold">מספר ארוחות</p>
-                                <p className="text-xs text-muted-foreground">שאכלתי</p>
+                                <p className="text-white font-semibold text-sm">ארוחות</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-oxygym-darkGrey border-border">
+                        <CardContent className="p-4 flex items-center gap-3">
+                            <Scale className="w-6 h-6 text-blue-400" />
+                            <div>
+                                <p className="text-white font-semibold text-sm">משקל</p>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
             </div>
+
+            {selectedDate && (
+                <DayDetailsDialog
+                    open={dialogOpen}
+                    onOpenChange={setDialogOpen}
+                    date={selectedDate}
+                    workouts={selectedDayData.workouts}
+                    meals={selectedDayData.meals}
+                    weights={selectedDayData.weights}
+                />
+            )}
         </div>
     );
 };

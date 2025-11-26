@@ -5,6 +5,7 @@ import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { Droplet, Moon, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { NutritionLog } from '@/entities';
 
 interface MealData {
     calories: number;
@@ -20,6 +21,7 @@ const Nutrition = () => {
     const [meal3Data, setMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal4Data, setMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [hasChanges, setHasChanges] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories;
     const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein;
@@ -56,19 +58,57 @@ const Nutrition = () => {
         });
     };
 
-    const handleSave = () => {
-        localStorage.setItem('nutrition-data', JSON.stringify({
-            meal1: meal1Data,
-            meal2: meal2Data,
-            meal3: meal3Data,
-            meal4: meal4Data,
-            date: new Date().toISOString().split('T')[0]
-        }));
-        setHasChanges(false);
-        toast({
-            title: "נשמר בהצלחה! ✅",
-            description: "התזונה היומית נשמרה במערכת",
-        });
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // שמירת כל ארוחה למסד הנתונים
+            const meals = [
+                { number: 1, data: meal1Data },
+                { number: 2, data: meal2Data },
+                { number: 3, data: meal3Data },
+                { number: 4, data: meal4Data },
+            ];
+
+            for (const meal of meals) {
+                if (meal.data.calories > 0) {
+                    await NutritionLog.create({
+                        date: today,
+                        meal_number: meal.number,
+                        items_consumed: [], // ניתן להוסיף מידע נוסף בעתיד
+                        total_calories: meal.data.calories,
+                        protein: meal.data.protein,
+                        carbs: meal.data.carbs,
+                        fat: meal.data.fat,
+                    });
+                }
+            }
+
+            // שמירה גם ל-localStorage
+            localStorage.setItem('nutrition-data', JSON.stringify({
+                meal1: meal1Data,
+                meal2: meal2Data,
+                meal3: meal3Data,
+                meal4: meal4Data,
+                date: today
+            }));
+
+            setHasChanges(false);
+            toast({
+                title: "נשמר בהצלחה! ✅",
+                description: "התזונה היומית נשמרה במערכת",
+            });
+        } catch (error) {
+            console.error('Error saving nutrition:', error);
+            toast({
+                title: "שגיאה בשמירה",
+                description: "אנא נסה שוב",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleCancel = () => {
@@ -268,13 +308,15 @@ const Nutrition = () => {
                         <div className="container mx-auto max-w-3xl flex gap-3">
                             <Button
                                 onClick={handleSave}
+                                disabled={isSaving}
                                 className="flex-1 bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
                             >
                                 <Save className="w-4 h-4 ml-2" />
-                                שמור תזונה
+                                {isSaving ? 'שומר...' : 'שמור תזונה'}
                             </Button>
                             <Button
                                 onClick={handleCancel}
+                                disabled={isSaving}
                                 variant="outline"
                                 className="flex-1 border-border text-white hover:bg-red-600 hover:text-white"
                             >
