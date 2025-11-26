@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
-import { Droplet, Moon } from 'lucide-react';
+import { Droplet, Moon, Save, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface MealData {
     calories: number;
@@ -12,10 +14,12 @@ interface MealData {
 }
 
 const Nutrition = () => {
+    const { toast } = useToast();
     const [meal1Data, setMeal1Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal2Data, setMeal2Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal3Data, setMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal4Data, setMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [hasChanges, setHasChanges] = useState(false);
 
     const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories;
     const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein;
@@ -33,6 +37,7 @@ const Nutrition = () => {
     ) => {
         mealSetter(prev => {
             if (checked) {
+                setHasChanges(true);
                 return {
                     calories: prev.calories + calories,
                     protein: prev.protein + protein,
@@ -40,6 +45,7 @@ const Nutrition = () => {
                     fat: prev.fat + fat,
                 };
             } else {
+                setHasChanges(true);
                 return {
                     calories: Math.max(0, prev.calories - calories),
                     protein: Math.max(0, prev.protein - protein),
@@ -50,8 +56,27 @@ const Nutrition = () => {
         });
     };
 
+    const handleSave = () => {
+        localStorage.setItem('nutrition-data', JSON.stringify({
+            meal1: meal1Data,
+            meal2: meal2Data,
+            meal3: meal3Data,
+            meal4: meal4Data,
+            date: new Date().toISOString().split('T')[0]
+        }));
+        setHasChanges(false);
+        toast({
+            title: "נשמר בהצלחה! ✅",
+            description: "התזונה היומית נשמרה במערכת",
+        });
+    };
+
+    const handleCancel = () => {
+        window.location.reload();
+    };
+
     return (
-        <div className="min-h-screen bg-oxygym-dark pb-20">
+        <div className="min-h-screen bg-oxygym-dark pb-32">
             <div className="container mx-auto px-4 py-8 max-w-3xl">
                 <h1 className="text-3xl font-bold text-white mb-2">תפריט תזונה</h1>
                 <p className="text-muted-foreground mb-8">סמן מה אכלת היום</p>
@@ -84,7 +109,7 @@ const Nutrition = () => {
                     </Card>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-6 mb-6">
                     <Card className="bg-oxygym-darkGrey border-border">
                         <CardHeader>
                             <CardTitle className="text-white flex items-center justify-between">
@@ -237,6 +262,28 @@ const Nutrition = () => {
                         </CardContent>
                     </Card>
                 </div>
+
+                {hasChanges && (
+                    <div className="fixed bottom-20 left-0 right-0 bg-oxygym-darkGrey border-t border-border p-4">
+                        <div className="container mx-auto max-w-3xl flex gap-3">
+                            <Button
+                                onClick={handleSave}
+                                className="flex-1 bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
+                            >
+                                <Save className="w-4 h-4 ml-2" />
+                                שמור תזונה
+                            </Button>
+                            <Button
+                                onClick={handleCancel}
+                                variant="outline"
+                                className="flex-1 border-border text-white hover:bg-red-600 hover:text-white"
+                            >
+                                <X className="w-4 h-4 ml-2" />
+                                בטל
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 interface CalorieChartProps {
     protein: number;
@@ -22,11 +22,12 @@ export const CalorieChart = ({
 
     const data = [
         { name: 'חלבון', value: proteinCals, grams: protein, color: '#60A5FA' },
-        { name: 'פחמימות', value: carbsCals, grams: carbs, color: '#FFE600' },
+        { name: 'פחמימות', value: carbsCals, grams: carbs, color: '#34D399' },
         { name: 'שומן', value: fatCals, grams: fat, color: '#FB923C' },
     ];
 
     const percentage = Math.min((totalCalories / targetCalories) * 100, 100);
+    const percentageDisplay = Math.round(percentage);
 
     return (
         <Card className="bg-oxygym-darkGrey border-border">
@@ -48,23 +49,31 @@ export const CalorieChart = ({
                 
                 {totalCalories > 0 ? (
                     <>
-                        <ResponsiveContainer width="100%" height={200}>
-                            <PieChart>
-                                <Pie
-                                    data={data}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={2}
-                                    dataKey="value"
-                                >
-                                    {data.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <div className="relative">
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie
+                                        data={data}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={2}
+                                        dataKey="value"
+                                    >
+                                        {data.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="text-center">
+                                    <p className="text-3xl font-bold text-oxygym-yellow">{percentageDisplay}%</p>
+                                    <p className="text-xs text-muted-foreground">מהיעד</p>
+                                </div>
+                            </div>
+                        </div>
                         
                         <div className="grid grid-cols-3 gap-2 mt-4">
                             {data.map((item) => (
@@ -74,7 +83,7 @@ export const CalorieChart = ({
                                         style={{ backgroundColor: item.color }}
                                     />
                                     <p className="text-xs text-muted-foreground">{item.name}</p>
-                                    <p className="text-sm text-white font-semibold">{item.grams}g</p>
+                                    <p className="text-sm text-white font-semibold">{Math.round(item.grams)}g</p>
                                 </div>
                             ))}
                         </div>

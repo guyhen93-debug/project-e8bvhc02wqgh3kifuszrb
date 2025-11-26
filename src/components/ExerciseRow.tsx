@@ -7,13 +7,14 @@ interface ExerciseRowProps {
     name: string;
     sets: number;
     reps: string;
+    onDataChange?: (data: any) => void;
 }
 
 interface SetData {
     completed: boolean;
 }
 
-export const ExerciseRow = ({ name, sets, reps }: ExerciseRowProps) => {
+export const ExerciseRow = ({ name, sets, reps, onDataChange }: ExerciseRowProps) => {
     const [setData, setSetData] = useState<SetData[]>(
         Array(sets).fill(null).map(() => ({ completed: false }))
     );
@@ -30,16 +31,20 @@ export const ExerciseRow = ({ name, sets, reps }: ExerciseRowProps) => {
         }
     }, [name]);
 
+    useEffect(() => {
+        if (onDataChange) {
+            onDataChange({ sets: setData, weight, name });
+        }
+    }, [setData, weight, name, onDataChange]);
+
     const handleWeightChange = (newWeight: number) => {
         setWeight(newWeight);
-        localStorage.setItem(`exercise-${name}`, JSON.stringify({ sets: setData, weight: newWeight }));
     };
 
     const handleCompletedChange = (index: number, completed: boolean) => {
         const newSetData = [...setData];
         newSetData[index].completed = completed;
         setSetData(newSetData);
-        localStorage.setItem(`exercise-${name}`, JSON.stringify({ sets: newSetData, weight }));
 
         if (completed) {
             setLastCompletedSet(index);
