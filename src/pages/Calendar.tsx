@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale, Calendar as CalendarIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { WorkoutLog, NutritionLog, WeightLog } from '@/entities';
 import { format } from 'date-fns';
@@ -117,24 +117,24 @@ const Calendar = () => {
                 } bg-oxygym-darkGrey`}
                 onClick={() => handleDayClick(day)}
             >
-                <CardContent className="p-2 h-full flex flex-col items-center justify-center">
-                    <span className={`text-sm font-semibold mb-1 ${
+                <CardContent className="p-1.5 h-full flex flex-col items-center justify-between overflow-hidden">
+                    <span className={`text-sm font-semibold ${
                         isSelected || isToday ? 'text-oxygym-yellow' : 'text-white'
                     }`}>
                         {day}
                     </span>
-                    <div className="flex gap-1 flex-wrap justify-center">
+                    <div className="flex gap-0.5 items-center justify-center min-h-[16px]">
                         {hasWorkout && (
-                            <Dumbbell className="w-4 h-4 text-green-400" />
+                            <Dumbbell className="w-3 h-3 text-green-400" />
                         )}
                         {mealsCount > 0 && (
                             <div className="flex items-center gap-0.5">
-                                <Utensils className="w-4 h-4 text-oxygym-yellow" />
-                                <span className="text-xs text-oxygym-yellow">{mealsCount}</span>
+                                <Utensils className="w-3 h-3 text-oxygym-yellow" />
+                                <span className="text-[10px] text-oxygym-yellow leading-none">{mealsCount}</span>
                             </div>
                         )}
                         {hasWeight && (
-                            <Scale className="w-4 h-4 text-purple-400" />
+                            <Scale className="w-3 h-3 text-purple-400" />
                         )}
                     </div>
                 </CardContent>
@@ -196,9 +196,12 @@ const Calendar = () => {
                 {selectedDate && selectedDayData && (
                     <Card className="bg-oxygym-darkGrey border-border mb-6">
                         <CardContent className="p-4">
-                            <h3 className="text-white font-bold text-xl mb-4">
-                                {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: he })}
-                            </h3>
+                            <div className="flex items-center gap-3 mb-4">
+                                <CalendarIcon className="w-6 h-6 text-oxygym-yellow" />
+                                <h3 className="text-white font-bold text-xl">
+                                    {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: he })}
+                                </h3>
+                            </div>
 
                             <div className="space-y-4">
                                 {selectedDayData.workouts.length > 0 && (
