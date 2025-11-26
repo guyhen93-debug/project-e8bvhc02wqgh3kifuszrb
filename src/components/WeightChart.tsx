@@ -50,7 +50,7 @@ export const WeightChart = () => {
             </CardHeader>
             <CardContent>
                 <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={chartData}>
+                    <LineChart data={chartData} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                         <XAxis 
                             dataKey="date" 
@@ -62,6 +62,8 @@ export const WeightChart = () => {
                             style={{ fontSize: '12px' }}
                             domain={[yAxisMin, yAxisMax]}
                             tickFormatter={(value) => `${value}`}
+                            width={45}
+                            tickMargin={8}
                         />
                         <Tooltip 
                             contentStyle={{ 
