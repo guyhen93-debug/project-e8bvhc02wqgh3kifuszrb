@@ -35,7 +35,7 @@ const WorkoutB = () => {
             setSaving(true);
             
             Object.entries(exerciseData).forEach(([name, data]) => {
-                localStorage.setItem(`exercise-${name}`, JSON.stringify(data));
+                localStorage.setItem(`exercise-B-${name}`, JSON.stringify(data));
             });
 
             const completed = Object.values(exerciseData).every((data: any) => 
@@ -108,6 +108,7 @@ const WorkoutB = () => {
                             name={exercise.name}
                             sets={exercise.sets}
                             reps={exercise.reps}
+                            workoutType="B"
                             onDataChange={handleExerciseDataChange}
                         />
                     ))}

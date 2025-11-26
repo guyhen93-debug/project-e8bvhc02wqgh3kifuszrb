@@ -7,6 +7,7 @@ interface ExerciseRowProps {
     name: string;
     sets: number;
     reps: string;
+    workoutType?: string;
     onDataChange?: (data: any) => void;
 }
 
@@ -14,7 +15,7 @@ interface SetData {
     completed: boolean;
 }
 
-export const ExerciseRow = ({ name, sets, reps, onDataChange }: ExerciseRowProps) => {
+export const ExerciseRow = ({ name, sets, reps, workoutType = '', onDataChange }: ExerciseRowProps) => {
     const [setData, setSetData] = useState<SetData[]>(
         Array(sets).fill(null).map(() => ({ completed: false }))
     );
@@ -23,9 +24,10 @@ export const ExerciseRow = ({ name, sets, reps, onDataChange }: ExerciseRowProps
     const [lastCompletedSet, setLastCompletedSet] = useState<number | null>(null);
 
     const isAbsExercise = name.toLowerCase().includes('בטן');
+    const storageKey = workoutType ? `exercise-${workoutType}-${name}` : `exercise-${name}`;
 
     useEffect(() => {
-        const savedData = localStorage.getItem(`exercise-${name}`);
+        const savedData = localStorage.getItem(storageKey);
         if (savedData) {
             const parsed = JSON.parse(savedData);
             setSetData(parsed.sets);
@@ -33,7 +35,7 @@ export const ExerciseRow = ({ name, sets, reps, onDataChange }: ExerciseRowProps
                 setWeight(parsed.weight || 0);
             }
         }
-    }, [name, isAbsExercise]);
+    }, [storageKey, isAbsExercise]);
 
     useEffect(() => {
         if (onDataChange) {
