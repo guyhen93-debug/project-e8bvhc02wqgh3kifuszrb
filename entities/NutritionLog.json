@@ -1,0 +1,37 @@
+{
+  "name": "NutritionLog",
+  "description": "תיעוד תזונה יומי",
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "תאריך"
+    },
+    "meal_number": {
+      "type": "number",
+      "description": "מספר הארוחה (1-4)"
+    },
+    "items_consumed": {
+      "type": "array",
+      "description": "פריטים שנאכלו",
+      "items": {
+        "type": "object"
+      }
+    },
+    "total_calories": {
+      "type": "number",
+      "description": "סך הקלוריות"
+    },
+    "protein": {
+      "type": "number",
+      "description": "חלבון בגרם"
+    },
+    "carbs": {
+      "type": "number",
+      "description": "פחמימות בגרם"
+    },
+    "fat": {
+      "type": "number",
+      "description": "שומן בגרם"
+    }
+  }
+}

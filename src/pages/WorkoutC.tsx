@@ -17,12 +17,12 @@ const WorkoutC = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-oxygym-dark">
+        <div className="min-h-screen bg-oxygym-dark pb-20">
             <div className="container mx-auto px-4 py-8 max-w-3xl">
                 <div className="flex items-center justify-between mb-8">
-                    <h1 className="text-3xl font-bold text-white">אימון C (רביעי)</h1>
+                    <h1 className="text-3xl font-bold text-white">אימון C</h1>
                     <Button
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/workouts')}
                         variant="outline"
                         className="border-oxygym-yellow text-white hover:bg-oxygym-yellow hover:text-black"
                     >

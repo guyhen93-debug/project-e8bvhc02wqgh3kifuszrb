@@ -1,0 +1,29 @@
+{
+  "name": "WorkoutLog",
+  "description": "תיעוד אימונים יומי",
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "תאריך האימון"
+    },
+    "workout_type": {
+      "type": "string",
+      "description": "סוג אימון - A, B, או C"
+    },
+    "exercises_completed": {
+      "type": "array",
+      "description": "רשימת התרגילים שבוצעו",
+      "items": {
+        "type": "object"
+      }
+    },
+    "completed": {
+      "type": "boolean",
+      "description": "האם האימון הושלם במלואו"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "description": "משך האימון בדקות"
+    }
+  }
+}
