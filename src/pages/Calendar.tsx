@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { WorkoutLog, NutritionLog, WeightLog } from '@/entities';
 import { format } from 'date-fns';
@@ -196,12 +196,9 @@ const Calendar = () => {
                 {selectedDate && selectedDayData && (
                     <Card className="bg-oxygym-darkGrey border-border mb-6">
                         <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-4">
-                                <CalendarDays className="w-5 h-5 text-oxygym-yellow" />
-                                <h3 className="text-white font-bold text-lg">
-                                    {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: he })}
-                                </h3>
-                            </div>
+                            <h3 className="text-white font-bold text-xl mb-4">
+                                {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: he })}
+                            </h3>
 
                             <div className="space-y-4">
                                 {selectedDayData.workouts.length > 0 && (
@@ -276,33 +273,6 @@ const Calendar = () => {
                         </CardContent>
                     </Card>
                 )}
-
-                <div className="grid grid-cols-3 gap-4">
-                    <Card className="bg-oxygym-darkGrey border-border">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <Dumbbell className="w-6 h-6 text-green-400" />
-                            <div>
-                                <p className="text-white font-semibold text-sm">אימון</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-oxygym-darkGrey border-border">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <Utensils className="w-6 h-6 text-oxygym-yellow" />
-                            <div>
-                                <p className="text-white font-semibold text-sm">ארוחות</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-oxygym-darkGrey border-border">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <Scale className="w-6 h-6 text-purple-400" />
-                            <div>
-                                <p className="text-white font-semibold text-sm">משקל</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
             </div>
         </div>
     );
