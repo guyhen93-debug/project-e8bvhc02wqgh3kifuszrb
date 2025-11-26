@@ -1,76 +1,106 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dumbbell, Utensils, Calendar as CalendarIcon, Scale } from 'lucide-react';
-import { WeightModal } from '@/components/WeightModal';
+import { useQuery } from '@tanstack/react-query';
+import { Dumbbell, Droplet, Utensils } from 'lucide-react';
+import { StatsCard } from '@/components/StatsCard';
+import { WeightChart } from '@/components/WeightChart';
+import { CalorieChart } from '@/components/CalorieChart';
+import { WeightDialog } from '@/components/WeightDialog';
+import { WorkoutLog, NutritionLog } from '@/entities';
 
 const Index = () => {
-    const navigate = useNavigate();
-    const [weightModalOpen, setWeightModalOpen] = useState(false);
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data: todayWorkouts } = useQuery({
+        queryKey: ['today-workouts', today],
+        queryFn: async () => {
+            try {
+                const logs = await WorkoutLog.filter({ date: today });
+                return logs || [];
+            } catch (error) {
+                console.error('Error fetching workouts:', error);
+                return [];
+            }
+        },
+    });
+
+    const { data: todayNutrition } = useQuery({
+        queryKey: ['today-nutrition', today],
+        queryFn: async () => {
+            try {
+                const logs = await NutritionLog.filter({ date: today });
+                return logs || [];
+            } catch (error) {
+                console.error('Error fetching nutrition:', error);
+                return [];
+            }
+        },
+    });
+
+    const totalCalories = todayNutrition?.reduce((sum, log) => sum + (log.total_calories || 0), 0) || 0;
+    const totalProtein = todayNutrition?.reduce((sum, log) => sum + (log.protein || 0), 0) || 0;
+    const totalCarbs = todayNutrition?.reduce((sum, log) => sum + (log.carbs || 0), 0) || 0;
+    const totalFat = todayNutrition?.reduce((sum, log) => sum + (log.fat || 0), 0) || 0;
+
+    const workoutsThisWeek = todayWorkouts?.filter(w => w.completed).length || 0;
+    const mealsToday = todayNutrition?.length || 0;
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-20">
             <div className="container mx-auto px-4 py-8 max-w-3xl">
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">OXYGYM</h1>
-                    <p className="text-oxygym-yellow text-lg">מעקב אימונים ותזונה</p>
+                <div className="flex items-center justify-center mb-8">
+                    <img 
+                        src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764155003407-OXYGYM5.jpg" 
+                        alt="OXYGYM Logo" 
+                        className="w-32 h-32 mb-4 rounded-full"
+                    />
+                </div>
+                <h1 className="text-4xl font-bold text-center text-white mb-2">OXYGYM Tracker</h1>
+                <p className="text-center text-muted-foreground mb-8">סטטיסטיקות והתקדמות</p>
+                
+                <div className="mb-6">
+                    <WeightDialog />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                    <Card 
-                        className="bg-oxygym-darkGrey border-border hover:border-oxygym-yellow transition-all cursor-pointer"
-                        onClick={() => navigate('/workouts')}
-                    >
-                        <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px]">
-                            <Dumbbell className="w-12 h-12 text-oxygym-yellow mb-3" />
-                            <h2 className="text-xl font-bold text-white">אימונים</h2>
-                        </CardContent>
-                    </Card>
-
-                    <Card 
-                        className="bg-oxygym-darkGrey border-border hover:border-oxygym-yellow transition-all cursor-pointer"
-                        onClick={() => navigate('/nutrition')}
-                    >
-                        <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px]">
-                            <Utensils className="w-12 h-12 text-oxygym-yellow mb-3" />
-                            <h2 className="text-xl font-bold text-white">תפריט תזונה</h2>
-                        </CardContent>
-                    </Card>
-
-                    <Card 
-                        className="bg-oxygym-darkGrey border-border hover:border-oxygym-yellow transition-all cursor-pointer"
-                        onClick={() => navigate('/calendar')}
-                    >
-                        <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px]">
-                            <CalendarIcon className="w-12 h-12 text-oxygym-yellow mb-3" />
-                            <h2 className="text-xl font-bold text-white">לוח שנה</h2>
-                        </CardContent>
-                    </Card>
-
-                    <Card 
-                        className="bg-oxygym-darkGrey border-border hover:border-oxygym-yellow transition-all cursor-pointer"
-                        onClick={() => setWeightModalOpen(true)}
-                    >
-                        <CardContent className="p-6 flex flex-col items-center justify-center min-h-[140px]">
-                            <Scale className="w-12 h-12 text-oxygym-yellow mb-3" />
-                            <h2 className="text-xl font-bold text-white">תיעוד משקל</h2>
-                        </CardContent>
-                    </Card>
+                    <StatsCard
+                        icon={Dumbbell}
+                        title="אימונים היום"
+                        value={`${workoutsThisWeek}/3`}
+                        subtitle="השבוע"
+                        color="text-blue-400"
+                    />
+                    <StatsCard
+                        icon={Utensils}
+                        title="ארוחות היום"
+                        value={`${mealsToday}/4`}
+                        color="text-green-400"
+                    />
+                    <StatsCard
+                        icon={Droplet}
+                        title="שתיית מים"
+                        value="3 ליטר"
+                        subtitle="יעד יומי"
+                        color="text-cyan-400"
+                    />
+                    <StatsCard
+                        icon={Utensils}
+                        title="קלוריות היום"
+                        value={`${Math.round(totalCalories)}`}
+                        subtitle="מתוך 2,409"
+                        color="text-oxygym-yellow"
+                    />
                 </div>
 
-                <Card className="bg-gradient-to-br from-oxygym-yellow to-yellow-600 border-0">
-                    <CardContent className="p-6">
-                        <h3 className="text-2xl font-bold text-black mb-2">💪 מוכן להתחיל?</h3>
-                        <p className="text-black/80">בחר אימון או תעד את התזונה שלך</p>
-                    </CardContent>
-                </Card>
+                <div className="space-y-6">
+                    <CalorieChart
+                        protein={totalProtein}
+                        carbs={totalCarbs}
+                        fat={totalFat}
+                        totalCalories={totalCalories}
+                    />
+                    
+                    <WeightChart />
+                </div>
             </div>
-
-            <WeightModal 
-                open={weightModalOpen} 
-                onOpenChange={setWeightModalOpen}
-            />
         </div>
     );
 };

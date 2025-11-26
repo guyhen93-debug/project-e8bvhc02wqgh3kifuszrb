@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MealItem } from '@/components/MealItem';
@@ -165,6 +165,7 @@ const Nutrition = () => {
                                 proteinPer100g={11.9}
                                 carbsPer100g={47.6}
                                 fatPer100g={1.9}
+                                mealNumber={1}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal1Data, 'bread', checked, cals, prot, crbs, ft)
                                 }
@@ -177,6 +178,7 @@ const Nutrition = () => {
                                 proteinPer100g={9}
                                 carbsPer100g={4.3}
                                 fatPer100g={5}
+                                mealNumber={1}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal1Data, 'cheese', checked, cals, prot, crbs, ft)
                                 }
@@ -189,6 +191,7 @@ const Nutrition = () => {
                                 proteinPer100g={13}
                                 carbsPer100g={1.1}
                                 fatPer100g={11}
+                                mealNumber={1}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal1Data, 'eggs', checked, cals, prot, crbs, ft)
                                 }
@@ -201,6 +204,7 @@ const Nutrition = () => {
                                 proteinPer100g={0.5}
                                 carbsPer100g={6.5}
                                 fatPer100g={0.2}
+                                mealNumber={1}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal1Data, 'veggies', checked, cals, prot, crbs, ft)
                                 }
@@ -224,6 +228,7 @@ const Nutrition = () => {
                                 proteinPer100g={15}
                                 carbsPer100g={75}
                                 fatPer100g={3.1}
+                                mealNumber={2}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal2Data, 'gainer', checked, cals, prot, crbs, ft)
                                 }
@@ -247,6 +252,7 @@ const Nutrition = () => {
                                 proteinPer100g={15}
                                 carbsPer100g={75}
                                 fatPer100g={3.1}
+                                mealNumber={3}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal3Data, 'gainer', checked, cals, prot, crbs, ft)
                                 }
@@ -270,6 +276,7 @@ const Nutrition = () => {
                                 proteinPer100g={31}
                                 carbsPer100g={0}
                                 fatPer100g={3.6}
+                                mealNumber={4}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal4Data, 'chicken', checked, cals, prot, crbs, ft)
                                 }
@@ -282,6 +289,7 @@ const Nutrition = () => {
                                 proteinPer100g={7.3}
                                 carbsPer100g={78.5}
                                 fatPer100g={0.7}
+                                mealNumber={4}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal4Data, 'rice', checked, cals, prot, crbs, ft)
                                 }
@@ -294,6 +302,7 @@ const Nutrition = () => {
                                 proteinPer100g={0.5}
                                 carbsPer100g={6.5}
                                 fatPer100g={0.2}
+                                mealNumber={4}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal4Data, 'veggies', checked, cals, prot, crbs, ft)
                                 }

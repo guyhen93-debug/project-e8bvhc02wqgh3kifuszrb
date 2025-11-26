@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale, CalendarDays } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { WorkoutLog, NutritionLog, WeightLog } from '@/entities';
-import { DayDetailsModal } from '@/components/DayDetailsModal';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 
 const Calendar = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [modalOpen, setModalOpen] = useState(false);
 
     const { data: workoutLogs } = useQuery({
         queryKey: ['workout-logs'],
@@ -92,7 +92,6 @@ const Calendar = () => {
     const handleDayClick = (day: number) => {
         const date = new Date(year, month, day);
         setSelectedDate(date);
-        setModalOpen(true);
     };
 
     const days = [];
@@ -105,31 +104,37 @@ const Calendar = () => {
         const isToday = new Date().getDate() === day && 
                         new Date().getMonth() === month && 
                         new Date().getFullYear() === year;
+        const isSelected = selectedDate?.getDate() === day && 
+                          selectedDate?.getMonth() === month && 
+                          selectedDate?.getFullYear() === year;
 
         days.push(
             <Card 
                 key={day} 
                 className={`aspect-square cursor-pointer hover:border-oxygym-yellow transition-all ${
+                    isSelected ? 'border-oxygym-yellow border-2 bg-oxygym-yellow/10' : 
                     isToday ? 'border-oxygym-yellow border-2' : 'border-border'
                 } bg-oxygym-darkGrey`}
                 onClick={() => handleDayClick(day)}
             >
                 <CardContent className="p-2 h-full flex flex-col items-center justify-center">
-                    <span className={`text-sm font-semibold mb-1 ${isToday ? 'text-oxygym-yellow' : 'text-white'}`}>
+                    <span className={`text-sm font-semibold mb-1 ${
+                        isSelected || isToday ? 'text-oxygym-yellow' : 'text-white'
+                    }`}>
                         {day}
                     </span>
                     <div className="flex gap-1 flex-wrap justify-center">
                         {hasWorkout && (
-                            <Dumbbell className="w-3 h-3 text-green-400" />
+                            <Dumbbell className="w-4 h-4 text-green-400" />
                         )}
                         {mealsCount > 0 && (
                             <div className="flex items-center gap-0.5">
-                                <Utensils className="w-3 h-3 text-oxygym-yellow" />
+                                <Utensils className="w-4 h-4 text-oxygym-yellow" />
                                 <span className="text-xs text-oxygym-yellow">{mealsCount}</span>
                             </div>
                         )}
                         {hasWeight && (
-                            <Scale className="w-3 h-3 text-purple-400" />
+                            <Scale className="w-4 h-4 text-purple-400" />
                         )}
                     </div>
                 </CardContent>
@@ -139,7 +144,10 @@ const Calendar = () => {
 
     const selectedDayData = selectedDate 
         ? getDayData(selectedDate.getDate())
-        : { workouts: [], meals: [], weight: null };
+        : null;
+
+    const totalCalories = selectedDayData?.meals.reduce((sum, m) => sum + (m.total_calories || 0), 0) || 0;
+    const totalProtein = selectedDayData?.meals.reduce((sum, m) => sum + (m.protein || 0), 0) || 0;
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-20">
@@ -185,6 +193,90 @@ const Calendar = () => {
                     </CardContent>
                 </Card>
 
+                {selectedDate && selectedDayData && (
+                    <Card className="bg-oxygym-darkGrey border-border mb-6">
+                        <CardContent className="p-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <CalendarDays className="w-5 h-5 text-oxygym-yellow" />
+                                <h3 className="text-white font-bold text-lg">
+                                    {format(selectedDate, 'EEEE, d MMMM yyyy', { locale: he })}
+                                </h3>
+                            </div>
+
+                            <div className="space-y-4">
+                                {selectedDayData.workouts.length > 0 && (
+                                    <div className="bg-black p-4 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Dumbbell className="w-5 h-5 text-green-400" />
+                                            <h4 className="text-white font-semibold">אימונים</h4>
+                                        </div>
+                                        {selectedDayData.workouts.map((workout: any, idx: number) => (
+                                            <div key={idx} className="mb-2">
+                                                <p className="text-white">
+                                                    אימון {workout.workout_type}
+                                                </p>
+                                                {workout.completed && (
+                                                    <p className="text-xs text-green-400">✓ הושלם</p>
+                                                )}
+                                                {workout.duration_minutes && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {workout.duration_minutes} דקות
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {selectedDayData.meals.length > 0 && (
+                                    <div className="bg-black p-4 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Utensils className="w-5 h-5 text-oxygym-yellow" />
+                                            <h4 className="text-white font-semibold">תזונה</h4>
+                                        </div>
+                                        <p className="text-white mb-1">
+                                            {selectedDayData.meals.length} ארוחות תועדו
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {Math.round(totalCalories)} קלוריות סה"כ
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {Math.round(totalProtein)}g חלבון
+                                        </p>
+                                    </div>
+                                )}
+
+                                {selectedDayData.weight && (
+                                    <div className="bg-black p-4 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Scale className="w-5 h-5 text-purple-400" />
+                                            <h4 className="text-white font-semibold">משקל</h4>
+                                        </div>
+                                        <p className="text-2xl text-white font-bold">
+                                            {selectedDayData.weight.weight} <span className="text-lg">ק"ג</span>
+                                        </p>
+                                        {selectedDayData.weight.notes && (
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                {selectedDayData.weight.notes}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {selectedDayData.workouts.length === 0 && 
+                                 selectedDayData.meals.length === 0 && 
+                                 !selectedDayData.weight && (
+                                    <div className="bg-black p-4 rounded-lg text-center">
+                                        <p className="text-muted-foreground">
+                                            אין נתונים ליום זה
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <div className="grid grid-cols-3 gap-4">
                     <Card className="bg-oxygym-darkGrey border-border">
                         <CardContent className="p-4 flex items-center gap-3">
@@ -212,15 +304,6 @@ const Calendar = () => {
                     </Card>
                 </div>
             </div>
-
-            <DayDetailsModal
-                open={modalOpen}
-                onOpenChange={setModalOpen}
-                date={selectedDate}
-                workouts={selectedDayData.workouts}
-                meals={selectedDayData.meals}
-                weight={selectedDayData.weight}
-            />
         </div>
     );
 };

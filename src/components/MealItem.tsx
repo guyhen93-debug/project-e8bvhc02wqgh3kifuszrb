@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 
@@ -10,6 +10,7 @@ interface MealItemProps {
     proteinPer100g: number;
     carbsPer100g: number;
     fatPer100g: number;
+    mealNumber: number;
     onToggle: (checked: boolean, amount: number, calories: number, protein: number, carbs: number, fat: number) => void;
 }
 
@@ -21,10 +22,30 @@ export const MealItem = ({
     proteinPer100g,
     carbsPer100g,
     fatPer100g,
+    mealNumber,
     onToggle 
 }: MealItemProps) => {
+    const storageKey = `meal-${mealNumber}-${name}-${new Date().toISOString().split('T')[0]}`;
+    
     const [checked, setChecked] = useState(false);
     const [amount, setAmount] = useState(defaultAmount);
+
+    useEffect(() => {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            const { isChecked, savedAmount } = JSON.parse(saved);
+            setChecked(isChecked);
+            setAmount(savedAmount);
+            if (isChecked) {
+                const multiplier = savedAmount / 100;
+                const calories = Math.round(caloriesPer100g * multiplier);
+                const protein = Math.round(proteinPer100g * multiplier * 10) / 10;
+                const carbs = Math.round(carbsPer100g * multiplier * 10) / 10;
+                const fat = Math.round(fatPer100g * multiplier * 10) / 10;
+                onToggle(true, savedAmount, calories, protein, carbs, fat);
+            }
+        }
+    }, [storageKey]);
 
     const multiplier = amount / 100;
     const calories = Math.round(caloriesPer100g * multiplier);
@@ -34,6 +55,7 @@ export const MealItem = ({
 
     const handleCheckedChange = (newChecked: boolean) => {
         setChecked(newChecked);
+        localStorage.setItem(storageKey, JSON.stringify({ isChecked: newChecked, savedAmount: amount }));
         onToggle(newChecked, amount, calories, protein, carbs, fat);
     };
 
@@ -45,6 +67,7 @@ export const MealItem = ({
             const prot = Math.round(proteinPer100g * mult * 10) / 10;
             const crbs = Math.round(carbsPer100g * mult * 10) / 10;
             const ft = Math.round(fatPer100g * mult * 10) / 10;
+            localStorage.setItem(storageKey, JSON.stringify({ isChecked: checked, savedAmount: newAmount }));
             onToggle(true, newAmount, cals, prot, crbs, ft);
         }
     };

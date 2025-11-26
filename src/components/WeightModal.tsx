@@ -25,10 +25,10 @@ export const WeightModal = ({ open, onOpenChange, onSave }: WeightModalProps) =>
     const { toast } = useToast();
 
     const handleSave = async () => {
-        if (!weight || parseFloat(weight) <= 0) {
+        if (!weight || weight === '') {
             toast({
                 title: "שגיאה",
-                description: "אנא הזן משקל תקין",
+                description: "אנא הזן משקל",
                 variant: "destructive",
             });
             return;
