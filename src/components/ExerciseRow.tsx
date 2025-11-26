@@ -22,20 +22,24 @@ export const ExerciseRow = ({ name, sets, reps, onDataChange }: ExerciseRowProps
     const [timerActive, setTimerActive] = useState(false);
     const [lastCompletedSet, setLastCompletedSet] = useState<number | null>(null);
 
+    const isAbsExercise = name.toLowerCase().includes('בטן');
+
     useEffect(() => {
         const savedData = localStorage.getItem(`exercise-${name}`);
         if (savedData) {
             const parsed = JSON.parse(savedData);
             setSetData(parsed.sets);
-            setWeight(parsed.weight || 0);
+            if (!isAbsExercise) {
+                setWeight(parsed.weight || 0);
+            }
         }
-    }, [name]);
+    }, [name, isAbsExercise]);
 
     useEffect(() => {
         if (onDataChange) {
-            onDataChange({ sets: setData, weight, name });
+            onDataChange({ sets: setData, weight: isAbsExercise ? 0 : weight, name });
         }
-    }, [setData, weight, name, onDataChange]);
+    }, [setData, weight, name, onDataChange, isAbsExercise]);
 
     const handleWeightChange = (newWeight: number) => {
         setWeight(newWeight);
@@ -62,17 +66,19 @@ export const ExerciseRow = ({ name, sets, reps, onDataChange }: ExerciseRowProps
             <div className="mb-3">
                 <h3 className="text-lg font-semibold text-white">{name}</h3>
                 <p className="text-sm text-muted-foreground">{sets} סטים, {reps} חזרות</p>
-                <div className="flex items-center gap-2 mt-2">
-                    <span className="text-sm text-muted-foreground">משקל:</span>
-                    <Input
-                        type="number"
-                        value={weight || ''}
-                        onChange={(e) => handleWeightChange(Number(e.target.value))}
-                        placeholder="0"
-                        className="bg-black border-border text-white w-24 h-9"
-                    />
-                    <span className="text-sm text-muted-foreground">ק״ג</span>
-                </div>
+                {!isAbsExercise && (
+                    <div className="flex items-center gap-2 mt-2">
+                        <span className="text-sm text-muted-foreground">משקל:</span>
+                        <Input
+                            type="number"
+                            value={weight || ''}
+                            onChange={(e) => handleWeightChange(Number(e.target.value))}
+                            placeholder="0"
+                            className="bg-black border-border text-white w-24 h-9"
+                        />
+                        <span className="text-sm text-muted-foreground">ק״ג</span>
+                    </div>
+                )}
             </div>
             <div className="space-y-2">
                 {setData.map((set, index) => (

@@ -4,6 +4,7 @@ import { StatsCard } from '@/components/StatsCard';
 import { WeightChart } from '@/components/WeightChart';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WeightDialog } from '@/components/WeightDialog';
+import { WaterTracker } from '@/components/WaterTracker';
 import { WorkoutLog, NutritionLog } from '@/entities';
 
 const Index = () => {
@@ -40,7 +41,7 @@ const Index = () => {
     const totalCarbs = todayNutrition?.reduce((sum, log) => sum + (log.carbs || 0), 0) || 0;
     const totalFat = todayNutrition?.reduce((sum, log) => sum + (log.fat || 0), 0) || 0;
 
-    const workoutsThisWeek = todayWorkouts?.filter(w => w.completed).length || 0;
+    const completedWorkouts = todayWorkouts?.filter(w => w.completed).length || 0;
     const mealsToday = todayNutrition?.length || 0;
 
     return (
@@ -60,11 +61,15 @@ const Index = () => {
                     <WeightDialog />
                 </div>
 
+                <div className="mb-6">
+                    <WaterTracker />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4 mb-6">
                     <StatsCard
                         icon={Dumbbell}
                         title="אימונים היום"
-                        value={`${workoutsThisWeek}/3`}
+                        value={`${completedWorkouts}/3`}
                         subtitle="השבוע"
                         color="text-blue-400"
                     />
@@ -75,18 +80,18 @@ const Index = () => {
                         color="text-green-400"
                     />
                     <StatsCard
-                        icon={Droplet}
-                        title="שתיית מים"
-                        value="3 ליטר"
-                        subtitle="יעד יומי"
-                        color="text-cyan-400"
-                    />
-                    <StatsCard
                         icon={Utensils}
                         title="קלוריות היום"
                         value={`${Math.round(totalCalories)}`}
                         subtitle="מתוך 2,409"
                         color="text-oxygym-yellow"
+                    />
+                    <StatsCard
+                        icon={Dumbbell}
+                        title="חלבון היום"
+                        value={`${Math.round(totalProtein)}g`}
+                        subtitle="מתוך 145g"
+                        color="text-blue-400"
                     />
                 </div>
 

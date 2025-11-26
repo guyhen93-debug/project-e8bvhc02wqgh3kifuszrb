@@ -20,7 +20,8 @@ const WorkoutC = () => {
         { name: 'פולי עם מוט ישר (מכונה 29)', sets: 4, reps: '8-12' },
         { name: 'פולי עם חבל (מכונה 29)', sets: 4, reps: '8-12' },
         { name: 'פולי W מאחורי הראש (מכונה 29)', sets: 4, reps: '8-12' },
-        { name: 'בטן: בטן ישרה + עליות רגליים', sets: 3, reps: '15' },
+        { name: 'בטן: בטן ישרה', sets: 3, reps: '15' },
+        { name: 'בטן: עליות רגליים', sets: 3, reps: '15' },
     ];
 
     const handleExerciseDataChange = useCallback((data: any) => {

@@ -195,21 +195,26 @@ const Calendar = () => {
                                             <Dumbbell className="w-5 h-5 text-green-400" />
                                             <h4 className="text-white font-semibold">אימונים</h4>
                                         </div>
-                                        {selectedDayData.workouts.map((workout: any, idx: number) => (
-                                            <div key={idx} className="mb-2">
-                                                <p className="text-white">
-                                                    אימון {workout.workout_type}
-                                                </p>
-                                                {workout.completed && (
-                                                    <p className="text-xs text-green-400">✓ הושלם</p>
-                                                )}
-                                                {workout.duration_minutes && (
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {workout.duration_minutes} דקות
+                                        {selectedDayData.workouts.map((workout: any, idx: number) => {
+                                            const totalExercises = workout.exercises_completed?.length || 0;
+                                            const completedExercises = workout.exercises_completed?.filter(
+                                                (ex: any) => ex.sets?.every((s: any) => s.completed)
+                                            ).length || 0;
+                                            
+                                            return (
+                                                <div key={idx} className="mb-2">
+                                                    <p className="text-white">
+                                                        אימון {workout.workout_type}
                                                     </p>
-                                                )}
-                                            </div>
-                                        ))}
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {completedExercises} מתוך {totalExercises} תרגילים הושלמו
+                                                    </p>
+                                                    {workout.completed && (
+                                                        <p className="text-xs text-green-400">✓ אימון מלא הושלם</p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 )}
 

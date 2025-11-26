@@ -21,7 +21,8 @@ const WorkoutB = () => {
         { name: 'כפיפה עם מוט W', sets: 4, reps: '8-12' },
         { name: 'כפיפה עם משקולות יד', sets: 4, reps: '8-12' },
         { name: 'פטישים (משקולות יד)', sets: 4, reps: '8-12' },
-        { name: 'בטן: בטן ישרה + עליות רגליים', sets: 3, reps: '15' },
+        { name: 'בטן: בטן ישרה', sets: 3, reps: '15' },
+        { name: 'בטן: עליות רגליים', sets: 3, reps: '15' },
     ];
 
     const handleExerciseDataChange = useCallback((data: any) => {

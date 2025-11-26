@@ -20,10 +20,16 @@ export const CalorieChart = ({
     const carbsCals = carbs * 4;
     const fatCals = fat * 9;
 
+    const totalMacroCals = proteinCals + carbsCals + fatCals;
+
+    const proteinPercent = totalMacroCals > 0 ? Math.round((proteinCals / totalMacroCals) * 100) : 0;
+    const carbsPercent = totalMacroCals > 0 ? Math.round((carbsCals / totalMacroCals) * 100) : 0;
+    const fatPercent = totalMacroCals > 0 ? Math.round((fatCals / totalMacroCals) * 100) : 0;
+
     const data = [
-        { name: 'חלבון', value: proteinCals, grams: protein, color: '#60A5FA' },
-        { name: 'פחמימות', value: carbsCals, grams: carbs, color: '#34D399' },
-        { name: 'שומן', value: fatCals, grams: fat, color: '#FB923C' },
+        { name: 'חלבון', value: proteinCals, grams: protein, color: '#60A5FA', percent: proteinPercent },
+        { name: 'פחמימות', value: carbsCals, grams: carbs, color: '#34D399', percent: carbsPercent },
+        { name: 'שומן', value: fatCals, grams: fat, color: '#FB923C', percent: fatPercent },
     ];
 
     const percentage = Math.min((totalCalories / targetCalories) * 100, 100);
@@ -35,7 +41,7 @@ export const CalorieChart = ({
                 <CardTitle className="text-white flex items-center justify-between">
                     <span>תזונה יומית</span>
                     <span className="text-sm text-muted-foreground">
-                        {totalCalories} / {targetCalories} קלוריות
+                        {Math.round(totalCalories)} / {targetCalories} קלוריות
                     </span>
                 </CardTitle>
             </CardHeader>
@@ -84,6 +90,7 @@ export const CalorieChart = ({
                                     />
                                     <p className="text-xs text-muted-foreground">{item.name}</p>
                                     <p className="text-sm text-white font-semibold">{Math.round(item.grams)}g</p>
+                                    <p className="text-xs text-oxygym-yellow">{item.percent}%</p>
                                 </div>
                             ))}
                         </div>

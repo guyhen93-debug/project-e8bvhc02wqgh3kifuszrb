@@ -37,6 +37,12 @@ export const WeightChart = () => {
         );
     }
 
+    const weights = chartData.map(d => d.weight);
+    const minWeight = Math.min(...weights);
+    const maxWeight = Math.max(...weights);
+    const yAxisMin = Math.floor(minWeight - 1);
+    const yAxisMax = Math.ceil(maxWeight + 1);
+
     return (
         <Card className="bg-oxygym-darkGrey border-border">
             <CardHeader>
@@ -54,7 +60,8 @@ export const WeightChart = () => {
                         <YAxis 
                             stroke="#999"
                             style={{ fontSize: '12px' }}
-                            domain={['dataMin - 2', 'dataMax + 2']}
+                            domain={[yAxisMin, yAxisMax]}
+                            tickFormatter={(value) => `${value}`}
                         />
                         <Tooltip 
                             contentStyle={{ 
@@ -63,6 +70,7 @@ export const WeightChart = () => {
                                 borderRadius: '8px',
                                 color: '#fff'
                             }}
+                            formatter={(value: any) => [`${value} ק"ג`, 'משקל']}
                         />
                         <Line 
                             type="monotone" 

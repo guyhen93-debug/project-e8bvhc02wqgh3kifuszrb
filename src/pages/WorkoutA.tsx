@@ -21,7 +21,8 @@ const WorkoutA = () => {
         { name: 'לחיצת כתפיים (משקולות יד + ספסל)', sets: 4, reps: '8-12' },
         { name: 'הרחקת כתפיים (משקולות יד)', sets: 4, reps: '8-12' },
         { name: 'כתף אחורית (מכונה 29)', sets: 4, reps: '8-12' },
-        { name: 'בטן: בטן ישרה + עליות רגליים', sets: 3, reps: '15' },
+        { name: 'בטן: בטן ישרה', sets: 3, reps: '15' },
+        { name: 'בטן: עליות רגליים', sets: 3, reps: '15' },
     ];
 
     const handleExerciseDataChange = useCallback((data: any) => {
