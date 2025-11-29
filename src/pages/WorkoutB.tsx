@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseRow } from '@/components/ExerciseRow';
-import { ArrowRight, Save, X, Activity } from 'lucide-react';
+import { ArrowRight, Save, X, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WorkoutLog } from '@/entities';
 
@@ -50,21 +50,46 @@ const WorkoutB = () => {
 
             const completed = Object.values(exerciseData).every((data: any) => 
                 data.sets.every((set: any) => set.completed)
-            );
+            ) && cardioMinutes >= 20;
 
             const today = new Date().toISOString().split('T')[0];
             
-            await WorkoutLog.create({
-                date: today,
-                workout_type: 'B',
-                exercises_completed: Object.entries(exerciseData).map(([name, data]: any) => ({
-                    name,
-                    sets: data.sets,
-                    weight: data.weight,
-                })),
-                completed: completed,
-                duration_minutes: cardioMinutes,
+            const existingLogs = await WorkoutLog.filter({ 
+                date: today, 
+                workout_type: 'B' 
             });
+
+            if (existingLogs.length > 0) {
+                await WorkoutLog.update(existingLogs[0].id, {
+                    exercises_completed: Object.entries(exerciseData).map(([name, data]: any) => ({
+                        name,
+                        sets: data.sets,
+                        weight: data.weight,
+                    })),
+                    completed: completed,
+                    duration_minutes: cardioMinutes,
+                });
+            } else {
+                await WorkoutLog.create({
+                    date: today,
+                    workout_type: 'B',
+                    exercises_completed: Object.entries(exerciseData).map(([name, data]: any) => ({
+                        name,
+                        sets: data.sets,
+                        weight: data.weight,
+                    })),
+                    completed: completed,
+                    duration_minutes: cardioMinutes,
+                });
+            }
+
+            if (completed) {
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('exercise-B-')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+            }
 
             setHasChanges(false);
             toast({
@@ -116,7 +141,7 @@ const WorkoutB = () => {
                 <Card className="bg-oxygym-darkGrey border-border mb-6">
                     <CardContent className="p-4">
                         <div className="flex items-center gap-3 mb-3">
-                            <Activity className="w-6 h-6 text-orange-400" />
+                            <Heart className="w-6 h-6 text-red-400" />
                             <div className="flex-1">
                                 <Label htmlFor="cardio" className="text-white font-semibold">פעילות אירובית</Label>
                                 <p className="text-xs text-muted-foreground">יעד: 20 דקות</p>
@@ -135,7 +160,7 @@ const WorkoutB = () => {
                         </div>
                         <div className="w-full bg-black rounded-full h-2">
                             <div 
-                                className="bg-orange-400 h-2 rounded-full transition-all duration-500"
+                                className="bg-red-400 h-2 rounded-full transition-all duration-500"
                                 style={{ width: `${cardioPercentage}%` }}
                             />
                         </div>

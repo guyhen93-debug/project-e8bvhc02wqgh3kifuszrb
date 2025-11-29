@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dumbbell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 interface WorkoutCardProps {
     id: string;
@@ -12,6 +13,30 @@ interface WorkoutCardProps {
 
 export const WorkoutCard = ({ id, title, description, path }: WorkoutCardProps) => {
     const navigate = useNavigate();
+    const [hasProgress, setHasProgress] = useState(false);
+
+    useEffect(() => {
+        const checkProgress = () => {
+            const keys = Object.keys(localStorage);
+            const workoutKeys = keys.filter(key => key.startsWith(`exercise-${id.toUpperCase()}-`));
+            
+            if (workoutKeys.length > 0) {
+                const hasAnyProgress = workoutKeys.some(key => {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        const parsed = JSON.parse(data);
+                        return parsed.sets?.some((set: any) => set.completed);
+                    }
+                    return false;
+                });
+                setHasProgress(hasAnyProgress);
+            }
+        };
+
+        checkProgress();
+        const interval = setInterval(checkProgress, 1000);
+        return () => clearInterval(interval);
+    }, [id]);
 
     return (
         <Card className="bg-oxygym-darkGrey border-border hover:border-oxygym-yellow transition-colors">
@@ -29,7 +54,7 @@ export const WorkoutCard = ({ id, title, description, path }: WorkoutCardProps) 
                     onClick={() => navigate(path)}
                     className="w-full bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
                 >
-                    התחל אימון
+                    {hasProgress ? 'המשך אימון' : 'התחל אימון'}
                 </Button>
             </CardContent>
         </Card>

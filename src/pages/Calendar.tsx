@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale, Calendar as CalendarIcon, Droplet, Moon, Heart } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { WorkoutLog, NutritionLog, WeightLog } from '@/entities';
 import { format } from 'date-fns';
@@ -79,6 +79,11 @@ const Calendar = () => {
         const meals = nutritionLogs?.filter(log => log.date === dateStr) || [];
         const weight = weightLogs?.find(log => log.date === dateStr);
         
+        const waterGlasses = parseInt(localStorage.getItem(`water-${dateStr}`) || '0');
+        const sleepHours = parseFloat(localStorage.getItem(`sleep-${dateStr}`) || '0');
+        
+        const totalCardioMinutes = workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0);
+        
         return {
             workouts,
             meals,
@@ -86,6 +91,9 @@ const Calendar = () => {
             hasWorkout: workouts.some(w => w.completed),
             mealsCount: meals.length,
             hasWeight: !!weight,
+            waterGlasses,
+            sleepHours,
+            cardioMinutes: totalCardioMinutes,
         };
     };
 
@@ -218,6 +226,21 @@ const Calendar = () => {
                                     </div>
                                 )}
 
+                                {selectedDayData.cardioMinutes > 0 && (
+                                    <div className="bg-black p-4 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Heart className="w-5 h-5 text-red-400" />
+                                            <h4 className="text-white font-semibold">פעילות אירובית</h4>
+                                        </div>
+                                        <p className="text-2xl text-white font-bold">
+                                            {selectedDayData.cardioMinutes} <span className="text-lg">דקות</span>
+                                        </p>
+                                        {selectedDayData.cardioMinutes >= 20 && (
+                                            <p className="text-xs text-green-400 mt-1">✓ יעד יומי הושג</p>
+                                        )}
+                                    </div>
+                                )}
+
                                 {selectedDayData.meals.length > 0 && (
                                     <div className="bg-black p-4 rounded-lg">
                                         <div className="flex items-center gap-2 mb-3">
@@ -233,6 +256,39 @@ const Calendar = () => {
                                         <p className="text-sm text-muted-foreground">
                                             {Math.round(totalProtein)}g חלבון
                                         </p>
+                                    </div>
+                                )}
+
+                                {selectedDayData.waterGlasses > 0 && (
+                                    <div className="bg-black p-4 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Droplet className="w-5 h-5 text-blue-400" />
+                                            <h4 className="text-white font-semibold">שתיית מים</h4>
+                                        </div>
+                                        <p className="text-2xl text-white font-bold">
+                                            {selectedDayData.waterGlasses} <span className="text-lg">כוסות</span>
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {(selectedDayData.waterGlasses * 0.25).toFixed(1)} ליטר
+                                        </p>
+                                        {selectedDayData.waterGlasses >= 12 && (
+                                            <p className="text-xs text-green-400 mt-1">✓ יעד יומי הושג</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {selectedDayData.sleepHours > 0 && (
+                                    <div className="bg-black p-4 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Moon className="w-5 h-5 text-purple-400" />
+                                            <h4 className="text-white font-semibold">שעות שינה</h4>
+                                        </div>
+                                        <p className="text-2xl text-white font-bold">
+                                            {selectedDayData.sleepHours.toFixed(1)} <span className="text-lg">שעות</span>
+                                        </p>
+                                        {selectedDayData.sleepHours >= 7 && selectedDayData.sleepHours <= 9 && (
+                                            <p className="text-xs text-green-400 mt-1">✓ יעד יומי הושג</p>
+                                        )}
                                     </div>
                                 )}
 
@@ -255,7 +311,10 @@ const Calendar = () => {
 
                                 {selectedDayData.workouts.length === 0 && 
                                  selectedDayData.meals.length === 0 && 
-                                 !selectedDayData.weight && (
+                                 !selectedDayData.weight &&
+                                 selectedDayData.waterGlasses === 0 &&
+                                 selectedDayData.sleepHours === 0 &&
+                                 selectedDayData.cardioMinutes === 0 && (
                                     <div className="bg-black p-4 rounded-lg text-center">
                                         <p className="text-muted-foreground">
                                             אין נתונים ליום זה

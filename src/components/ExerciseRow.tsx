@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SetRow } from './SetRow';
-import { Timer } from './Timer';
+import { useTimer } from '@/contexts/TimerContext';
 import { Input } from '@/components/ui/input';
 
 interface ExerciseRowProps {
@@ -20,8 +20,7 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', onDataChange }
         Array(sets).fill(null).map(() => ({ completed: false }))
     );
     const [weight, setWeight] = useState<number>(0);
-    const [timerActive, setTimerActive] = useState(false);
-    const [lastCompletedSet, setLastCompletedSet] = useState<number | null>(null);
+    const { startTimer } = useTimer();
 
     const isAbsExercise = name.toLowerCase().includes('בטן');
     const storageKey = workoutType ? `exercise-${workoutType}-${name}` : `exercise-${name}`;
@@ -53,14 +52,9 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', onDataChange }
         setSetData(newSetData);
 
         if (completed) {
-            setLastCompletedSet(index);
-            setTimerActive(true);
+            sessionStorage.setItem('timer-seconds', '90');
+            startTimer();
         }
-    };
-
-    const handleTimerComplete = () => {
-        setTimerActive(false);
-        setLastCompletedSet(null);
     };
 
     return (
@@ -92,9 +86,6 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', onDataChange }
                     />
                 ))}
             </div>
-            {timerActive && lastCompletedSet !== null && (
-                <Timer isActive={timerActive} onComplete={handleTimerComplete} />
-            )}
         </div>
     );
 };
