@@ -9,7 +9,7 @@ export const WeightChart = () => {
         queryFn: async () => {
             try {
                 const logs = await WeightLog.list('-date', 20);
-                return logs.reverse();
+                return logs;
             } catch (error) {
                 console.error('Error fetching weight logs:', error);
                 return [];
