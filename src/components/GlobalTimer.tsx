@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useTimer } from '@/contexts/TimerContext';
 
 export const GlobalTimer = () => {
-    const { isActive, seconds, stopTimer } = useTimer();
+    const { isActive, stopTimer } = useTimer();
+    const [displaySeconds, setDisplaySeconds] = useState(90);
 
     const playSound = () => {
         try {
@@ -34,7 +35,10 @@ export const GlobalTimer = () => {
     };
 
     useEffect(() => {
-        if (!isActive) return;
+        if (!isActive) {
+            setDisplaySeconds(90);
+            return;
+        }
 
         const interval = setInterval(() => {
             const currentSeconds = parseInt(sessionStorage.getItem('timer-seconds') || '90');
@@ -44,11 +48,13 @@ export const GlobalTimer = () => {
                 playSound();
                 stopTimer();
                 sessionStorage.removeItem('timer-seconds');
+                setDisplaySeconds(0);
                 return;
             }
             
             const newSeconds = currentSeconds - 1;
             sessionStorage.setItem('timer-seconds', newSeconds.toString());
+            setDisplaySeconds(newSeconds);
         }, 1000);
 
         return () => clearInterval(interval);
@@ -56,9 +62,8 @@ export const GlobalTimer = () => {
 
     if (!isActive) return null;
 
-    const currentSeconds = parseInt(sessionStorage.getItem('timer-seconds') || '90');
-    const minutes = Math.floor(currentSeconds / 60);
-    const remainingSeconds = currentSeconds % 60;
+    const minutes = Math.floor(displaySeconds / 60);
+    const remainingSeconds = displaySeconds % 60;
 
     return (
         <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-oxygym-yellow text-black px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 z-50 animate-pulse">

@@ -9,7 +9,7 @@ export const WeightChart = () => {
         queryFn: async () => {
             try {
                 const logs = await WeightLog.list('-date', 20);
-                return logs;
+                return logs.reverse();
             } catch (error) {
                 console.error('Error fetching weight logs:', error);
                 return [];
@@ -56,7 +56,6 @@ export const WeightChart = () => {
                             dataKey="date" 
                             stroke="#999"
                             style={{ fontSize: '12px' }}
-                            reversed
                         />
                         <YAxis 
                             stroke="#999"
