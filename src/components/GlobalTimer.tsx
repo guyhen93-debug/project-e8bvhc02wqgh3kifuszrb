@@ -8,27 +8,33 @@ export const GlobalTimer = () => {
 
     const playSound = () => {
         try {
+            console.log('Playing timer completion sound...');
             const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
             
             // Play 3 beeps with increasing pitch
-            for (let i = 0; i < 3; i++) {
-                setTimeout(() => {
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
+            const playBeep = (index: number) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
 
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
 
-                    oscillator.frequency.value = 800 + (i * 200);
-                    oscillator.type = 'sine';
+                oscillator.frequency.value = 800 + (index * 200);
+                oscillator.type = 'sine';
 
-                    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                const startTime = audioContext.currentTime + (index * 0.4);
+                gainNode.gain.setValueAtTime(0.5, startTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
 
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.3);
-                }, i * 400);
-            }
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.3);
+            };
+
+            playBeep(0);
+            playBeep(1);
+            playBeep(2);
+
+            console.log('Timer sound played successfully');
         } catch (error) {
             console.error('Error playing sound:', error);
         }
@@ -40,10 +46,13 @@ export const GlobalTimer = () => {
             return;
         }
 
+        console.log('Timer started');
+
         const interval = setInterval(() => {
             const currentSeconds = parseInt(sessionStorage.getItem('timer-seconds') || '90');
             
             if (currentSeconds <= 1) {
+                console.log('Timer finished, playing sound...');
                 clearInterval(interval);
                 playSound();
                 stopTimer();
