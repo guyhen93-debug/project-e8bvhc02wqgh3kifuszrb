@@ -34,7 +34,6 @@ const App = () => (
                             <Route path="/workout-c" element={<WorkoutC />} />
                             <Route path="/nutrition" element={<Nutrition />} />
                             <Route path="/calendar" element={<Calendar />} />
-                            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                             <Route path="*" element={<NotFound />} />
                         </Routes>
                         <GlobalTimer />
