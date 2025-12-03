@@ -18,6 +18,12 @@ interface MealData {
     fat: number;
 }
 
+interface MealItemSelection {
+    name: string;
+    amount: number;
+    checked: boolean;
+}
+
 const Nutrition = () => {
     const { toast } = useToast();
     const { selectedDate, isToday } = useDate();
@@ -25,6 +31,10 @@ const Nutrition = () => {
     const [meal2Data, setMeal2Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal3Data, setMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal4Data, setMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [meal1Items, setMeal1Items] = useState<Record<string, MealItemSelection>>({});
+    const [meal2Items, setMeal2Items] = useState<Record<string, MealItemSelection>>({});
+    const [meal3Items, setMeal3Items] = useState<Record<string, MealItemSelection>>({});
+    const [meal4Items, setMeal4Items] = useState<Record<string, MealItemSelection>>({});
     const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
 
@@ -44,13 +54,60 @@ const Nutrition = () => {
 
     useEffect(() => {
         console.log('Date changed to:', selectedDate);
+        
+        // איפוס כל הנתונים
         setMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
         setMeal2Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
         setMeal3Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
         setMeal4Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setMeal1Items({});
+        setMeal2Items({});
+        setMeal3Items({});
+        setMeal4Items({});
         setHasChanges(false);
-        refetch();
-    }, [selectedDate, refetch]);
+        
+        // טעינת נתונים מהמסד
+        if (selectedDateMeals && selectedDateMeals.length > 0) {
+            selectedDateMeals.forEach((log: any) => {
+                const mealData = {
+                    calories: log.total_calories || 0,
+                    protein: log.protein || 0,
+                    carbs: log.carbs || 0,
+                    fat: log.fat || 0,
+                };
+
+                const items: Record<string, MealItemSelection> = {};
+                if (log.items_consumed && Array.isArray(log.items_consumed)) {
+                    log.items_consumed.forEach((item: any) => {
+                        items[item.name] = {
+                            name: item.name,
+                            amount: item.amount,
+                            checked: true,
+                        };
+                    });
+                }
+
+                switch (log.meal_number) {
+                    case 1:
+                        setMeal1Data(mealData);
+                        setMeal1Items(items);
+                        break;
+                    case 2:
+                        setMeal2Data(mealData);
+                        setMeal2Items(items);
+                        break;
+                    case 3:
+                        setMeal3Data(mealData);
+                        setMeal3Items(items);
+                        break;
+                    case 4:
+                        setMeal4Data(mealData);
+                        setMeal4Items(items);
+                        break;
+                }
+            });
+        }
+    }, [selectedDate, selectedDateMeals]);
 
     const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories;
     const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein;
@@ -59,13 +116,20 @@ const Nutrition = () => {
 
     const handleMealItemToggle = (
         mealSetter: React.Dispatch<React.SetStateAction<MealData>>,
+        itemsSetter: React.Dispatch<React.SetStateAction<Record<string, MealItemSelection>>>,
         itemName: string,
         checked: boolean,
+        amount: number,
         calories: number,
         protein: number,
         carbs: number,
         fat: number
     ) => {
+        itemsSetter(prev => ({
+            ...prev,
+            [itemName]: { name: itemName, amount, checked }
+        }));
+
         mealSetter(prev => {
             if (checked) {
                 setHasChanges(true);
@@ -97,18 +161,25 @@ const Nutrition = () => {
             }
 
             const meals = [
-                { number: 1, data: meal1Data },
-                { number: 2, data: meal2Data },
-                { number: 3, data: meal3Data },
-                { number: 4, data: meal4Data },
+                { number: 1, data: meal1Data, items: meal1Items },
+                { number: 2, data: meal2Data, items: meal2Items },
+                { number: 3, data: meal3Data, items: meal3Items },
+                { number: 4, data: meal4Data, items: meal4Items },
             ];
 
             for (const meal of meals) {
                 if (meal.data.calories > 0) {
+                    const itemsConsumed = Object.values(meal.items)
+                        .filter(item => item.checked)
+                        .map(item => ({
+                            name: item.name,
+                            amount: item.amount
+                        }));
+
                     await NutritionLog.create({
                         date: selectedDate,
                         meal_number: meal.number,
-                        items_consumed: [],
+                        items_consumed: itemsConsumed,
                         total_calories: meal.data.calories,
                         protein: meal.data.protein,
                         carbs: meal.data.carbs,
@@ -186,10 +257,10 @@ const Nutrition = () => {
                                 proteinPer100g={11.9}
                                 carbsPer100g={47.6}
                                 fatPer100g={1.9}
-                                mealNumber={1}
-                                selectedDate={selectedDate}
+                                initialChecked={meal1Items['לחם כוסמין']?.checked || false}
+                                initialAmount={meal1Items['לחם כוסמין']?.amount}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                    handleMealItemToggle(setMeal1Data, 'bread', checked, cals, prot, crbs, ft)
+                                    handleMealItemToggle(setMeal1Data, setMeal1Items, 'לחם כוסמין', checked, amount, cals, prot, crbs, ft)
                                 }
                             />
                             <MealItem
@@ -200,10 +271,10 @@ const Nutrition = () => {
                                 proteinPer100g={9}
                                 carbsPer100g={4.3}
                                 fatPer100g={5}
-                                mealNumber={1}
-                                selectedDate={selectedDate}
+                                initialChecked={meal1Items['גבינה לבנה 5%']?.checked || false}
+                                initialAmount={meal1Items['גבינה לבנה 5%']?.amount}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                    handleMealItemToggle(setMeal1Data, 'cheese', checked, cals, prot, crbs, ft)
+                                    handleMealItemToggle(setMeal1Data, setMeal1Items, 'גבינה לבנה 5%', checked, amount, cals, prot, crbs, ft)
                                 }
                             />
                             <MealItem
@@ -214,10 +285,10 @@ const Nutrition = () => {
                                 proteinPer100g={13}
                                 carbsPer100g={1.1}
                                 fatPer100g={11}
-                                mealNumber={1}
-                                selectedDate={selectedDate}
+                                initialChecked={meal1Items['ביצים']?.checked || false}
+                                initialAmount={meal1Items['ביצים']?.amount}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                    handleMealItemToggle(setMeal1Data, 'eggs', checked, cals, prot, crbs, ft)
+                                    handleMealItemToggle(setMeal1Data, setMeal1Items, 'ביצים', checked, amount, cals, prot, crbs, ft)
                                 }
                             />
                             <MealItem
@@ -228,10 +299,10 @@ const Nutrition = () => {
                                 proteinPer100g={0.5}
                                 carbsPer100g={6.5}
                                 fatPer100g={0.2}
-                                mealNumber={1}
-                                selectedDate={selectedDate}
+                                initialChecked={meal1Items['ירקות']?.checked || false}
+                                initialAmount={meal1Items['ירקות']?.amount}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                    handleMealItemToggle(setMeal1Data, 'veggies', checked, cals, prot, crbs, ft)
+                                    handleMealItemToggle(setMeal1Data, setMeal1Items, 'ירקות', checked, amount, cals, prot, crbs, ft)
                                 }
                             />
                         </CardContent>
@@ -253,10 +324,10 @@ const Nutrition = () => {
                                 proteinPer100g={15}
                                 carbsPer100g={75}
                                 fatPer100g={3.1}
-                                mealNumber={2}
-                                selectedDate={selectedDate}
+                                initialChecked={meal2Items['גיינר עם מים']?.checked || false}
+                                initialAmount={meal2Items['גיינר עם מים']?.amount}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                    handleMealItemToggle(setMeal2Data, 'gainer', checked, cals, prot, crbs, ft)
+                                    handleMealItemToggle(setMeal2Data, setMeal2Items, 'גיינר עם מים', checked, amount, cals, prot, crbs, ft)
                                 }
                             />
                         </CardContent>
@@ -278,10 +349,10 @@ const Nutrition = () => {
                                 proteinPer100g={15}
                                 carbsPer100g={75}
                                 fatPer100g={3.1}
-                                mealNumber={3}
-                                selectedDate={selectedDate}
+                                initialChecked={meal3Items['גיינר עם מים']?.checked || false}
+                                initialAmount={meal3Items['גיינר עם מים']?.amount}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                    handleMealItemToggle(setMeal3Data, 'gainer', checked, cals, prot, crbs, ft)
+                                    handleMealItemToggle(setMeal3Data, setMeal3Items, 'גיינר עם מים', checked, amount, cals, prot, crbs, ft)
                                 }
                             />
                         </CardContent>
@@ -303,10 +374,10 @@ const Nutrition = () => {
                                 proteinPer100g={31}
                                 carbsPer100g={0}
                                 fatPer100g={3.6}
-                                mealNumber={4}
-                                selectedDate={selectedDate}
+                                initialChecked={meal4Items['חזה עוף']?.checked || false}
+                                initialAmount={meal4Items['חזה עוף']?.amount}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                    handleMealItemToggle(setMeal4Data, 'chicken', checked, cals, prot, crbs, ft)
+                                    handleMealItemToggle(setMeal4Data, setMeal4Items, 'חזה עוף', checked, amount, cals, prot, crbs, ft)
                                 }
                             />
                             <MealItem
@@ -317,10 +388,10 @@ const Nutrition = () => {
                                 proteinPer100g={7.3}
                                 carbsPer100g={78.5}
                                 fatPer100g={0.7}
-                                mealNumber={4}
-                                selectedDate={selectedDate}
+                                initialChecked={meal4Items['אורז (לפני בישול)']?.checked || false}
+                                initialAmount={meal4Items['אורז (לפני בישול)']?.amount}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                    handleMealItemToggle(setMeal4Data, 'rice', checked, cals, prot, crbs, ft)
+                                    handleMealItemToggle(setMeal4Data, setMeal4Items, 'אורז (לפני בישול)', checked, amount, cals, prot, crbs, ft)
                                 }
                             />
                             <MealItem
@@ -331,10 +402,10 @@ const Nutrition = () => {
                                 proteinPer100g={0.5}
                                 carbsPer100g={6.5}
                                 fatPer100g={0.2}
-                                mealNumber={4}
-                                selectedDate={selectedDate}
+                                initialChecked={meal4Items['ירקות']?.checked || false}
+                                initialAmount={meal4Items['ירקות']?.amount}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                    handleMealItemToggle(setMeal4Data, 'veggies', checked, cals, prot, crbs, ft)
+                                    handleMealItemToggle(setMeal4Data, setMeal4Items, 'ירקות', checked, amount, cals, prot, crbs, ft)
                                 }
                             />
                         </CardContent>
