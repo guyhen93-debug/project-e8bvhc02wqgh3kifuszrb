@@ -37,6 +37,7 @@ const Nutrition = () => {
     const [meal4Items, setMeal4Items] = useState<Record<string, MealItemSelection>>({});
     const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [dataLoaded, setDataLoaded] = useState(false);
 
     const { data: selectedDateMeals, refetch } = useQuery({
         queryKey: ['nutrition-logs', selectedDate],
@@ -65,19 +66,16 @@ const Nutrition = () => {
         setMeal3Items({});
         setMeal4Items({});
         setHasChanges(false);
+        setDataLoaded(false);
         
         // טעינת נתונים מהמסד
         if (selectedDateMeals && selectedDateMeals.length > 0) {
+            console.log('Processing loaded meals...');
             selectedDateMeals.forEach((log: any) => {
-                const mealData = {
-                    calories: log.total_calories || 0,
-                    protein: log.protein || 0,
-                    carbs: log.carbs || 0,
-                    fat: log.fat || 0,
-                };
-
                 const items: Record<string, MealItemSelection> = {};
-                if (log.items_consumed && Array.isArray(log.items_consumed)) {
+                
+                if (log.items_consumed && Array.isArray(log.items_consumed) && log.items_consumed.length > 0) {
+                    console.log(`Meal ${log.meal_number} items from DB:`, log.items_consumed);
                     log.items_consumed.forEach((item: any) => {
                         items[item.name] = {
                             name: item.name,
@@ -89,23 +87,22 @@ const Nutrition = () => {
 
                 switch (log.meal_number) {
                     case 1:
-                        setMeal1Data(mealData);
                         setMeal1Items(items);
                         break;
                     case 2:
-                        setMeal2Data(mealData);
                         setMeal2Items(items);
                         break;
                     case 3:
-                        setMeal3Data(mealData);
                         setMeal3Items(items);
                         break;
                     case 4:
-                        setMeal4Data(mealData);
                         setMeal4Items(items);
                         break;
                 }
             });
+            setDataLoaded(true);
+        } else {
+            setDataLoaded(true);
         }
     }, [selectedDate, selectedDateMeals]);
 
@@ -176,6 +173,8 @@ const Nutrition = () => {
                             amount: item.amount
                         }));
 
+                    console.log(`Saving meal ${meal.number} with items:`, itemsConsumed);
+
                     await NutritionLog.create({
                         date: selectedDate,
                         meal_number: meal.number,
@@ -210,6 +209,14 @@ const Nutrition = () => {
         refetch();
         setHasChanges(false);
     };
+
+    if (!dataLoaded) {
+        return (
+            <div className="min-h-screen bg-oxygym-dark flex items-center justify-center">
+                <p className="text-white">טוען...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-32">
