@@ -3,13 +3,26 @@ import { Clock } from 'lucide-react';
 import { useTimer } from '@/contexts/TimerContext';
 
 export const GlobalTimer = () => {
-    const { isActive, stopTimer } = useTimer();
+    const { isActive, stopTimer, audioContextRef } = useTimer();
     const [displaySeconds, setDisplaySeconds] = useState(90);
 
     const playSound = () => {
         try {
             console.log('Playing timer completion sound...');
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            
+            if (!audioContextRef.current) {
+                console.error('AudioContext not available');
+                return;
+            }
+
+            const audioContext = audioContextRef.current;
+            
+            // Resume AudioContext if it's suspended (Safari requirement)
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log('AudioContext resumed');
+                });
+            }
             
             // Play 3 beeps with increasing pitch
             const playBeep = (index: number) => {
