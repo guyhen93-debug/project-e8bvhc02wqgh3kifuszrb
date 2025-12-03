@@ -2,7 +2,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dumbbell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { WorkoutLog } from '@/entities';
+import { useQuery } from '@tanstack/react-query';
 
 interface WorkoutCardProps {
     id: string;
@@ -13,30 +14,32 @@ interface WorkoutCardProps {
 
 export const WorkoutCard = ({ id, title, description, path }: WorkoutCardProps) => {
     const navigate = useNavigate();
-    const [hasProgress, setHasProgress] = useState(false);
+    const today = new Date().toISOString().split('T')[0];
 
-    useEffect(() => {
-        const checkProgress = () => {
-            const keys = Object.keys(localStorage);
-            const workoutKeys = keys.filter(key => key.startsWith(`exercise-${id.toUpperCase()}-`));
-            
-            if (workoutKeys.length > 0) {
-                const hasAnyProgress = workoutKeys.some(key => {
-                    const data = localStorage.getItem(key);
-                    if (data) {
-                        const parsed = JSON.parse(data);
-                        return parsed.sets?.some((set: any) => set.completed);
-                    }
-                    return false;
+    const { data: workoutData } = useQuery({
+        queryKey: ['workout-status', id, today],
+        queryFn: async () => {
+            try {
+                const logs = await WorkoutLog.filter({ 
+                    date: today, 
+                    workout_type: id.toUpperCase() 
                 });
-                setHasProgress(hasAnyProgress);
+                return logs[0] || null;
+            } catch (error) {
+                console.error('Error loading workout status:', error);
+                return null;
             }
-        };
+        },
+        refetchInterval: 3000,
+        staleTime: 1000,
+    });
 
-        checkProgress();
-        const interval = setInterval(checkProgress, 1000);
-        return () => clearInterval(interval);
-    }, [id]);
+    const hasProgress = workoutData && 
+        workoutData.exercises_completed && 
+        workoutData.exercises_completed.length > 0 &&
+        workoutData.exercises_completed.some((ex: any) => 
+            ex.sets && ex.sets.some((set: any) => set.completed)
+        );
 
     return (
         <Card className="bg-oxygym-darkGrey border-border hover:border-oxygym-yellow transition-colors">
