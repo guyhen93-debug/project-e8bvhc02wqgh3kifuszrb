@@ -5,7 +5,7 @@ import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { Save, X } from 'lucide-react';
+import { Save, X, RefreshCw, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { NutritionLog } from '@/entities';
 import { useQuery } from '@tanstack/react-query';
@@ -39,18 +39,18 @@ const Nutrition = () => {
     const [saving, setSaving] = useState(false);
     const [dataLoaded, setDataLoaded] = useState(false);
 
-    const { data: selectedDateMeals, refetch } = useQuery({
+    const { data: selectedDateMeals, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['nutrition-logs', selectedDate],
         queryFn: async () => {
-            try {
-                const logs = await NutritionLog.filter({ date: selectedDate });
-                console.log('Loaded nutrition logs for date:', selectedDate, logs);
-                return logs;
-            } catch (error) {
-                console.error('Error loading nutrition logs:', error);
-                return [];
-            }
+            const logs = await NutritionLog.filter({ date: selectedDate });
+            console.log('Loaded nutrition logs for date:', selectedDate, logs);
+            return logs;
         },
+        retry: 3,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        staleTime: 30000,
     });
 
     useEffect(() => {
@@ -210,10 +210,36 @@ const Nutrition = () => {
         setHasChanges(false);
     };
 
-    if (!dataLoaded) {
+    if (isLoading || !dataLoaded) {
         return (
-            <div className="min-h-screen bg-oxygym-dark flex items-center justify-center">
-                <p className="text-white">טוען...</p>
+            <div className="min-h-screen bg-oxygym-dark flex items-center justify-center pb-20">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-oxygym-yellow mb-4"></div>
+                    <p className="text-white text-lg">טוען תזונה...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="min-h-screen bg-oxygym-dark flex items-center justify-center pb-20 px-4">
+                <Card className="bg-oxygym-darkGrey border-red-500 max-w-md">
+                    <CardContent className="p-6 text-center">
+                        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h2 className="text-xl font-bold text-white mb-2">אופס! משהו השתבש</h2>
+                        <p className="text-muted-foreground mb-6">
+                            לא הצלחנו לטעון את נתוני התזונה. בדוק את החיבור לאינטרנט ונסה שוב.
+                        </p>
+                        <Button
+                            onClick={() => refetch()}
+                            className="w-full bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
+                        >
+                            <RefreshCw className="w-4 h-4 ml-2" />
+                            נסה שוב
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
         );
     }

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseRow } from '@/components/ExerciseRow';
 import { DateSelector } from '@/components/DateSelector';
-import { ArrowRight, Save, X, Heart } from 'lucide-react';
+import { ArrowRight, Save, X, Heart, RefreshCw, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WorkoutLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
@@ -33,21 +33,21 @@ const WorkoutA = () => {
         { name: 'בטן: עליות רגליים', sets: 3, reps: '15' },
     ];
 
-    const { data: workoutData, refetch } = useQuery({
+    const { data: workoutData, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['workout-log', selectedDate, 'A'],
         queryFn: async () => {
-            try {
-                const logs = await WorkoutLog.filter({ 
-                    date: selectedDate, 
-                    workout_type: 'A' 
-                });
-                console.log('Loaded workout A for date:', selectedDate, logs);
-                return logs[0] || null;
-            } catch (error) {
-                console.error('Error loading workout:', error);
-                return null;
-            }
+            const logs = await WorkoutLog.filter({ 
+                date: selectedDate, 
+                workout_type: 'A' 
+            });
+            console.log('Loaded workout A for date:', selectedDate, logs);
+            return logs[0] || null;
         },
+        retry: 3,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        staleTime: 30000,
     });
 
     useEffect(() => {
@@ -144,6 +144,50 @@ const WorkoutA = () => {
     };
 
     const cardioPercentage = Math.min((cardioMinutes / 20) * 100, 100);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-oxygym-dark flex items-center justify-center pb-20">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-oxygym-yellow mb-4"></div>
+                    <p className="text-white text-lg">טוען אימון...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="min-h-screen bg-oxygym-dark flex items-center justify-center pb-20 px-4">
+                <Card className="bg-oxygym-darkGrey border-red-500 max-w-md">
+                    <CardContent className="p-6 text-center">
+                        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h2 className="text-xl font-bold text-white mb-2">אופס! משהו השתבש</h2>
+                        <p className="text-muted-foreground mb-6">
+                            לא הצלחנו לטעון את נתוני האימון. בדוק את החיבור לאינטרנט ונסה שוב.
+                        </p>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={() => refetch()}
+                                className="flex-1 bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
+                            >
+                                <RefreshCw className="w-4 h-4 ml-2" />
+                                נסה שוב
+                            </Button>
+                            <Button
+                                onClick={() => navigate('/workouts')}
+                                variant="outline"
+                                className="flex-1 border-border text-white"
+                            >
+                                <ArrowRight className="w-4 h-4 ml-2" />
+                                חזרה
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-32">

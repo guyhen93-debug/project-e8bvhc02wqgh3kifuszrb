@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseRow } from '@/components/ExerciseRow';
 import { DateSelector } from '@/components/DateSelector';
-import { ArrowRight, Save, X, Heart } from 'lucide-react';
+import { ArrowRight, Save, X, Heart, RefreshCw, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WorkoutLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
@@ -22,32 +22,32 @@ const WorkoutC = () => {
     const [saving, setSaving] = useState(false);
 
     const exercises = [
-        { name: 'פולי עליון רחב (מכונה 19)', sets: 4, reps: '8-12' },
-        { name: 'פולי עליון צר (מכונה 19)', sets: 4, reps: '8-12' },
-        { name: 'פולי תחתון צר (מכונה 19)', sets: 4, reps: '8-12' },
-        { name: 'T BAR (מכונה 7)', sets: 4, reps: '8-12' },
-        { name: 'פולי עם מוט ישר (מכונה 29)', sets: 4, reps: '8-12' },
-        { name: 'פולי עם חבל (מכונה 29)', sets: 4, reps: '8-12' },
-        { name: 'פולי W מאחורי הראש (מכונה 29)', sets: 4, reps: '8-12' },
+        { name: 'משיכות במכונה (מכונה 14)', sets: 4, reps: '8-12' },
+        { name: 'רואינג מכונה (מכונה 15)', sets: 4, reps: '8-12' },
+        { name: 'שכיבות משקולת יד', sets: 4, reps: '8-12' },
+        { name: 'שכיבות מוט', sets: 4, reps: '8-12' },
+        { name: 'טריצפס במכונה (מכונה 29)', sets: 4, reps: '8-12' },
+        { name: 'שכיבות טריצפס חזרה', sets: 4, reps: '8-12' },
+        { name: 'פטיש טריצפס', sets: 4, reps: '8-12' },
         { name: 'בטן: בטן ישרה', sets: 3, reps: '15' },
         { name: 'בטן: עליות רגליים', sets: 3, reps: '15' },
     ];
 
-    const { data: workoutData, refetch } = useQuery({
+    const { data: workoutData, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['workout-log', selectedDate, 'C'],
         queryFn: async () => {
-            try {
-                const logs = await WorkoutLog.filter({ 
-                    date: selectedDate, 
-                    workout_type: 'C' 
-                });
-                console.log('Loaded workout C for date:', selectedDate, logs);
-                return logs[0] || null;
-            } catch (error) {
-                console.error('Error loading workout:', error);
-                return null;
-            }
+            const logs = await WorkoutLog.filter({ 
+                date: selectedDate, 
+                workout_type: 'C' 
+            });
+            console.log('Loaded workout C for date:', selectedDate, logs);
+            return logs[0] || null;
         },
+        retry: 3,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+        staleTime: 30000,
     });
 
     useEffect(() => {
@@ -145,6 +145,50 @@ const WorkoutC = () => {
 
     const cardioPercentage = Math.min((cardioMinutes / 20) * 100, 100);
 
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-oxygym-dark flex items-center justify-center pb-20">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-oxygym-yellow mb-4"></div>
+                    <p className="text-white text-lg">טוען אימון...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="min-h-screen bg-oxygym-dark flex items-center justify-center pb-20 px-4">
+                <Card className="bg-oxygym-darkGrey border-red-500 max-w-md">
+                    <CardContent className="p-6 text-center">
+                        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h2 className="text-xl font-bold text-white mb-2">אופס! משהו השתבש</h2>
+                        <p className="text-muted-foreground mb-6">
+                            לא הצלחנו לטעון את נתוני האימון. בדוק את החיבור לאינטרנט ונסה שוב.
+                        </p>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={() => refetch()}
+                                className="flex-1 bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
+                            >
+                                <RefreshCw className="w-4 h-4 ml-2" />
+                                נסה שוב
+                            </Button>
+                            <Button
+                                onClick={() => navigate('/workouts')}
+                                variant="outline"
+                                className="flex-1 border-border text-white"
+                            >
+                                <ArrowRight className="w-4 h-4 ml-2" />
+                                חזרה
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-oxygym-dark pb-32">
             <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -174,7 +218,7 @@ const WorkoutC = () => {
 
                 <div className="mb-6 p-4 bg-oxygym-darkGrey rounded-lg">
                     <img 
-                        src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/chat-generated-images/project-e8bvhc02wqgh3kifuszrb/7ca5911c-1444-415e-afac-00735a068c9f.png" 
+                        src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/chat-generated-images/project-e8bvhc02wqgh3kifuszrb/8bb12d14-5b77-4c70-967a-f19d9e3fed66.png" 
                         alt="Workout Back and Triceps" 
                         className="w-full h-48 object-cover rounded-lg mb-4"
                     />
