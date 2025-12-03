@@ -13,19 +13,33 @@ export const DateSelector = () => {
 
     const handleDateSelect = (date: Date | undefined) => {
         if (date) {
-            const dateString = date.toISOString().split('T')[0];
+            // תיקון: השתמש ב-date methods מקומיים במקום toISOString
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateString = `${year}-${month}-${day}`;
+            
+            console.log('Date selected:', dateString);
             setSelectedDate(dateString);
             setOpen(false);
         }
     };
 
     const handleResetToToday = () => {
-        const today = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const today = `${year}-${month}-${day}`;
+        
+        console.log('Reset to today:', today);
         setSelectedDate(today);
         setOpen(false);
     };
 
-    const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+    // המרת string לתאריך בזמן מקומי
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const selectedDateObj = new Date(year, month - 1, day);
 
     return (
         <div className="flex items-center gap-2">

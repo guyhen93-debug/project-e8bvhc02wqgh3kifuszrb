@@ -9,7 +9,14 @@ interface DateContextType {
 const DateContext = createContext<DateContextType | undefined>(undefined);
 
 export const DateProvider = ({ children }: { children: ReactNode }) => {
-    const getTodayString = () => new Date().toISOString().split('T')[0];
+    const getTodayString = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
     const [selectedDate, setSelectedDate] = useState<string>(getTodayString());
 
     const isToday = selectedDate === getTodayString();
