@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Droplet, Plus, Minus } from 'lucide-react';
+import { useDate } from '@/contexts/DateContext';
 
 export const WaterTracker = () => {
+    const { selectedDate } = useDate();
     const [glasses, setGlasses] = useState(0);
     const targetGlasses = 12;
     const glassSize = 250;
@@ -11,25 +13,24 @@ export const WaterTracker = () => {
     const targetLiters = 3;
 
     useEffect(() => {
-        const today = new Date().toISOString().split('T')[0];
-        const saved = localStorage.getItem(`water-${today}`);
+        const saved = localStorage.getItem(`water-${selectedDate}`);
         if (saved) {
             setGlasses(parseInt(saved));
+        } else {
+            setGlasses(0);
         }
-    }, []);
+    }, [selectedDate]);
 
     const handleAdd = () => {
         const newGlasses = Math.min(glasses + 1, targetGlasses);
         setGlasses(newGlasses);
-        const today = new Date().toISOString().split('T')[0];
-        localStorage.setItem(`water-${today}`, newGlasses.toString());
+        localStorage.setItem(`water-${selectedDate}`, newGlasses.toString());
     };
 
     const handleSubtract = () => {
         const newGlasses = Math.max(glasses - 1, 0);
         setGlasses(newGlasses);
-        const today = new Date().toISOString().split('T')[0];
-        localStorage.setItem(`water-${today}`, newGlasses.toString());
+        localStorage.setItem(`water-${selectedDate}`, newGlasses.toString());
     };
 
     const percentage = Math.min((glasses / targetGlasses) * 100, 100);

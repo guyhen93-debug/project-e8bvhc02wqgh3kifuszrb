@@ -3,8 +3,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Moon, Plus, Minus, Check } from 'lucide-react';
+import { useDate } from '@/contexts/DateContext';
 
 export const SleepTracker = () => {
+    const { selectedDate } = useDate();
     const [hours, setHours] = useState(0);
     const [inputValue, setInputValue] = useState('');
     const [showInput, setShowInput] = useState(false);
@@ -12,33 +14,31 @@ export const SleepTracker = () => {
     const maxTarget = 9;
 
     useEffect(() => {
-        const today = new Date().toISOString().split('T')[0];
-        const saved = localStorage.getItem(`sleep-${today}`);
+        const saved = localStorage.getItem(`sleep-${selectedDate}`);
         if (saved) {
             setHours(parseFloat(saved));
+        } else {
+            setHours(0);
         }
-    }, []);
+    }, [selectedDate]);
 
     const handleAdd = () => {
         const newHours = Math.min(hours + 0.5, 12);
         setHours(newHours);
-        const today = new Date().toISOString().split('T')[0];
-        localStorage.setItem(`sleep-${today}`, newHours.toString());
+        localStorage.setItem(`sleep-${selectedDate}`, newHours.toString());
     };
 
     const handleSubtract = () => {
         const newHours = Math.max(hours - 0.5, 0);
         setHours(newHours);
-        const today = new Date().toISOString().split('T')[0];
-        localStorage.setItem(`sleep-${today}`, newHours.toString());
+        localStorage.setItem(`sleep-${selectedDate}`, newHours.toString());
     };
 
     const handleInputSubmit = () => {
         const value = parseFloat(inputValue);
         if (!isNaN(value) && value >= 0 && value <= 12) {
             setHours(value);
-            const today = new Date().toISOString().split('T')[0];
-            localStorage.setItem(`sleep-${today}`, value.toString());
+            localStorage.setItem(`sleep-${selectedDate}`, value.toString());
             setInputValue('');
             setShowInput(false);
         }

@@ -3,14 +3,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Scale, CheckCircle2 } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Scale, CheckCircle2, Calendar as CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WeightLog } from '@/entities';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 
 export const WeightDialog = () => {
     const [open, setOpen] = useState(false);
     const [weight, setWeight] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedWeightDate, setSelectedWeightDate] = useState<Date | undefined>(new Date());
+    const [calendarOpen, setCalendarOpen] = useState(false);
     const { toast } = useToast();
 
     const handleSubmit = async () => {
@@ -23,22 +29,32 @@ export const WeightDialog = () => {
             return;
         }
 
+        if (!selectedWeightDate) {
+            toast({
+                title: "שגיאה",
+                description: "נא לבחור תאריך",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const today = new Date().toISOString().split('T')[0];
+            const dateString = selectedWeightDate.toISOString().split('T')[0];
             
             await WeightLog.create({
-                date: today,
+                date: dateString,
                 weight: Number(weight),
                 notes: '',
             });
 
             toast({
                 title: "נשמר בהצלחה! ✅",
-                description: `משקל ${weight} ק"ג נרשם`,
+                description: `משקל ${weight} ק"ג נרשם ל-${format(selectedWeightDate, 'd MMMM', { locale: he })}`,
             });
 
             setWeight('');
+            setSelectedWeightDate(new Date());
             setOpen(false);
         } catch (error) {
             console.error('Error saving weight:', error);
@@ -81,6 +97,34 @@ export const WeightDialog = () => {
                                 <p className="text-xs text-muted-foreground">בלי בגדים</p>
                             </div>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="weight-date" className="text-white">תאריך השקילה</Label>
+                        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-right border-border text-white hover:bg-oxygym-darkGrey"
+                                >
+                                    <CalendarIcon className="ml-2 h-4 w-4" />
+                                    {selectedWeightDate ? format(selectedWeightDate, 'EEEE, d MMMM yyyy', { locale: he }) : 'בחר תאריך'}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-oxygym-darkGrey border-border" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={selectedWeightDate}
+                                    onSelect={(date) => {
+                                        setSelectedWeightDate(date);
+                                        setCalendarOpen(false);
+                                    }}
+                                    disabled={(date) => date > new Date() || date < new Date('2020-01-01')}
+                                    initialFocus
+                                    className="text-white"
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
                     <div className="space-y-2">

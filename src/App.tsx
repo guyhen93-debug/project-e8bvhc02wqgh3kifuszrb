@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { GlobalTimer } from "@/components/GlobalTimer";
 import { TimerProvider } from "@/contexts/TimerContext";
+import { DateProvider } from "@/contexts/DateContext";
 import Index from "./pages/Index";
 import Workouts from "./pages/Workouts";
 import WorkoutA from "./pages/WorkoutA";
@@ -20,25 +21,27 @@ const queryClient = new QueryClient();
 const App = () => (
     <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-            <TimerProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                    <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/workouts" element={<Workouts />} />
-                        <Route path="/workout-a" element={<WorkoutA />} />
-                        <Route path="/workout-b" element={<WorkoutB />} />
-                        <Route path="/workout-c" element={<WorkoutC />} />
-                        <Route path="/nutrition" element={<Nutrition />} />
-                        <Route path="/calendar" element={<Calendar />} />
-                        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                        <Route path="*" element={<NotFound />} />
-                    </Routes>
-                    <GlobalTimer />
-                    <BottomNav />
-                </BrowserRouter>
-            </TimerProvider>
+            <DateProvider>
+                <TimerProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
+                        <Routes>
+                            <Route path="/" element={<Index />} />
+                            <Route path="/workouts" element={<Workouts />} />
+                            <Route path="/workout-a" element={<WorkoutA />} />
+                            <Route path="/workout-b" element={<WorkoutB />} />
+                            <Route path="/workout-c" element={<WorkoutC />} />
+                            <Route path="/nutrition" element={<Nutrition />} />
+                            <Route path="/calendar" element={<Calendar />} />
+                            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                            <Route path="*" element={<NotFound />} />
+                        </Routes>
+                        <GlobalTimer />
+                        <BottomNav />
+                    </BrowserRouter>
+                </TimerProvider>
+            </DateProvider>
         </TooltipProvider>
     </QueryClientProvider>
 );
