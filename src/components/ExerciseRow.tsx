@@ -8,6 +8,7 @@ interface ExerciseRowProps {
     sets: number;
     reps: string;
     workoutType?: string;
+    initialData?: any;
     onDataChange?: (data: any) => void;
 }
 
@@ -15,7 +16,7 @@ interface SetData {
     completed: boolean;
 }
 
-export const ExerciseRow = ({ name, sets, reps, workoutType = '', onDataChange }: ExerciseRowProps) => {
+export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, onDataChange }: ExerciseRowProps) => {
     const [setData, setSetData] = useState<SetData[]>(
         Array(sets).fill(null).map(() => ({ completed: false }))
     );
@@ -23,18 +24,18 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', onDataChange }
     const { startTimer } = useTimer();
 
     const isAbsExercise = name.toLowerCase().includes('בטן');
-    const storageKey = workoutType ? `exercise-${workoutType}-${name}` : `exercise-${name}`;
 
     useEffect(() => {
-        const savedData = localStorage.getItem(storageKey);
-        if (savedData) {
-            const parsed = JSON.parse(savedData);
-            setSetData(parsed.sets);
-            if (!isAbsExercise) {
-                setWeight(parsed.weight || 0);
+        if (initialData) {
+            console.log('Loading initial data for', name, initialData);
+            if (initialData.sets) {
+                setSetData(initialData.sets);
+            }
+            if (!isAbsExercise && initialData.weight) {
+                setWeight(initialData.weight);
             }
         }
-    }, [storageKey, isAbsExercise]);
+    }, [initialData, name, isAbsExercise]);
 
     useEffect(() => {
         if (onDataChange) {

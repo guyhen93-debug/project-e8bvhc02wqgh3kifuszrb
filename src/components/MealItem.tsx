@@ -31,7 +31,7 @@ export const MealItem = ({
     const [amount, setAmount] = useState(initialAmount || defaultAmount);
 
     useEffect(() => {
-        console.log(`Setting ${name}: checked=${initialChecked}, amount=${initialAmount || defaultAmount}`);
+        console.log(`MealItem ${name}: initialChecked=${initialChecked}, initialAmount=${initialAmount}`);
         setChecked(initialChecked);
         setAmount(initialAmount || defaultAmount);
         
@@ -43,7 +43,7 @@ export const MealItem = ({
             const fat = Math.round(fatPer100g * multiplier * 10) / 10;
             onToggle(true, initialAmount, calories, protein, carbs, fat);
         }
-    }, [initialChecked, initialAmount, name]);
+    }, [initialChecked, initialAmount]);
 
     const multiplier = amount / 100;
     const calories = Math.round(caloriesPer100g * multiplier);

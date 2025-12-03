@@ -1,17 +1,21 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseRow } from '@/components/ExerciseRow';
+import { DateSelector } from '@/components/DateSelector';
 import { ArrowRight, Save, X, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WorkoutLog } from '@/entities';
+import { useDate } from '@/contexts/DateContext';
+import { useQuery } from '@tanstack/react-query';
 
 const WorkoutB = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { selectedDate, isToday } = useDate();
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
     const [cardioMinutes, setCardioMinutes] = useState(0);
     const [hasChanges, setHasChanges] = useState(false);
@@ -29,6 +33,45 @@ const WorkoutB = () => {
         { name: 'בטן: עליות רגליים', sets: 3, reps: '15' },
     ];
 
+    const { data: workoutData, refetch } = useQuery({
+        queryKey: ['workout-log', selectedDate, 'B'],
+        queryFn: async () => {
+            try {
+                const logs = await WorkoutLog.filter({ 
+                    date: selectedDate, 
+                    workout_type: 'B' 
+                });
+                console.log('Loaded workout B for date:', selectedDate, logs);
+                return logs[0] || null;
+            } catch (error) {
+                console.error('Error loading workout:', error);
+                return null;
+            }
+        },
+    });
+
+    useEffect(() => {
+        console.log('Date changed to:', selectedDate);
+        setExerciseData({});
+        setCardioMinutes(0);
+        setHasChanges(false);
+        
+        if (workoutData) {
+            const loadedData: any = {};
+            if (workoutData.exercises_completed) {
+                workoutData.exercises_completed.forEach((ex: any) => {
+                    loadedData[ex.name] = {
+                        sets: ex.sets,
+                        weight: ex.weight,
+                        name: ex.name
+                    };
+                });
+            }
+            setExerciseData(loadedData);
+            setCardioMinutes(workoutData.duration_minutes || 0);
+        }
+    }, [selectedDate, workoutData]);
+
     const handleExerciseDataChange = useCallback((data: any) => {
         setExerciseData(prev => ({ ...prev, [data.name]: data }));
         setHasChanges(true);
@@ -43,19 +86,13 @@ const WorkoutB = () => {
     const handleSave = async () => {
         try {
             setSaving(true);
-            
-            Object.entries(exerciseData).forEach(([name, data]) => {
-                localStorage.setItem(`exercise-B-${name}`, JSON.stringify(data));
-            });
 
             const completed = Object.values(exerciseData).every((data: any) => 
                 data.sets.every((set: any) => set.completed)
             ) && cardioMinutes >= 20;
-
-            const today = new Date().toISOString().split('T')[0];
             
             const existingLogs = await WorkoutLog.filter({ 
-                date: today, 
+                date: selectedDate, 
                 workout_type: 'B' 
             });
 
@@ -71,7 +108,7 @@ const WorkoutB = () => {
                 });
             } else {
                 await WorkoutLog.create({
-                    date: today,
+                    date: selectedDate,
                     workout_type: 'B',
                     exercises_completed: Object.entries(exerciseData).map(([name, data]: any) => ({
                         name,
@@ -83,19 +120,12 @@ const WorkoutB = () => {
                 });
             }
 
-            if (completed) {
-                Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith('exercise-B-')) {
-                        localStorage.removeItem(key);
-                    }
-                });
-            }
-
             setHasChanges(false);
             toast({
                 title: "נשמר בהצלחה! ✅",
-                description: "אימון B נשמר במערכת",
+                description: `אימון B של ${new Date(selectedDate).toLocaleDateString('he-IL')} נשמר`,
             });
+            refetch();
         } catch (error) {
             console.error('Error saving workout:', error);
             toast({
@@ -109,7 +139,8 @@ const WorkoutB = () => {
     };
 
     const handleCancel = () => {
-        window.location.reload();
+        refetch();
+        setHasChanges(false);
     };
 
     const cardioPercentage = Math.min((cardioMinutes / 20) * 100, 100);
@@ -117,7 +148,7 @@ const WorkoutB = () => {
     return (
         <div className="min-h-screen bg-oxygym-dark pb-32">
             <div className="container mx-auto px-4 py-8 max-w-3xl">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center justify-between mb-6">
                     <h1 className="text-3xl font-bold text-white">אימון B</h1>
                     <Button
                         onClick={() => navigate('/workouts')}
@@ -128,6 +159,18 @@ const WorkoutB = () => {
                         חזרה
                     </Button>
                 </div>
+
+                <div className="mb-6">
+                    <DateSelector />
+                </div>
+
+                {!isToday && (
+                    <div className="mb-4 p-3 bg-oxygym-yellow/10 border border-oxygym-yellow rounded-lg">
+                        <p className="text-center text-sm text-white">
+                            📅 עורך נתונים של {new Date(selectedDate).toLocaleDateString('he-IL')}
+                        </p>
+                    </div>
+                )}
 
                 <div className="mb-6 p-4 bg-oxygym-darkGrey rounded-lg">
                     <img 
@@ -178,6 +221,7 @@ const WorkoutB = () => {
                             sets={exercise.sets}
                             reps={exercise.reps}
                             workoutType="B"
+                            initialData={exerciseData[exercise.name]}
                             onDataChange={handleExerciseDataChange}
                         />
                     ))}
