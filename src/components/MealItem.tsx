@@ -11,6 +11,7 @@ interface MealItemProps {
     carbsPer100g: number;
     fatPer100g: number;
     mealNumber: number;
+    selectedDate: string;
     onToggle: (checked: boolean, amount: number, calories: number, protein: number, carbs: number, fat: number) => void;
 }
 
@@ -23,14 +24,16 @@ export const MealItem = ({
     carbsPer100g,
     fatPer100g,
     mealNumber,
+    selectedDate,
     onToggle 
 }: MealItemProps) => {
-    const storageKey = `meal-${mealNumber}-${name}-${new Date().toISOString().split('T')[0]}`;
+    const storageKey = `meal-${mealNumber}-${name}-${selectedDate}`;
     
     const [checked, setChecked] = useState(false);
     const [amount, setAmount] = useState(defaultAmount);
 
     useEffect(() => {
+        console.log('Loading MealItem for date:', selectedDate, 'key:', storageKey);
         const saved = localStorage.getItem(storageKey);
         if (saved) {
             const { isChecked, savedAmount } = JSON.parse(saved);
@@ -44,8 +47,11 @@ export const MealItem = ({
                 const fat = Math.round(fatPer100g * multiplier * 10) / 10;
                 onToggle(true, savedAmount, calories, protein, carbs, fat);
             }
+        } else {
+            setChecked(false);
+            setAmount(defaultAmount);
         }
-    }, [storageKey]);
+    }, [storageKey, selectedDate]);
 
     const multiplier = amount / 100;
     const calories = Math.round(caloriesPer100g * multiplier);
@@ -73,7 +79,7 @@ export const MealItem = ({
     };
 
     return (
-        <div className="flex items-center gap-3 p-4 bg-oxygym-darkGrey rounded-lg">
+        <div className="flex items-center gap-3 p-4 bg-black/30 rounded-lg border border-border">
             <Checkbox
                 checked={checked}
                 onCheckedChange={(c) => handleCheckedChange(c === true)}

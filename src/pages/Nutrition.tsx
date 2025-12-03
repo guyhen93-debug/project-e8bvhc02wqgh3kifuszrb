@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
+import { DateSelector } from '@/components/DateSelector';
 import { Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { NutritionLog } from '@/entities';
 import { useQuery } from '@tanstack/react-query';
+import { useDate } from '@/contexts/DateContext';
 
 interface MealData {
     calories: number;
@@ -18,22 +20,20 @@ interface MealData {
 
 const Nutrition = () => {
     const { toast } = useToast();
+    const { selectedDate, isToday } = useDate();
     const [meal1Data, setMeal1Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal2Data, setMeal2Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal3Data, setMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal4Data, setMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
 
-    const today = new Date().toISOString().split('T')[0];
-
-    const { data: todayMeals } = useQuery({
-        queryKey: ['nutrition-logs', today],
+    const { data: selectedDateMeals, refetch } = useQuery({
+        queryKey: ['nutrition-logs', selectedDate],
         queryFn: async () => {
             try {
-                const logs = await NutritionLog.filter({ date: today });
-                console.log('Loaded nutrition logs for today:', logs);
+                const logs = await NutritionLog.filter({ date: selectedDate });
+                console.log('Loaded nutrition logs for date:', selectedDate, logs);
                 return logs;
             } catch (error) {
                 console.error('Error loading nutrition logs:', error);
@@ -43,36 +43,14 @@ const Nutrition = () => {
     });
 
     useEffect(() => {
-        if (todayMeals && todayMeals.length > 0 && !isLoaded) {
-            console.log('Setting meal data from database:', todayMeals);
-            
-            todayMeals.forEach((log: any) => {
-                const mealData = {
-                    calories: log.total_calories || 0,
-                    protein: log.protein || 0,
-                    carbs: log.carbs || 0,
-                    fat: log.fat || 0,
-                };
-
-                switch (log.meal_number) {
-                    case 1:
-                        setMeal1Data(mealData);
-                        break;
-                    case 2:
-                        setMeal2Data(mealData);
-                        break;
-                    case 3:
-                        setMeal3Data(mealData);
-                        break;
-                    case 4:
-                        setMeal4Data(mealData);
-                        break;
-                }
-            });
-            
-            setIsLoaded(true);
-        }
-    }, [todayMeals, isLoaded]);
+        console.log('Date changed to:', selectedDate);
+        setMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setMeal2Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setMeal3Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setMeal4Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setHasChanges(false);
+        refetch();
+    }, [selectedDate, refetch]);
 
     const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories;
     const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein;
@@ -112,16 +90,8 @@ const Nutrition = () => {
     const handleSave = async () => {
         try {
             setSaving(true);
-            
-            localStorage.setItem('nutrition-data', JSON.stringify({
-                meal1: meal1Data,
-                meal2: meal2Data,
-                meal3: meal3Data,
-                meal4: meal4Data,
-                date: today
-            }));
 
-            const existingLogs = await NutritionLog.filter({ date: today });
+            const existingLogs = await NutritionLog.filter({ date: selectedDate });
             for (const log of existingLogs) {
                 await NutritionLog.delete(log.id);
             }
@@ -136,7 +106,7 @@ const Nutrition = () => {
             for (const meal of meals) {
                 if (meal.data.calories > 0) {
                     await NutritionLog.create({
-                        date: today,
+                        date: selectedDate,
                         meal_number: meal.number,
                         items_consumed: [],
                         total_calories: meal.data.calories,
@@ -150,8 +120,9 @@ const Nutrition = () => {
             setHasChanges(false);
             toast({
                 title: "נשמר בהצלחה! ✅",
-                description: "התזונה היומית נשמרה במערכת",
+                description: `התזונה של ${new Date(selectedDate).toLocaleDateString('he-IL')} נשמרה`,
             });
+            refetch();
         } catch (error) {
             console.error('Error saving nutrition:', error);
             toast({
@@ -165,14 +136,27 @@ const Nutrition = () => {
     };
 
     const handleCancel = () => {
-        window.location.reload();
+        refetch();
+        setHasChanges(false);
     };
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-32">
             <div className="container mx-auto px-4 py-8 max-w-3xl">
                 <h1 className="text-3xl font-bold text-white mb-2">תפריט תזונה</h1>
-                <p className="text-muted-foreground mb-8">סמן מה אכלת היום</p>
+                <p className="text-muted-foreground mb-4">סמן מה אכלת</p>
+
+                <div className="mb-6">
+                    <DateSelector />
+                </div>
+
+                {!isToday && (
+                    <div className="mb-4 p-3 bg-oxygym-yellow/10 border border-oxygym-yellow rounded-lg">
+                        <p className="text-center text-sm text-white">
+                            📅 עורך נתונים של {new Date(selectedDate).toLocaleDateString('he-IL')}
+                        </p>
+                    </div>
+                )}
 
                 <CalorieChart
                     protein={totalProtein}
@@ -203,6 +187,7 @@ const Nutrition = () => {
                                 carbsPer100g={47.6}
                                 fatPer100g={1.9}
                                 mealNumber={1}
+                                selectedDate={selectedDate}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal1Data, 'bread', checked, cals, prot, crbs, ft)
                                 }
@@ -216,6 +201,7 @@ const Nutrition = () => {
                                 carbsPer100g={4.3}
                                 fatPer100g={5}
                                 mealNumber={1}
+                                selectedDate={selectedDate}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal1Data, 'cheese', checked, cals, prot, crbs, ft)
                                 }
@@ -229,6 +215,7 @@ const Nutrition = () => {
                                 carbsPer100g={1.1}
                                 fatPer100g={11}
                                 mealNumber={1}
+                                selectedDate={selectedDate}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal1Data, 'eggs', checked, cals, prot, crbs, ft)
                                 }
@@ -242,6 +229,7 @@ const Nutrition = () => {
                                 carbsPer100g={6.5}
                                 fatPer100g={0.2}
                                 mealNumber={1}
+                                selectedDate={selectedDate}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal1Data, 'veggies', checked, cals, prot, crbs, ft)
                                 }
@@ -266,6 +254,7 @@ const Nutrition = () => {
                                 carbsPer100g={75}
                                 fatPer100g={3.1}
                                 mealNumber={2}
+                                selectedDate={selectedDate}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal2Data, 'gainer', checked, cals, prot, crbs, ft)
                                 }
@@ -290,6 +279,7 @@ const Nutrition = () => {
                                 carbsPer100g={75}
                                 fatPer100g={3.1}
                                 mealNumber={3}
+                                selectedDate={selectedDate}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal3Data, 'gainer', checked, cals, prot, crbs, ft)
                                 }
@@ -314,6 +304,7 @@ const Nutrition = () => {
                                 carbsPer100g={0}
                                 fatPer100g={3.6}
                                 mealNumber={4}
+                                selectedDate={selectedDate}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal4Data, 'chicken', checked, cals, prot, crbs, ft)
                                 }
@@ -327,6 +318,7 @@ const Nutrition = () => {
                                 carbsPer100g={78.5}
                                 fatPer100g={0.7}
                                 mealNumber={4}
+                                selectedDate={selectedDate}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal4Data, 'rice', checked, cals, prot, crbs, ft)
                                 }
@@ -340,6 +332,7 @@ const Nutrition = () => {
                                 carbsPer100g={6.5}
                                 fatPer100g={0.2}
                                 mealNumber={4}
+                                selectedDate={selectedDate}
                                 onToggle={(checked, amount, cals, prot, crbs, ft) => 
                                     handleMealItemToggle(setMeal4Data, 'veggies', checked, cals, prot, crbs, ft)
                                 }
