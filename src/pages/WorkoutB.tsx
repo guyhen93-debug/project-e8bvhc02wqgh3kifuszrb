@@ -21,6 +21,7 @@ const WorkoutB = () => {
     const [saving, setSaving] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout>();
     const isInitialLoadRef = useRef(true);
+    const userMadeChangeRef = useRef(false);
 
     const exercises = [
         { name: 'לחיצת חזה מוט אולימפי', sets: 4, reps: '8-12' },
@@ -54,6 +55,7 @@ const WorkoutB = () => {
     useEffect(() => {
         console.log('Date changed to:', selectedDate);
         isInitialLoadRef.current = true;
+        userMadeChangeRef.current = false;
         setExerciseData({});
         setCardioMinutes(0);
         
@@ -72,17 +74,17 @@ const WorkoutB = () => {
             setCardioMinutes(workoutData.duration_minutes || 0);
             setTimeout(() => {
                 isInitialLoadRef.current = false;
-            }, 200);
+            }, 100);
         } else {
             setTimeout(() => {
                 isInitialLoadRef.current = false;
-            }, 200);
+            }, 100);
         }
     }, [selectedDate, workoutData]);
 
     const autoSave = useCallback(async () => {
-        if (isInitialLoadRef.current) {
-            console.log('Skipping auto-save during initial load');
+        if (isInitialLoadRef.current || !userMadeChangeRef.current) {
+            console.log('Skipping auto-save during initial load or no user changes');
             return;
         }
         
@@ -147,10 +149,12 @@ const WorkoutB = () => {
     }, [exerciseData, cardioMinutes, autoSave]);
 
     const handleExerciseDataChange = useCallback((data: any) => {
+        userMadeChangeRef.current = true;
         setExerciseData(prev => ({ ...prev, [data.name]: data }));
     }, []);
 
     const handleCardioChange = (value: string) => {
+        userMadeChangeRef.current = true;
         const minutes = parseInt(value) || 0;
         setCardioMinutes(minutes);
     };

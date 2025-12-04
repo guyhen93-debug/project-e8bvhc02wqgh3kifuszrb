@@ -45,7 +45,7 @@ export const WorkoutCard = ({ id, title, description, path, imageUrl }: WorkoutC
         <Card className="bg-oxygym-darkGrey border-border hover:border-oxygym-yellow transition-colors">
             <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 bg-oxygym-yellow rounded-full flex items-center justify-center p-2 overflow-hidden">
+                    <div className="w-24 h-24 bg-oxygym-yellow rounded-full flex items-center justify-center p-3 overflow-hidden">
                         <img 
                             src={imageUrl} 
                             alt={title}
