@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { Save, X, RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { NutritionLog } from '@/entities';
 import { useQuery } from '@tanstack/react-query';
@@ -35,9 +35,10 @@ const Nutrition = () => {
     const [meal2Items, setMeal2Items] = useState<Record<string, MealItemSelection>>({});
     const [meal3Items, setMeal3Items] = useState<Record<string, MealItemSelection>>({});
     const [meal4Items, setMeal4Items] = useState<Record<string, MealItemSelection>>({});
-    const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
     const [dataLoaded, setDataLoaded] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
     const { data: selectedDateMeals, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['nutrition-logs', selectedDate],
@@ -65,8 +66,8 @@ const Nutrition = () => {
         setMeal2Items({});
         setMeal3Items({});
         setMeal4Items({});
-        setHasChanges(false);
         setDataLoaded(false);
+        setIsLoaded(false);
         
         // טעינת נתונים מהמסד
         if (selectedDateMeals && selectedDateMeals.length > 0) {
@@ -101,8 +102,10 @@ const Nutrition = () => {
                 }
             });
             setDataLoaded(true);
+            setTimeout(() => setIsLoaded(true), 100);
         } else {
             setDataLoaded(true);
+            setTimeout(() => setIsLoaded(true), 100);
         }
     }, [selectedDate, selectedDateMeals]);
 
@@ -111,44 +114,9 @@ const Nutrition = () => {
     const totalCarbs = meal1Data.carbs + meal2Data.carbs + meal3Data.carbs + meal4Data.carbs;
     const totalFat = meal1Data.fat + meal2Data.fat + meal3Data.fat + meal4Data.fat;
 
-    const handleMealItemToggle = (
-        mealSetter: React.Dispatch<React.SetStateAction<MealData>>,
-        itemsSetter: React.Dispatch<React.SetStateAction<Record<string, MealItemSelection>>>,
-        itemName: string,
-        checked: boolean,
-        amount: number,
-        calories: number,
-        protein: number,
-        carbs: number,
-        fat: number
-    ) => {
-        itemsSetter(prev => ({
-            ...prev,
-            [itemName]: { name: itemName, amount, checked }
-        }));
+    const autoSave = async () => {
+        if (!isLoaded) return;
 
-        mealSetter(prev => {
-            if (checked) {
-                setHasChanges(true);
-                return {
-                    calories: prev.calories + calories,
-                    protein: prev.protein + protein,
-                    carbs: prev.carbs + carbs,
-                    fat: prev.fat + fat,
-                };
-            } else {
-                setHasChanges(true);
-                return {
-                    calories: Math.max(0, prev.calories - calories),
-                    protein: Math.max(0, prev.protein - protein),
-                    carbs: Math.max(0, prev.carbs - carbs),
-                    fat: Math.max(0, prev.fat - fat),
-                };
-            }
-        });
-    };
-
-    const handleSave = async () => {
         try {
             setSaving(true);
 
@@ -173,7 +141,7 @@ const Nutrition = () => {
                             amount: item.amount
                         }));
 
-                    console.log(`Saving meal ${meal.number} with items:`, itemsConsumed);
+                    console.log(`Auto-saving meal ${meal.number} with items:`, itemsConsumed);
 
                     await NutritionLog.create({
                         date: selectedDate,
@@ -187,27 +155,65 @@ const Nutrition = () => {
                 }
             }
 
-            setHasChanges(false);
-            toast({
-                title: "נשמר בהצלחה! ✅",
-                description: `התזונה של ${new Date(selectedDate).toLocaleDateString('he-IL')} נשמרה`,
-            });
-            refetch();
+            console.log('Auto-saved nutrition');
         } catch (error) {
-            console.error('Error saving nutrition:', error);
-            toast({
-                title: "שגיאה",
-                description: "לא הצלחנו לשמור את התזונה. נסה שוב.",
-                variant: "destructive",
-            });
+            console.error('Error auto-saving nutrition:', error);
         } finally {
             setSaving(false);
         }
     };
 
-    const handleCancel = () => {
-        refetch();
-        setHasChanges(false);
+    useEffect(() => {
+        if (!isLoaded) return;
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        saveTimeoutRef.current = setTimeout(() => {
+            autoSave();
+        }, 1000);
+
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, [meal1Data, meal2Data, meal3Data, meal4Data, meal1Items, meal2Items, meal3Items, meal4Items, isLoaded]);
+
+    const handleMealItemToggle = (
+        mealSetter: React.Dispatch<React.SetStateAction<MealData>>,
+        itemsSetter: React.Dispatch<React.SetStateAction<Record<string, MealItemSelection>>>,
+        itemName: string,
+        checked: boolean,
+        amount: number,
+        calories: number,
+        protein: number,
+        carbs: number,
+        fat: number
+    ) => {
+        itemsSetter(prev => ({
+            ...prev,
+            [itemName]: { name: itemName, amount, checked }
+        }));
+
+        mealSetter(prev => {
+            if (checked) {
+                return {
+                    calories: prev.calories + calories,
+                    protein: prev.protein + protein,
+                    carbs: prev.carbs + carbs,
+                    fat: prev.fat + fat,
+                };
+            } else {
+                return {
+                    calories: Math.max(0, prev.calories - calories),
+                    protein: Math.max(0, prev.protein - protein),
+                    carbs: Math.max(0, prev.carbs - carbs),
+                    fat: Math.max(0, prev.fat - fat),
+                };
+            }
+        });
     };
 
     if (isLoading || !dataLoaded) {
@@ -245,10 +251,17 @@ const Nutrition = () => {
     }
 
     return (
-        <div className="min-h-screen bg-oxygym-dark pb-32">
+        <div className="min-h-screen bg-oxygym-dark pb-20">
             <div className="container mx-auto px-4 py-8 max-w-3xl">
-                <h1 className="text-3xl font-bold text-white mb-2">תפריט תזונה</h1>
-                <p className="text-muted-foreground mb-4">סמן מה אכלת</p>
+                <div className="mb-6">
+                    <h1 className="text-3xl font-bold text-white mb-2">תפריט תזונה</h1>
+                    <div className="flex items-center justify-between">
+                        <p className="text-muted-foreground">סמן מה אכלת</p>
+                        {saving && (
+                            <p className="text-xs text-oxygym-yellow">שומר אוטומטית...</p>
+                        )}
+                    </div>
+                </div>
 
                 <div className="mb-6">
                     <DateSelector />
@@ -444,29 +457,6 @@ const Nutrition = () => {
                         </CardContent>
                     </Card>
                 </div>
-
-                {hasChanges && (
-                    <div className="fixed bottom-20 left-0 right-0 bg-oxygym-darkGrey border-t border-border p-4">
-                        <div className="container mx-auto max-w-3xl flex gap-3">
-                            <Button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="flex-1 bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
-                            >
-                                <Save className="w-4 h-4 ml-2" />
-                                {saving ? 'שומר...' : 'שמור תזונה'}
-                            </Button>
-                            <Button
-                                onClick={handleCancel}
-                                variant="outline"
-                                className="flex-1 border-border text-white hover:bg-red-600 hover:text-white"
-                            >
-                                <X className="w-4 h-4 ml-2" />
-                                בטל
-                            </Button>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

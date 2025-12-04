@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseRow } from '@/components/ExerciseRow';
 import { DateSelector } from '@/components/DateSelector';
-import { ArrowRight, Save, X, Heart, RefreshCw, AlertCircle } from 'lucide-react';
+import { ArrowRight, Heart, RefreshCw, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WorkoutLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
@@ -18,8 +18,9 @@ const WorkoutA = () => {
     const { selectedDate, isToday } = useDate();
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
     const [cardioMinutes, setCardioMinutes] = useState(0);
-    const [hasChanges, setHasChanges] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
     const exercises = [
         { name: 'לחיצת רגליים במכונה (מכונה 27)', sets: 4, reps: '8-12' },
@@ -54,7 +55,7 @@ const WorkoutA = () => {
         console.log('Date changed to:', selectedDate);
         setExerciseData({});
         setCardioMinutes(0);
-        setHasChanges(false);
+        setIsLoaded(false);
         
         if (workoutData) {
             const loadedData: any = {};
@@ -69,21 +70,15 @@ const WorkoutA = () => {
             }
             setExerciseData(loadedData);
             setCardioMinutes(workoutData.duration_minutes || 0);
+            setTimeout(() => setIsLoaded(true), 100);
+        } else {
+            setIsLoaded(true);
         }
     }, [selectedDate, workoutData]);
 
-    const handleExerciseDataChange = useCallback((data: any) => {
-        setExerciseData(prev => ({ ...prev, [data.name]: data }));
-        setHasChanges(true);
-    }, []);
-
-    const handleCardioChange = (value: string) => {
-        const minutes = parseInt(value) || 0;
-        setCardioMinutes(minutes);
-        setHasChanges(true);
-    };
-
-    const handleSave = async () => {
+    const autoSave = useCallback(async () => {
+        if (!isLoaded) return;
+        
         try {
             setSaving(true);
 
@@ -120,27 +115,39 @@ const WorkoutA = () => {
                 });
             }
 
-            setHasChanges(false);
-            toast({
-                title: "נשמר בהצלחה! ✅",
-                description: `אימון A של ${new Date(selectedDate).toLocaleDateString('he-IL')} נשמר`,
-            });
-            refetch();
+            console.log('Auto-saved workout A');
         } catch (error) {
-            console.error('Error saving workout:', error);
-            toast({
-                title: "שגיאה",
-                description: "לא הצלחנו לשמור את האימון. נסה שוב.",
-                variant: "destructive",
-            });
+            console.error('Error auto-saving workout:', error);
         } finally {
             setSaving(false);
         }
-    };
+    }, [exerciseData, cardioMinutes, selectedDate, isLoaded]);
 
-    const handleCancel = () => {
-        refetch();
-        setHasChanges(false);
+    useEffect(() => {
+        if (!isLoaded) return;
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        saveTimeoutRef.current = setTimeout(() => {
+            autoSave();
+        }, 1000);
+
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, [exerciseData, cardioMinutes, autoSave, isLoaded]);
+
+    const handleExerciseDataChange = useCallback((data: any) => {
+        setExerciseData(prev => ({ ...prev, [data.name]: data }));
+    }, []);
+
+    const handleCardioChange = (value: string) => {
+        const minutes = parseInt(value) || 0;
+        setCardioMinutes(minutes);
     };
 
     const cardioPercentage = Math.min((cardioMinutes / 20) * 100, 100);
@@ -190,10 +197,15 @@ const WorkoutA = () => {
     }
 
     return (
-        <div className="min-h-screen bg-oxygym-dark pb-32">
+        <div className="min-h-screen bg-oxygym-dark pb-20">
             <div className="container mx-auto px-4 py-8 max-w-3xl">
                 <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-3xl font-bold text-white">אימון A</h1>
+                    <div>
+                        <h1 className="text-3xl font-bold text-white">אימון A</h1>
+                        {saving && (
+                            <p className="text-xs text-oxygym-yellow mt-1">שומר אוטומטית...</p>
+                        )}
+                    </div>
                     <Button
                         onClick={() => navigate('/workouts')}
                         variant="outline"
@@ -270,29 +282,6 @@ const WorkoutA = () => {
                         />
                     ))}
                 </div>
-
-                {hasChanges && (
-                    <div className="fixed bottom-20 left-0 right-0 bg-oxygym-darkGrey border-t border-border p-4">
-                        <div className="container mx-auto max-w-3xl flex gap-3">
-                            <Button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="flex-1 bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
-                            >
-                                <Save className="w-4 h-4 ml-2" />
-                                {saving ? 'שומר...' : 'שמור שינויים'}
-                            </Button>
-                            <Button
-                                onClick={handleCancel}
-                                variant="outline"
-                                className="flex-1 border-border text-white hover:bg-red-600 hover:text-white"
-                            >
-                                <X className="w-4 h-4 ml-2" />
-                                בטל
-                            </Button>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
