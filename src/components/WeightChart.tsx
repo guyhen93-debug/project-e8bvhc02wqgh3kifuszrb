@@ -20,7 +20,10 @@ export const WeightChart = () => {
     const chartData = weightLogs?.map(log => ({
         date: new Date(log.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' }),
         weight: log.weight,
-    })) || [];
+        sortDate: new Date(log.date).getTime(),
+    }))
+    .sort((a, b) => a.sortDate - b.sortDate)
+    .map(({ date, weight }) => ({ date, weight })) || [];
 
     if (chartData.length === 0) {
         return (
