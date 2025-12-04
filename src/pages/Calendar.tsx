@@ -21,6 +21,8 @@ const Calendar = () => {
                 return [];
             }
         },
+        refetchInterval: 3000,
+        staleTime: 1000,
     });
 
     const { data: nutritionLogs } = useQuery({
@@ -33,6 +35,8 @@ const Calendar = () => {
                 return [];
             }
         },
+        refetchInterval: 3000,
+        staleTime: 1000,
     });
 
     const { data: weightLogs } = useQuery({
@@ -45,6 +49,8 @@ const Calendar = () => {
                 return [];
             }
         },
+        refetchInterval: 3000,
+        staleTime: 1000,
     });
 
     const getDaysInMonth = (date: Date) => {
