@@ -19,8 +19,8 @@ const WorkoutA = () => {
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
     const [cardioMinutes, setCardioMinutes] = useState(0);
     const [saving, setSaving] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout>();
+    const isInitialLoadRef = useRef(true);
 
     const exercises = [
         { name: 'לחיצת רגליים במכונה (מכונה 27)', sets: 4, reps: '8-12' },
@@ -53,9 +53,9 @@ const WorkoutA = () => {
 
     useEffect(() => {
         console.log('Date changed to:', selectedDate);
+        isInitialLoadRef.current = true;
         setExerciseData({});
         setCardioMinutes(0);
-        setIsLoaded(false);
         
         if (workoutData) {
             const loadedData: any = {};
@@ -70,14 +70,21 @@ const WorkoutA = () => {
             }
             setExerciseData(loadedData);
             setCardioMinutes(workoutData.duration_minutes || 0);
-            setTimeout(() => setIsLoaded(true), 100);
+            setTimeout(() => {
+                isInitialLoadRef.current = false;
+            }, 200);
         } else {
-            setIsLoaded(true);
+            setTimeout(() => {
+                isInitialLoadRef.current = false;
+            }, 200);
         }
     }, [selectedDate, workoutData]);
 
     const autoSave = useCallback(async () => {
-        if (!isLoaded) return;
+        if (isInitialLoadRef.current) {
+            console.log('Skipping auto-save during initial load');
+            return;
+        }
         
         try {
             setSaving(true);
@@ -121,11 +128,9 @@ const WorkoutA = () => {
         } finally {
             setSaving(false);
         }
-    }, [exerciseData, cardioMinutes, selectedDate, isLoaded]);
+    }, [exerciseData, cardioMinutes, selectedDate]);
 
     useEffect(() => {
-        if (!isLoaded) return;
-
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
         }
@@ -139,7 +144,7 @@ const WorkoutA = () => {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [exerciseData, cardioMinutes, autoSave, isLoaded]);
+    }, [exerciseData, cardioMinutes, autoSave]);
 
     const handleExerciseDataChange = useCallback((data: any) => {
         setExerciseData(prev => ({ ...prev, [data.name]: data }));
