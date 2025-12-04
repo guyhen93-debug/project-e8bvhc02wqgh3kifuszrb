@@ -39,6 +39,7 @@ const Nutrition = () => {
     const [dataLoaded, setDataLoaded] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout>();
     const isInitialLoadRef = useRef(true);
+    const userMadeChangeRef = useRef(false);
 
     const { data: selectedDateMeals, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['nutrition-logs', selectedDate],
@@ -57,6 +58,7 @@ const Nutrition = () => {
     useEffect(() => {
         console.log('Date changed to:', selectedDate);
         isInitialLoadRef.current = true;
+        userMadeChangeRef.current = false;
         
         // איפוס כל הנתונים
         setMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
@@ -104,12 +106,12 @@ const Nutrition = () => {
             setDataLoaded(true);
             setTimeout(() => {
                 isInitialLoadRef.current = false;
-            }, 200);
+            }, 100);
         } else {
             setDataLoaded(true);
             setTimeout(() => {
                 isInitialLoadRef.current = false;
-            }, 200);
+            }, 100);
         }
     }, [selectedDate, selectedDateMeals]);
 
@@ -119,8 +121,8 @@ const Nutrition = () => {
     const totalFat = meal1Data.fat + meal2Data.fat + meal3Data.fat + meal4Data.fat;
 
     const autoSave = async () => {
-        if (isInitialLoadRef.current) {
-            console.log('Skipping auto-save during initial load');
+        if (isInitialLoadRef.current || !userMadeChangeRef.current) {
+            console.log('Skipping auto-save during initial load or no user changes');
             return;
         }
 
@@ -197,6 +199,8 @@ const Nutrition = () => {
         carbs: number,
         fat: number
     ) => {
+        userMadeChangeRef.current = true;
+        
         itemsSetter(prev => ({
             ...prev,
             [itemName]: { name: itemName, amount, checked }
