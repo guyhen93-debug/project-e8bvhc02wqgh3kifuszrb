@@ -37,8 +37,8 @@ const Nutrition = () => {
     const [meal4Items, setMeal4Items] = useState<Record<string, MealItemSelection>>({});
     const [saving, setSaving] = useState(false);
     const [dataLoaded, setDataLoaded] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout>();
+    const isInitialLoadRef = useRef(true);
 
     const { data: selectedDateMeals, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['nutrition-logs', selectedDate],
@@ -56,6 +56,7 @@ const Nutrition = () => {
 
     useEffect(() => {
         console.log('Date changed to:', selectedDate);
+        isInitialLoadRef.current = true;
         
         // איפוס כל הנתונים
         setMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
@@ -67,7 +68,6 @@ const Nutrition = () => {
         setMeal3Items({});
         setMeal4Items({});
         setDataLoaded(false);
-        setIsLoaded(false);
         
         // טעינת נתונים מהמסד
         if (selectedDateMeals && selectedDateMeals.length > 0) {
@@ -102,10 +102,14 @@ const Nutrition = () => {
                 }
             });
             setDataLoaded(true);
-            setTimeout(() => setIsLoaded(true), 100);
+            setTimeout(() => {
+                isInitialLoadRef.current = false;
+            }, 200);
         } else {
             setDataLoaded(true);
-            setTimeout(() => setIsLoaded(true), 100);
+            setTimeout(() => {
+                isInitialLoadRef.current = false;
+            }, 200);
         }
     }, [selectedDate, selectedDateMeals]);
 
@@ -115,7 +119,10 @@ const Nutrition = () => {
     const totalFat = meal1Data.fat + meal2Data.fat + meal3Data.fat + meal4Data.fat;
 
     const autoSave = async () => {
-        if (!isLoaded) return;
+        if (isInitialLoadRef.current) {
+            console.log('Skipping auto-save during initial load');
+            return;
+        }
 
         try {
             setSaving(true);
@@ -164,8 +171,6 @@ const Nutrition = () => {
     };
 
     useEffect(() => {
-        if (!isLoaded) return;
-
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
         }
@@ -179,7 +184,7 @@ const Nutrition = () => {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [meal1Data, meal2Data, meal3Data, meal4Data, meal1Items, meal2Items, meal3Items, meal4Items, isLoaded]);
+    }, [meal1Data, meal2Data, meal3Data, meal4Data, meal1Items, meal2Items, meal3Items, meal4Items]);
 
     const handleMealItemToggle = (
         mealSetter: React.Dispatch<React.SetStateAction<MealData>>,
