@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { LucideIcon } from 'lucide-react';
 
 interface MealItemProps {
     name: string;
-    icon?: LucideIcon;
+    icon?: React.ComponentType<{ className?: string }>;
     defaultAmount: number;
     unit: string;
     caloriesPer100g: number;
