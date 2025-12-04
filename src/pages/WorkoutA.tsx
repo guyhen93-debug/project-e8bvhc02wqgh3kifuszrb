@@ -239,8 +239,8 @@ const WorkoutA = () => {
 
                 <div className="mb-6 p-4 bg-oxygym-darkGrey rounded-lg">
                     <img 
-                        src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/chat-generated-images/project-e8bvhc02wqgh3kifuszrb/5be3a896-9fce-4aa4-89f8-08ab0e2d7fae.png" 
-                        alt="Workout Legs and Shoulders" 
+                        src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764848183433-A.jpeg" 
+                        alt="Leg Press Workout - אימון לחיצת רגליים" 
                         className="w-full h-48 object-cover rounded-lg mb-4"
                     />
                     <p className="text-center text-muted-foreground">יום רגליים וכתפיים</p>

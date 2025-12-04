@@ -239,8 +239,8 @@ const WorkoutB = () => {
 
                 <div className="mb-6 p-4 bg-oxygym-darkGrey rounded-lg">
                     <img 
-                        src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/files/chat-generated-images/project-e8bvhc02wqgh3kifuszrb/9fefb01c-83da-40d2-8419-1fb9e95f9b15.png" 
-                        alt="Workout Chest and Arms" 
+                        src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764848183434-B.jpeg" 
+                        alt="Dumbbell Chest Press - אימון לחיצת חזה" 
                         className="w-full h-48 object-cover rounded-lg mb-4"
                     />
                     <p className="text-center text-muted-foreground">יום חזה וזרועות</p>
