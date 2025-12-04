@@ -1,6 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dumbbell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WorkoutLog } from '@/entities';
 import { useQuery } from '@tanstack/react-query';
@@ -10,9 +9,10 @@ interface WorkoutCardProps {
     title: string;
     description: string;
     path: string;
+    imageUrl: string;
 }
 
-export const WorkoutCard = ({ id, title, description, path }: WorkoutCardProps) => {
+export const WorkoutCard = ({ id, title, description, path, imageUrl }: WorkoutCardProps) => {
     const navigate = useNavigate();
     const today = new Date().toISOString().split('T')[0];
 
@@ -45,8 +45,12 @@ export const WorkoutCard = ({ id, title, description, path }: WorkoutCardProps) 
         <Card className="bg-oxygym-darkGrey border-border hover:border-oxygym-yellow transition-colors">
             <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-oxygym-yellow rounded-full flex items-center justify-center">
-                        <Dumbbell className="w-6 h-6 text-black" />
+                    <div className="w-16 h-16 bg-oxygym-yellow rounded-full flex items-center justify-center p-2 overflow-hidden">
+                        <img 
+                            src={imageUrl} 
+                            alt={title}
+                            className="w-full h-full object-contain"
+                        />
                     </div>
                     <div className="flex-1">
                         <h3 className="text-xl font-bold text-white">{title}</h3>
