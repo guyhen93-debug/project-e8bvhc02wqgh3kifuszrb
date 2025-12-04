@@ -5,7 +5,7 @@ import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Beef, Egg, Milk, Salad, GlassWater } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { NutritionLog } from '@/entities';
 import { useQuery } from '@tanstack/react-query';
@@ -60,7 +60,6 @@ const Nutrition = () => {
         isInitialLoadRef.current = true;
         userMadeChangeRef.current = false;
         
-        // איפוס כל הנתונים
         setMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
         setMeal2Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
         setMeal3Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
@@ -71,7 +70,6 @@ const Nutrition = () => {
         setMeal4Items({});
         setDataLoaded(false);
         
-        // טעינת נתונים מהמסד
         if (selectedDateMeals && selectedDateMeals.length > 0) {
             console.log('Processing loaded meals...');
             selectedDateMeals.forEach((log: any) => {
@@ -296,7 +294,14 @@ const Nutrition = () => {
                 </div>
 
                 <div className="space-y-6 mb-6">
-                    <Card className="bg-oxygym-darkGrey border-border">
+                    <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
+                        <div className="relative h-48 w-full overflow-hidden">
+                            <img 
+                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764849325113-1.jpeg"
+                                alt="ארוחת בוקר - לחם, גבינה, ביצים וירקות"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
                         <CardHeader>
                             <CardTitle className="text-white flex items-center justify-between">
                                 <span>ארוחה 1</span>
@@ -306,6 +311,7 @@ const Nutrition = () => {
                         <CardContent className="space-y-3">
                             <MealItem
                                 name="לחם כוסמין"
+                                icon={Milk}
                                 defaultAmount={168}
                                 unit="גרם (4 פרוסות)"
                                 caloriesPer100g={216}
@@ -320,6 +326,7 @@ const Nutrition = () => {
                             />
                             <MealItem
                                 name="גבינה לבנה 5%"
+                                icon={Milk}
                                 defaultAmount={100}
                                 unit="גרם"
                                 caloriesPer100g={98}
@@ -334,6 +341,7 @@ const Nutrition = () => {
                             />
                             <MealItem
                                 name="ביצים"
+                                icon={Egg}
                                 defaultAmount={136}
                                 unit="גרם (2 ביצים)"
                                 caloriesPer100g={155}
@@ -348,6 +356,7 @@ const Nutrition = () => {
                             />
                             <MealItem
                                 name="ירקות"
+                                icon={Salad}
                                 defaultAmount={200}
                                 unit="גרם"
                                 caloriesPer100g={30}
@@ -363,7 +372,14 @@ const Nutrition = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-oxygym-darkGrey border-border">
+                    <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
+                        <div className="relative h-48 w-full overflow-hidden">
+                            <img 
+                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764849325114-2.jpeg"
+                                alt="ארוחה 2 - גיינר עם חלב שיבולת שועל"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
                         <CardHeader>
                             <CardTitle className="text-white flex items-center justify-between">
                                 <span>ארוחה 2</span>
@@ -373,6 +389,7 @@ const Nutrition = () => {
                         <CardContent className="space-y-3">
                             <MealItem
                                 name="גיינר עם מים"
+                                icon={GlassWater}
                                 defaultAmount={150}
                                 unit="גרם (2 כפות)"
                                 caloriesPer100g={388}
@@ -388,7 +405,14 @@ const Nutrition = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-oxygym-darkGrey border-border">
+                    <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
+                        <div className="relative h-48 w-full overflow-hidden">
+                            <img 
+                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764849325114-2.jpeg"
+                                alt="ארוחה 3 - גיינר עם חלב שיבולת שועל"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
                         <CardHeader>
                             <CardTitle className="text-white flex items-center justify-between">
                                 <span>ארוחה 3</span>
@@ -398,6 +422,7 @@ const Nutrition = () => {
                         <CardContent className="space-y-3">
                             <MealItem
                                 name="גיינר עם מים"
+                                icon={GlassWater}
                                 defaultAmount={150}
                                 unit="גרם (2 כפות)"
                                 caloriesPer100g={388}
@@ -413,7 +438,14 @@ const Nutrition = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-oxygym-darkGrey border-border">
+                    <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
+                        <div className="relative h-48 w-full overflow-hidden">
+                            <img 
+                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764849325114-4.jpeg"
+                                alt="ארוחה 4 - חזה עוף, אורז וירקות"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
                         <CardHeader>
                             <CardTitle className="text-white flex items-center justify-between">
                                 <span>ארוחה 4</span>
@@ -423,6 +455,7 @@ const Nutrition = () => {
                         <CardContent className="space-y-3">
                             <MealItem
                                 name="חזה עוף"
+                                icon={Beef}
                                 defaultAmount={150}
                                 unit="גרם"
                                 caloriesPer100g={156}
@@ -437,6 +470,7 @@ const Nutrition = () => {
                             />
                             <MealItem
                                 name="אורז (לפני בישול)"
+                                icon={Milk}
                                 defaultAmount={80}
                                 unit="גרם"
                                 caloriesPer100g={350}
@@ -451,6 +485,7 @@ const Nutrition = () => {
                             />
                             <MealItem
                                 name="ירקות"
+                                icon={Salad}
                                 defaultAmount={200}
                                 unit="גרם"
                                 caloriesPer100g={30}

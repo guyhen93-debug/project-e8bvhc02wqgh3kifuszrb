@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { LucideIcon } from 'lucide-react';
 
 interface MealItemProps {
     name: string;
+    icon?: LucideIcon;
     defaultAmount: number;
     unit: string;
     caloriesPer100g: number;
@@ -12,12 +14,20 @@ interface MealItemProps {
     fatPer100g: number;
     initialChecked?: boolean;
     initialAmount?: number;
-    onToggle: (checked: boolean, amount: number, calories: number, protein: number, carbs: number, fat: number) => void;
+    onToggle: (
+        checked: boolean,
+        amount: number,
+        calories: number,
+        protein: number,
+        carbs: number,
+        fat: number
+    ) => void;
 }
 
-export const MealItem = ({ 
-    name, 
-    defaultAmount, 
+export const MealItem = ({
+    name,
+    icon: Icon,
+    defaultAmount,
     unit,
     caloriesPer100g,
     proteinPer100g,
@@ -25,72 +35,72 @@ export const MealItem = ({
     fatPer100g,
     initialChecked = false,
     initialAmount,
-    onToggle 
+    onToggle,
 }: MealItemProps) => {
     const [checked, setChecked] = useState(initialChecked);
     const [amount, setAmount] = useState(initialAmount || defaultAmount);
 
     useEffect(() => {
-        console.log(`MealItem ${name}: initialChecked=${initialChecked}, initialAmount=${initialAmount}`);
         setChecked(initialChecked);
         setAmount(initialAmount || defaultAmount);
-        
-        if (initialChecked && initialAmount) {
-            const multiplier = initialAmount / 100;
-            const calories = Math.round(caloriesPer100g * multiplier);
-            const protein = Math.round(proteinPer100g * multiplier * 10) / 10;
-            const carbs = Math.round(carbsPer100g * multiplier * 10) / 10;
-            const fat = Math.round(fatPer100g * multiplier * 10) / 10;
-            onToggle(true, initialAmount, calories, protein, carbs, fat);
-        }
-    }, [initialChecked, initialAmount]);
+    }, [initialChecked, initialAmount, defaultAmount]);
 
-    const multiplier = amount / 100;
-    const calories = Math.round(caloriesPer100g * multiplier);
-    const protein = Math.round(proteinPer100g * multiplier * 10) / 10;
-    const carbs = Math.round(carbsPer100g * multiplier * 10) / 10;
-    const fat = Math.round(fatPer100g * multiplier * 10) / 10;
+    const calculateNutrition = (grams: number) => {
+        const multiplier = grams / 100;
+        return {
+            calories: caloriesPer100g * multiplier,
+            protein: proteinPer100g * multiplier,
+            carbs: carbsPer100g * multiplier,
+            fat: fatPer100g * multiplier,
+        };
+    };
 
-    const handleCheckedChange = (newChecked: boolean) => {
+    const handleCheckChange = (newChecked: boolean) => {
         setChecked(newChecked);
-        onToggle(newChecked, amount, calories, protein, carbs, fat);
+        const nutrition = calculateNutrition(amount);
+        onToggle(newChecked, amount, nutrition.calories, nutrition.protein, nutrition.carbs, nutrition.fat);
     };
 
     const handleAmountChange = (newAmount: number) => {
         setAmount(newAmount);
         if (checked) {
-            const mult = newAmount / 100;
-            const cals = Math.round(caloriesPer100g * mult);
-            const prot = Math.round(proteinPer100g * mult * 10) / 10;
-            const crbs = Math.round(carbsPer100g * mult * 10) / 10;
-            const ft = Math.round(fatPer100g * mult * 10) / 10;
-            onToggle(true, newAmount, cals, prot, crbs, ft);
+            const nutrition = calculateNutrition(newAmount);
+            onToggle(true, newAmount, nutrition.calories, nutrition.protein, nutrition.carbs, nutrition.fat);
         }
     };
 
+    const nutrition = calculateNutrition(amount);
+
     return (
-        <div className="flex items-center gap-3 p-4 bg-black/30 rounded-lg border border-border">
+        <div className="flex items-center gap-3 p-3 bg-black rounded-lg hover:bg-black/80 transition-colors">
             <Checkbox
                 checked={checked}
-                onCheckedChange={(c) => handleCheckedChange(c === true)}
-                className="border-oxygym-yellow data-[state=checked]:bg-oxygym-yellow data-[state=checked]:border-oxygym-yellow"
+                onCheckedChange={handleCheckChange}
+                className="border-border data-[state=checked]:bg-oxygym-yellow data-[state=checked]:border-oxygym-yellow"
             />
-            <div className="flex-1">
+            
+            {Icon && <Icon className="w-5 h-5 text-oxygym-yellow flex-shrink-0" />}
+            
+            <div className="flex-1 min-w-0">
                 <p className="text-white font-medium">{name}</p>
                 <div className="flex items-center gap-2 mt-1">
                     <Input
                         type="number"
                         value={amount}
                         onChange={(e) => handleAmountChange(Number(e.target.value))}
-                        className="w-20 h-8 bg-black border-border text-white text-sm"
+                        className="w-20 h-8 text-sm bg-oxygym-darkGrey border-border text-white"
                     />
                     <span className="text-sm text-muted-foreground">{unit}</span>
-                    {checked && (
-                        <span className="text-xs text-oxygym-yellow">
-                            {calories} קלוריות
-                        </span>
-                    )}
                 </div>
+            </div>
+            
+            <div className="text-left">
+                <p className="text-sm text-oxygym-yellow font-semibold">
+                    {Math.round(nutrition.calories)} קל'
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    {Math.round(nutrition.protein)}g חלבון
+                </p>
             </div>
         </div>
     );
