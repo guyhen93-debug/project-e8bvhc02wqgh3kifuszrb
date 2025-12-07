@@ -306,7 +306,7 @@ const Nutrition = () => {
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
                         <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
                             <img 
-                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764850162567-1.jpeg"
+                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594587-1.png"
                                 alt="ארוחת בוקר - לחם, גבינה, ביצים וירקות"
                                 className="max-w-full max-h-full object-contain"
                             />
@@ -384,7 +384,7 @@ const Nutrition = () => {
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
                         <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
                             <img 
-                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764850162568-2.jpeg"
+                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
                                 alt="ארוחה 2 - גיינר עם חלב שיבולת שועל"
                                 className="max-w-full max-h-full object-contain"
                             />
@@ -417,7 +417,7 @@ const Nutrition = () => {
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
                         <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
                             <img 
-                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764850162568-2.jpeg"
+                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
                                 alt="ארוחה 3 - גיינר עם חלב שיבולת שועל"
                                 className="max-w-full max-h-full object-contain"
                             />
@@ -450,7 +450,7 @@ const Nutrition = () => {
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
                         <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
                             <img 
-                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764850162568-4.jpeg"
+                                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-4.png"
                                 alt="ארוחה 4 - חזה עוף, אורז וירקות"
                                 className="max-w-full max-h-full object-contain"
                             />
