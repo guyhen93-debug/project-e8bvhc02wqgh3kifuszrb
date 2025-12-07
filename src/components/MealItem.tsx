@@ -71,29 +71,29 @@ export const MealItem = ({
     const nutrition = calculateNutrition(amount);
 
     return (
-        <div className="flex items-start sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-black rounded-lg hover:bg-black/80 transition-colors">
+        <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-black rounded-lg hover:bg-black/80 transition-colors">
             <Checkbox
                 checked={checked}
                 onCheckedChange={handleCheckChange}
-                className="border-border data-[state=checked]:bg-oxygym-yellow data-[state=checked]:border-oxygym-yellow mt-1 sm:mt-0 flex-shrink-0"
+                className="border-border data-[state=checked]:bg-oxygym-yellow data-[state=checked]:border-oxygym-yellow flex-shrink-0"
             />
             
-            {Icon && <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-oxygym-yellow flex-shrink-0 mt-1 sm:mt-0" />}
+            {Icon && <Icon className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" />}
             
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 text-center">
                 <p className="text-sm sm:text-base text-white font-medium leading-tight">{name}</p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center justify-center gap-2 mt-1">
                     <Input
                         type="number"
                         value={amount}
                         onChange={(e) => handleAmountChange(Number(e.target.value))}
-                        className="w-16 sm:w-20 h-7 sm:h-8 text-xs sm:text-sm bg-oxygym-darkGrey border-border text-white"
+                        className="w-16 sm:w-20 h-7 sm:h-8 text-xs sm:text-sm bg-oxygym-darkGrey border-border text-white text-center"
                     />
                     <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">{unit}</span>
                 </div>
             </div>
             
-            <div className="text-left flex-shrink-0">
+            <div className="text-center flex-shrink-0">
                 <p className="text-xs sm:text-sm text-oxygym-yellow font-semibold whitespace-nowrap">
                     {Math.round(nutrition.calories)} קל'
                 </p>
