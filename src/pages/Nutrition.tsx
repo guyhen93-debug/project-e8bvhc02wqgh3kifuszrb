@@ -304,7 +304,7 @@ const Nutrition = () => {
 
                 <div className="space-y-4 sm:space-y-6 mb-6">
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-black flex items-center justify-center p-4">
+                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
                             <img 
                                 src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764850162567-1.jpeg"
                                 alt="ארוחת בוקר - לחם, גבינה, ביצים וירקות"
@@ -382,7 +382,7 @@ const Nutrition = () => {
                     </Card>
 
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-black flex items-center justify-center p-4">
+                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
                             <img 
                                 src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764850162568-2.jpeg"
                                 alt="ארוחה 2 - גיינר עם חלב שיבולת שועל"
@@ -415,7 +415,7 @@ const Nutrition = () => {
                     </Card>
 
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-black flex items-center justify-center p-4">
+                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
                             <img 
                                 src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764850162568-2.jpeg"
                                 alt="ארוחה 3 - גיינר עם חלב שיבולת שועל"
@@ -448,7 +448,7 @@ const Nutrition = () => {
                     </Card>
 
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-black flex items-center justify-center p-4">
+                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
                             <img 
                                 src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764850162568-4.jpeg"
                                 alt="ארוחה 4 - חזה עוף, אורז וירקות"
