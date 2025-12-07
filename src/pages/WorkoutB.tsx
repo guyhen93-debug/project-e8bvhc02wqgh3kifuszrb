@@ -210,7 +210,7 @@ const WorkoutB = () => {
             <div className="container mx-auto px-4 py-8 max-w-3xl">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold text-white">חזה ויד קדמית</h1>
+                        <h1 className="text-3xl font-bold text-white">אימון B</h1>
                         {saving && (
                             <p className="text-xs text-oxygym-yellow mt-1">שומר אוטומטית...</p>
                         )}
@@ -243,7 +243,7 @@ const WorkoutB = () => {
                         alt="Dumbbell Chest Press - אימון לחיצת חזה" 
                         className="w-full h-48 object-cover rounded-lg mb-4"
                     />
-                    <p className="text-center text-muted-foreground">יום חזה וביצפס</p>
+                    <p className="text-center text-muted-foreground">חזה ויד קדמית</p>
                 </div>
 
                 <Card className="bg-oxygym-darkGrey border-border mb-6">
