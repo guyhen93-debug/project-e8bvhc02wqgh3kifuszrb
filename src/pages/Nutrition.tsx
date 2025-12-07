@@ -302,22 +302,22 @@ const Nutrition = () => {
                     <WaterTracker />
                 </div>
 
-                <div className="space-y-4 sm:space-y-6 mb-6">
+                <div className="space-y-3 sm:space-y-4 mb-6">
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
+                        <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                             <img 
                                 src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594587-1.png"
                                 alt="ארוחת בוקר - לחם, גבינה, ביצים וירקות"
                                 className="max-w-full max-h-full object-contain"
                             />
                         </div>
-                        <CardHeader className="p-4 sm:p-6">
-                            <CardTitle className="text-white flex items-center justify-between text-lg sm:text-xl">
+                        <CardHeader className="p-3 sm:p-4">
+                            <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
                                 <span>ארוחה 1</span>
                                 <span className="text-oxygym-yellow text-xs sm:text-sm">עד 10:00</span>
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">
+                        <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
                             <MealItem
                                 name="לחם כוסמין"
                                 icon={BreadIcon}
@@ -382,20 +382,20 @@ const Nutrition = () => {
                     </Card>
 
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
+                        <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                             <img 
                                 src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
                                 alt="ארוחה 2 - גיינר עם חלב שיבולת שועל"
                                 className="max-w-full max-h-full object-contain"
                             />
                         </div>
-                        <CardHeader className="p-4 sm:p-6">
-                            <CardTitle className="text-white flex items-center justify-between text-lg sm:text-xl">
+                        <CardHeader className="p-3 sm:p-4">
+                            <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
                                 <span>ארוחה 2</span>
                                 <span className="text-oxygym-yellow text-xs sm:text-sm">עד 12:30</span>
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">
+                        <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
                             <MealItem
                                 name="גיינר עם מים"
                                 icon={ShakerIcon}
@@ -415,20 +415,20 @@ const Nutrition = () => {
                     </Card>
 
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
+                        <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                             <img 
                                 src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
                                 alt="ארוחה 3 - גיינר עם חלב שיבולת שועל"
                                 className="max-w-full max-h-full object-contain"
                             />
                         </div>
-                        <CardHeader className="p-4 sm:p-6">
-                            <CardTitle className="text-white flex items-center justify-between text-lg sm:text-xl">
+                        <CardHeader className="p-3 sm:p-4">
+                            <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
                                 <span>ארוחה 3</span>
                                 <span className="text-oxygym-yellow text-xs sm:text-sm">עד 15:30</span>
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">
+                        <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
                             <MealItem
                                 name="גיינר עם מים"
                                 icon={ShakerIcon}
@@ -448,20 +448,20 @@ const Nutrition = () => {
                     </Card>
 
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                        <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-4">
+                        <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                             <img 
                                 src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-4.png"
                                 alt="ארוחה 4 - חזה עוף, אורז וירקות"
                                 className="max-w-full max-h-full object-contain"
                             />
                         </div>
-                        <CardHeader className="p-4 sm:p-6">
-                            <CardTitle className="text-white flex items-center justify-between text-lg sm:text-xl">
+                        <CardHeader className="p-3 sm:p-4">
+                            <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
                                 <span>ארוחה 4</span>
                                 <span className="text-oxygym-yellow text-xs sm:text-sm">עד 22:00</span>
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">
+                        <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
                             <MealItem
                                 name="חזה עוף"
                                 icon={ChickenIcon}
