@@ -24,13 +24,13 @@ const WorkoutC = () => {
     const userMadeChangeRef = useRef(false);
 
     const exercises = [
-        { name: 'משיכות במכונה (מכונה 14)', sets: 4, reps: '8-12' },
-        { name: 'רואינג מכונה (מכונה 15)', sets: 4, reps: '8-12' },
-        { name: 'שכיבות משקולת יד', sets: 4, reps: '8-12' },
-        { name: 'שכיבות מוט', sets: 4, reps: '8-12' },
-        { name: 'טריצפס במכונה (מכונה 29)', sets: 4, reps: '8-12' },
-        { name: 'שכיבות טריצפס חזרה', sets: 4, reps: '8-12' },
-        { name: 'פטיש טריצפס', sets: 4, reps: '8-12' },
+        { name: 'פולי עליון רחב (מכונה 19)', sets: 4, reps: '8-12' },
+        { name: 'פולי עליון צר (מכונה 19)', sets: 4, reps: '8-12' },
+        { name: 'פולי תחתון צר (מכונה 19)', sets: 4, reps: '8-12' },
+        { name: 'T BAR (מכונה 7)', sets: 4, reps: '8-12' },
+        { name: 'פולי עם מוט ישר (מכונה 29)', sets: 4, reps: '8-12' },
+        { name: 'פולי עם חבל (מכונה 29)', sets: 4, reps: '8-12' },
+        { name: 'פולי W מאחורי הראש (מכונה 29)', sets: 4, reps: '8-12' },
         { name: 'בטן: בטן ישרה', sets: 3, reps: '15' },
         { name: 'בטן: עליות רגליים', sets: 3, reps: '15' },
     ];
