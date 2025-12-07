@@ -11,14 +11,14 @@ const Workouts = () => {
         },
         { 
             id: 'b', 
-            title: 'אימון B', 
-            description: 'חזה וזרועות',
+            title: 'חזה ויד קדמית', 
+            description: 'חזה וביצפס',
             path: '/workout-b',
             imageUrl: 'https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764846439853-B.png'
         },
         { 
             id: 'c', 
-            title: 'אימון C', 
+            title: 'גב ויד אחורית', 
             description: 'גב וטריצפס',
             path: '/workout-c',
             imageUrl: 'https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1764846439853-C.png'
