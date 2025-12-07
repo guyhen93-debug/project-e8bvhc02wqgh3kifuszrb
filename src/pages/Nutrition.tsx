@@ -5,7 +5,14 @@ import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { RefreshCw, AlertCircle, Drumstick, Egg, Soup, Carrot, Sparkles, Wheat, CircleDot } from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
+import { BreadIcon } from '@/components/icons/BreadIcon';
+import { ChickenIcon } from '@/components/icons/ChickenIcon';
+import { VegetablesIcon } from '@/components/icons/VegetablesIcon';
+import { RiceIcon } from '@/components/icons/RiceIcon';
+import { EggsIcon } from '@/components/icons/EggsIcon';
+import { CheeseIcon } from '@/components/icons/CheeseIcon';
+import { ShakerIcon } from '@/components/icons/ShakerIcon';
 import { useToast } from '@/hooks/use-toast';
 import { NutritionLog } from '@/entities';
 import { useQuery } from '@tanstack/react-query';
@@ -313,7 +320,7 @@ const Nutrition = () => {
                         <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">
                             <MealItem
                                 name="לחם כוסמין"
-                                icon={Wheat}
+                                icon={BreadIcon}
                                 defaultAmount={168}
                                 unit="גרם (4 פרוסות)"
                                 caloriesPer100g={216}
@@ -328,7 +335,7 @@ const Nutrition = () => {
                             />
                             <MealItem
                                 name="גבינה לבנה 5%"
-                                icon={Soup}
+                                icon={CheeseIcon}
                                 defaultAmount={100}
                                 unit="גרם"
                                 caloriesPer100g={98}
@@ -343,7 +350,7 @@ const Nutrition = () => {
                             />
                             <MealItem
                                 name="ביצים"
-                                icon={Egg}
+                                icon={EggsIcon}
                                 defaultAmount={136}
                                 unit="גרם (2 ביצים)"
                                 caloriesPer100g={155}
@@ -358,7 +365,7 @@ const Nutrition = () => {
                             />
                             <MealItem
                                 name="ירקות"
-                                icon={Carrot}
+                                icon={VegetablesIcon}
                                 defaultAmount={200}
                                 unit="גרם"
                                 caloriesPer100g={30}
@@ -391,7 +398,7 @@ const Nutrition = () => {
                         <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">
                             <MealItem
                                 name="גיינר עם מים"
-                                icon={Sparkles}
+                                icon={ShakerIcon}
                                 defaultAmount={150}
                                 unit="גרם (2 כפות)"
                                 caloriesPer100g={388}
@@ -424,7 +431,7 @@ const Nutrition = () => {
                         <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">
                             <MealItem
                                 name="גיינר עם מים"
-                                icon={Sparkles}
+                                icon={ShakerIcon}
                                 defaultAmount={150}
                                 unit="גרם (2 כפות)"
                                 caloriesPer100g={388}
@@ -457,7 +464,7 @@ const Nutrition = () => {
                         <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">
                             <MealItem
                                 name="חזה עוף"
-                                icon={Drumstick}
+                                icon={ChickenIcon}
                                 defaultAmount={150}
                                 unit="גרם"
                                 caloriesPer100g={156}
@@ -472,7 +479,7 @@ const Nutrition = () => {
                             />
                             <MealItem
                                 name="אורז (לפני בישול)"
-                                icon={CircleDot}
+                                icon={RiceIcon}
                                 defaultAmount={80}
                                 unit="גרם"
                                 caloriesPer100g={350}
@@ -487,7 +494,7 @@ const Nutrition = () => {
                             />
                             <MealItem
                                 name="ירקות"
-                                icon={Carrot}
+                                icon={VegetablesIcon}
                                 defaultAmount={200}
                                 unit="גרם"
                                 caloriesPer100g={30}
