@@ -243,7 +243,7 @@ const WorkoutB = () => {
                         alt="Dumbbell Chest Press - אימון לחיצת חזה" 
                         className="w-full h-48 object-cover rounded-lg mb-4"
                     />
-                    <p className="text-center text-muted-foreground">חזה ויד קדמית</p>
+                    <p className="text-center text-muted-foreground">יום חזה ויד קדמית</p>
                 </div>
 
                 <Card className="bg-oxygym-darkGrey border-border mb-6">

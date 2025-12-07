@@ -243,7 +243,7 @@ const WorkoutC = () => {
                         alt="Lat Pulldown - אימון משיכות גב" 
                         className="w-full h-48 object-cover rounded-lg mb-4"
                     />
-                    <p className="text-center text-muted-foreground">גב ויד אחורית</p>
+                    <p className="text-center text-muted-foreground">יום גב ויד אחורית</p>
                 </div>
 
                 <Card className="bg-oxygym-darkGrey border-border mb-6">
