@@ -83,14 +83,14 @@ export const MealItem = ({
             </div>
             
             <div className="text-right min-w-0 overflow-hidden">
-                <p className="text-sm sm:text-base text-white font-medium leading-tight mb-1 truncate">{name}</p>
-                <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">{unit}</span>
+                <p className="text-sm sm:text-base text-white font-medium leading-tight mb-1.5 truncate">{name}</p>
+                <div className="flex items-center justify-end gap-2 flex-wrap">
+                    <span className="text-xs sm:text-sm text-muted-foreground">{unit}</span>
                     <Input
                         type="number"
                         value={amount}
                         onChange={(e) => handleAmountChange(Number(e.target.value))}
-                        className="w-14 sm:w-16 h-6 sm:h-7 text-xs bg-oxygym-darkGrey border-border text-white text-center"
+                        className="w-16 sm:w-20 h-7 sm:h-8 text-sm sm:text-base bg-oxygym-darkGrey border-border text-white text-center px-1"
                     />
                 </div>
             </div>
