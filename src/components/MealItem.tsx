@@ -71,15 +71,15 @@ export const MealItem = ({
     const nutrition = calculateNutrition(amount);
 
     return (
-        <div className="grid grid-cols-[auto_auto_1fr_auto] gap-2 sm:gap-3 items-center p-2.5 sm:p-3 bg-black rounded-lg hover:bg-black/80 transition-colors">
+        <div className="grid grid-cols-[auto_80px_1fr_auto] gap-2 sm:gap-3 items-center p-2.5 sm:p-3 bg-black rounded-lg hover:bg-black/80 transition-colors">
             <Checkbox
                 checked={checked}
                 onCheckedChange={handleCheckChange}
                 className="w-6 h-6 border-border data-[state=checked]:bg-oxygym-yellow data-[state=checked]:border-oxygym-yellow"
             />
             
-            <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center flex-shrink-0">
-                {Icon && <Icon className="w-14 h-14 sm:w-16 sm:h-16" />}
+            <div className="w-16 h-16 flex items-center justify-center flex-shrink-0">
+                {Icon && <Icon className="w-full h-full" />}
             </div>
             
             <div className="text-right min-w-0 overflow-hidden">

@@ -1,6 +1,6 @@
 {
   "name": "UserProfile",
-  "description": "פרטים אישיים של המשתמש",
+  "description": "פרופיל משתמש - פרטים אישיים",
   "properties": {
     "gender": {
       "type": "string",
@@ -8,11 +8,11 @@
     },
     "age": {
       "type": "number",
-      "description": "גיל"
+      "description": "גיל בשנים"
     },
     "height": {
       "type": "number",
-      "description": "גובה בס\"מ"
+      "description": "גובה בסנטימטרים"
     },
     "goal": {
       "type": "string",

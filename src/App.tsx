@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { GlobalTimer } from "@/components/GlobalTimer";
+import { ProfileForm } from "@/components/ProfileForm";
 import { TimerProvider } from "@/contexts/TimerContext";
 import { DateProvider } from "@/contexts/DateContext";
 import Index from "./pages/Index";
@@ -25,6 +26,7 @@ const App = () => (
                 <TimerProvider>
                     <Toaster />
                     <Sonner />
+                    <ProfileForm />
                     <BrowserRouter>
                         <Routes>
                             <Route path="/" element={<Index />} />

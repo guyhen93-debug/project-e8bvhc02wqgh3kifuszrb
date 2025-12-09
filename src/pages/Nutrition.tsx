@@ -5,7 +5,6 @@ import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { ShabbatMealCard } from '@/components/ShabbatMealCard';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { BreadIcon } from '@/components/icons/BreadIcon';
 import { ChickenIcon } from '@/components/icons/ChickenIcon';
@@ -39,15 +38,21 @@ const Nutrition = () => {
     const [meal2Data, setMeal2Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal3Data, setMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal4Data, setMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [shabbatMealData, setShabbatMealData] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [meal1Items, setMeal1Items] = useState<Record<string, MealItemSelection>>({});
     const [meal2Items, setMeal2Items] = useState<Record<string, MealItemSelection>>({});
     const [meal3Items, setMeal3Items] = useState<Record<string, MealItemSelection>>({});
     const [meal4Items, setMeal4Items] = useState<Record<string, MealItemSelection>>({});
+    const [shabbatMealItems, setShabbatMealItems] = useState<Record<string, MealItemSelection>>({});
     const [saving, setSaving] = useState(false);
     const [dataLoaded, setDataLoaded] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout>();
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
+
+    const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+    const dayOfWeek = selectedDateObj.getDay();
+    const isShabbat = dayOfWeek === 5 || dayOfWeek === 6;
 
     const { data: selectedDateMeals, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['nutrition-logs', selectedDate],
@@ -63,12 +68,6 @@ const Nutrition = () => {
         staleTime: 30000,
     });
 
-    const isShabbat = () => {
-        const date = new Date(selectedDate);
-        const dayOfWeek = date.getDay();
-        return dayOfWeek === 5 || dayOfWeek === 6;
-    };
-
     useEffect(() => {
         console.log('Date changed to:', selectedDate);
         isInitialLoadRef.current = true;
@@ -78,10 +77,12 @@ const Nutrition = () => {
         setMeal2Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
         setMeal3Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
         setMeal4Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setShabbatMealData({ calories: 0, protein: 0, carbs: 0, fat: 0 });
         setMeal1Items({});
         setMeal2Items({});
         setMeal3Items({});
         setMeal4Items({});
+        setShabbatMealItems({});
         setDataLoaded(false);
         
         if (selectedDateMeals && selectedDateMeals.length > 0) {
@@ -113,6 +114,9 @@ const Nutrition = () => {
                     case 4:
                         setMeal4Items(items);
                         break;
+                    case 5:
+                        setShabbatMealItems(items);
+                        break;
                 }
             });
             setDataLoaded(true);
@@ -127,10 +131,10 @@ const Nutrition = () => {
         }
     }, [selectedDate, selectedDateMeals]);
 
-    const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories;
-    const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein;
-    const totalCarbs = meal1Data.carbs + meal2Data.carbs + meal3Data.carbs + meal4Data.carbs;
-    const totalFat = meal1Data.fat + meal2Data.fat + meal3Data.fat + meal4Data.fat;
+    const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories + shabbatMealData.calories;
+    const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein + shabbatMealData.protein;
+    const totalCarbs = meal1Data.carbs + meal2Data.carbs + meal3Data.carbs + meal4Data.carbs + shabbatMealData.carbs;
+    const totalFat = meal1Data.fat + meal2Data.fat + meal3Data.fat + meal4Data.fat + shabbatMealData.fat;
 
     const autoSave = async () => {
         if (isInitialLoadRef.current || !userMadeChangeRef.current) {
@@ -151,6 +155,7 @@ const Nutrition = () => {
                 { number: 2, data: meal2Data, items: meal2Items },
                 { number: 3, data: meal3Data, items: meal3Items },
                 { number: 4, data: meal4Data, items: meal4Items },
+                { number: 5, data: shabbatMealData, items: shabbatMealItems },
             ];
 
             for (const meal of meals) {
@@ -198,7 +203,7 @@ const Nutrition = () => {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [meal1Data, meal2Data, meal3Data, meal4Data, meal1Items, meal2Items, meal3Items, meal4Items]);
+    }, [meal1Data, meal2Data, meal3Data, meal4Data, shabbatMealData, meal1Items, meal2Items, meal3Items, meal4Items, shabbatMealItems]);
 
     const handleMealItemToggle = (
         mealSetter: React.Dispatch<React.SetStateAction<MealData>>,
@@ -308,12 +313,6 @@ const Nutrition = () => {
                 <div className="mb-4 sm:mb-6">
                     <WaterTracker />
                 </div>
-
-                {isShabbat() && (
-                    <div className="mb-4 sm:mb-6">
-                        <ShabbatMealCard />
-                    </div>
-                )}
 
                 <div className="space-y-3 sm:space-y-4 mb-6">
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
@@ -522,6 +521,89 @@ const Nutrition = () => {
                             />
                         </CardContent>
                     </Card>
+
+                    {isShabbat && (
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
+                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
+                                <img 
+                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-4.png"
+                                    alt="סעודת שבת"
+                                    className="max-w-full max-h-full object-contain"
+                                />
+                            </div>
+                            <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/10">
+                                <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
+                                    <span>✨ סעודת שבת</span>
+                                    <span className="text-oxygym-yellow text-xs sm:text-sm">שבת קודש</span>
+                                </CardTitle>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    💡 ארוחה זו מחליפה ארוחה אחת ביום
+                                </p>
+                            </CardHeader>
+                            <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
+                                <MealItem
+                                    name="דג מרוקאי + חלה + ירקות"
+                                    icon={ChickenIcon}
+                                    defaultAmount={400}
+                                    unit="גרם"
+                                    caloriesPer100g={180}
+                                    proteinPer100g={25}
+                                    carbsPer100g={15}
+                                    fatPer100g={5}
+                                    initialChecked={shabbatMealItems['דג מרוקאי + חלה + ירקות']?.checked || false}
+                                    initialAmount={shabbatMealItems['דג מרוקאי + חלה + ירקות']?.amount}
+                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
+                                        handleMealItemToggle(setShabbatMealData, setShabbatMealItems, 'דג מרוקאי + חלה + ירקות', checked, amount, cals, prot, crbs, ft)
+                                    }
+                                />
+                                <MealItem
+                                    name="כרעיים + אורז + ירקות"
+                                    icon={ChickenIcon}
+                                    defaultAmount={400}
+                                    unit="גרם"
+                                    caloriesPer100g={200}
+                                    proteinPer100g={28}
+                                    carbsPer100g={18}
+                                    fatPer100g={6}
+                                    initialChecked={shabbatMealItems['כרעיים + אורז + ירקות']?.checked || false}
+                                    initialAmount={shabbatMealItems['כרעיים + אורז + ירקות']?.amount}
+                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
+                                        handleMealItemToggle(setShabbatMealData, setShabbatMealItems, 'כרעיים + אורז + ירקות', checked, amount, cals, prot, crbs, ft)
+                                    }
+                                />
+                                <MealItem
+                                    name="סלמון + בטטה + ירקות"
+                                    icon={ChickenIcon}
+                                    defaultAmount={400}
+                                    unit="גרם"
+                                    caloriesPer100g={190}
+                                    proteinPer100g={26}
+                                    carbsPer100g={16}
+                                    fatPer100g={7}
+                                    initialChecked={shabbatMealItems['סלמון + בטטה + ירקות']?.checked || false}
+                                    initialAmount={shabbatMealItems['סלמון + בטטה + ירקות']?.amount}
+                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
+                                        handleMealItemToggle(setShabbatMealData, setShabbatMealItems, 'סלמון + בטטה + ירקות', checked, amount, cals, prot, crbs, ft)
+                                    }
+                                />
+                                <MealItem
+                                    name="סינטה + בורגול + ירקות"
+                                    icon={ChickenIcon}
+                                    defaultAmount={400}
+                                    unit="גרם"
+                                    caloriesPer100g={185}
+                                    proteinPer100g={24}
+                                    carbsPer100g={17}
+                                    fatPer100g={5.5}
+                                    initialChecked={shabbatMealItems['סינטה + בורגול + ירקות']?.checked || false}
+                                    initialAmount={shabbatMealItems['סינטה + בורגול + ירקות']?.amount}
+                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
+                                        handleMealItemToggle(setShabbatMealData, setShabbatMealItems, 'סינטה + בורגול + ירקות', checked, amount, cals, prot, crbs, ft)
+                                    }
+                                />
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
         </div>
