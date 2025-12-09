@@ -52,6 +52,18 @@ const WorkoutC = () => {
         staleTime: 30000,
     });
 
+    const { data: lastWorkoutData } = useQuery({
+        queryKey: ['last-workout-log', 'C'],
+        queryFn: async () => {
+            const logs = await WorkoutLog.filter({ 
+                workout_type: 'C' 
+            }, '-date', 1);
+            console.log('Loaded last workout C:', logs);
+            return logs[0] || null;
+        },
+        staleTime: 60000,
+    });
+
     useEffect(() => {
         console.log('Date changed to:', selectedDate);
         isInitialLoadRef.current = true;
@@ -75,12 +87,28 @@ const WorkoutC = () => {
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
+        } else if (lastWorkoutData && lastWorkoutData.date !== selectedDate) {
+            const loadedData: any = {};
+            if (lastWorkoutData.exercises_completed) {
+                lastWorkoutData.exercises_completed.forEach((ex: any) => {
+                    loadedData[ex.name] = {
+                        sets: Array(exercises.find(e => e.name === ex.name)?.sets || 4).fill(null).map(() => ({ completed: false })),
+                        weight: ex.weight || 0,
+                        name: ex.name
+                    };
+                });
+            }
+            setExerciseData(loadedData);
+            console.log('Loaded weights from last workout:', loadedData);
+            setTimeout(() => {
+                isInitialLoadRef.current = false;
+            }, 100);
         } else {
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
         }
-    }, [selectedDate, workoutData]);
+    }, [selectedDate, workoutData, lastWorkoutData]);
 
     const autoSave = useCallback(async () => {
         if (isInitialLoadRef.current || !userMadeChangeRef.current) {
