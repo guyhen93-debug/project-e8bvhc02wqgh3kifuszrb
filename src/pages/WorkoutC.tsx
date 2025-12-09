@@ -115,6 +115,15 @@ const WorkoutC = () => {
             console.log('Skipping auto-save during initial load or no user changes');
             return;
         }
+
+        const hasAnyCompletedSet = Object.values(exerciseData).some((data: any) => 
+            data.sets && data.sets.some((set: any) => set.completed)
+        );
+
+        if (!hasAnyCompletedSet && cardioMinutes === 0) {
+            console.log('Skipping auto-save - no completed sets and no cardio');
+            return;
+        }
         
         try {
             setSaving(true);
