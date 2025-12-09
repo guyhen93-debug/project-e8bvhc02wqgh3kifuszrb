@@ -5,45 +5,51 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { User } from '@/entities';
+import { UserProfile } from '@/entities';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const ProfileForm = () => {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
-    const [gender, setGender] = useState('');
+    const [gender, setGender] = useState('זכר');
     const [age, setAge] = useState('');
     const [height, setHeight] = useState('');
-    const [goal, setGoal] = useState('');
+    const [goal, setGoal] = useState('מסה');
     const [saving, setSaving] = useState(false);
 
-    const { data: currentUser } = useQuery({
-        queryKey: ['current-user'],
+    const { data: existingProfile, isLoading } = useQuery({
+        queryKey: ['user-profile'],
         queryFn: async () => {
             try {
-                const user = await User.me();
-                return user;
+                const profiles = await UserProfile.list();
+                console.log('Checking for existing profile:', profiles);
+                return profiles && profiles.length > 0 ? profiles[0] : null;
             } catch (error) {
-                console.error('Error loading user:', error);
+                console.error('Error loading profile:', error);
                 return null;
             }
         },
+        staleTime: Infinity,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
     });
 
     useEffect(() => {
-        if (currentUser) {
-            const hasProfile = currentUser.gender && currentUser.age && currentUser.height && currentUser.goal;
-            if (!hasProfile) {
+        if (!isLoading) {
+            if (!existingProfile) {
+                console.log('No profile found, opening dialog');
                 setOpen(true);
+            } else {
+                console.log('Profile exists:', existingProfile);
+                setOpen(false);
+                if (existingProfile.gender) setGender(existingProfile.gender);
+                if (existingProfile.age) setAge(String(existingProfile.age));
+                if (existingProfile.height) setHeight(String(existingProfile.height));
+                if (existingProfile.goal) setGoal(existingProfile.goal);
             }
-            
-            if (currentUser.gender) setGender(currentUser.gender);
-            if (currentUser.age) setAge(String(currentUser.age));
-            if (currentUser.height) setHeight(String(currentUser.height));
-            if (currentUser.goal) setGoal(currentUser.goal);
         }
-    }, [currentUser]);
+    }, [existingProfile, isLoading]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,19 +66,21 @@ export const ProfileForm = () => {
         try {
             setSaving(true);
             
-            await User.updateProfile({
+            await UserProfile.create({
                 gender,
                 age: parseInt(age),
                 height: parseInt(height),
                 goal,
             });
 
+            console.log('Profile saved successfully');
+
             toast({
                 title: '✅ הפרטים נשמרו בהצלחה',
                 description: 'הפרופיל שלך עודכן',
             });
 
-            queryClient.invalidateQueries({ queryKey: ['current-user'] });
+            queryClient.invalidateQueries({ queryKey: ['user-profile'] });
             setOpen(false);
         } catch (error) {
             console.error('Error saving profile:', error);
@@ -85,6 +93,10 @@ export const ProfileForm = () => {
             setSaving(false);
         }
     };
+
+    if (isLoading) {
+        return null;
+    }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
