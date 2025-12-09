@@ -17,6 +17,7 @@ export const ProfileForm = () => {
     const [height, setHeight] = useState('');
     const [goal, setGoal] = useState('מסה');
     const [saving, setSaving] = useState(false);
+    const [hasChecked, setHasChecked] = useState(false);
 
     const { data: existingProfile, isLoading } = useQuery({
         queryKey: ['user-profile'],
@@ -36,20 +37,25 @@ export const ProfileForm = () => {
     });
 
     useEffect(() => {
-        if (!isLoading) {
-            if (!existingProfile) {
+        if (!isLoading && !hasChecked) {
+            const profileCompleted = localStorage.getItem('oxygym-profile-completed');
+            
+            if (!existingProfile && !profileCompleted) {
                 console.log('No profile found, opening dialog');
                 setOpen(true);
             } else {
-                console.log('Profile exists:', existingProfile);
+                console.log('Profile exists or already completed:', existingProfile);
                 setOpen(false);
-                if (existingProfile.gender) setGender(existingProfile.gender);
-                if (existingProfile.age) setAge(String(existingProfile.age));
-                if (existingProfile.height) setHeight(String(existingProfile.height));
-                if (existingProfile.goal) setGoal(existingProfile.goal);
+                if (existingProfile) {
+                    if (existingProfile.gender) setGender(existingProfile.gender);
+                    if (existingProfile.age) setAge(String(existingProfile.age));
+                    if (existingProfile.height) setHeight(String(existingProfile.height));
+                    if (existingProfile.goal) setGoal(existingProfile.goal);
+                }
             }
+            setHasChecked(true);
         }
-    }, [existingProfile, isLoading]);
+    }, [existingProfile, isLoading, hasChecked]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,6 +80,8 @@ export const ProfileForm = () => {
             });
 
             console.log('Profile saved successfully');
+            
+            localStorage.setItem('oxygym-profile-completed', 'true');
 
             toast({
                 title: '✅ הפרטים נשמרו בהצלחה',
@@ -94,12 +102,19 @@ export const ProfileForm = () => {
         }
     };
 
+    const handleClose = (newOpen: boolean) => {
+        if (!newOpen) {
+            localStorage.setItem('oxygym-profile-completed', 'true');
+        }
+        setOpen(newOpen);
+    };
+
     if (isLoading) {
         return null;
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="bg-oxygym-darkGrey border-border text-white max-w-md">
                 <DialogHeader>
                     <DialogTitle className="text-2xl text-center text-oxygym-yellow">
