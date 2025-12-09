@@ -5,7 +5,7 @@ import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckSquare } from 'lucide-react';
 import { BreadIcon } from '@/components/icons/BreadIcon';
 import { ChickenIcon } from '@/components/icons/ChickenIcon';
 import { VegetablesIcon } from '@/components/icons/VegetablesIcon';
@@ -40,6 +40,17 @@ interface MealItemSelection {
     checked: boolean;
 }
 
+interface MealItemDefinition {
+    name: string;
+    icon: React.ComponentType<{ className?: string }>;
+    defaultAmount: number;
+    unit: string;
+    caloriesPer100g: number;
+    proteinPer100g: number;
+    carbsPer100g: number;
+    fatPer100g: number;
+}
+
 const Nutrition = () => {
     const { toast } = useToast();
     const { selectedDate, isToday } = useDate();
@@ -58,11 +69,16 @@ const Nutrition = () => {
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
 
+    const currentMenuType = isShabbatMenu ? 'shabbat' : 'weekday';
+
     const { data: selectedDateMeals, isLoading, isError, error, refetch } = useQuery({
-        queryKey: ['nutrition-logs', selectedDate],
+        queryKey: ['nutrition-logs', selectedDate, currentMenuType],
         queryFn: async () => {
-            const logs = await NutritionLog.filter({ date: selectedDate });
-            console.log('Loaded nutrition logs for date:', selectedDate, logs);
+            const logs = await NutritionLog.filter({ 
+                date: selectedDate,
+                menu_type: currentMenuType 
+            });
+            console.log('Loaded nutrition logs for date:', selectedDate, 'menu type:', currentMenuType, logs);
             return logs;
         },
         retry: 3,
@@ -73,7 +89,7 @@ const Nutrition = () => {
     });
 
     useEffect(() => {
-        console.log('Date changed to:', selectedDate);
+        console.log('Date or menu type changed to:', selectedDate, currentMenuType);
         isInitialLoadRef.current = true;
         userMadeChangeRef.current = false;
         
@@ -128,7 +144,7 @@ const Nutrition = () => {
                 isInitialLoadRef.current = false;
             }, 100);
         }
-    }, [selectedDate, selectedDateMeals]);
+    }, [selectedDate, currentMenuType, selectedDateMeals]);
 
     const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories;
     const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein;
@@ -144,7 +160,10 @@ const Nutrition = () => {
         try {
             setSaving(true);
 
-            const existingLogs = await NutritionLog.filter({ date: selectedDate });
+            const existingLogs = await NutritionLog.filter({ 
+                date: selectedDate,
+                menu_type: currentMenuType 
+            });
             for (const log of existingLogs) {
                 await NutritionLog.delete(log.id);
             }
@@ -165,10 +184,11 @@ const Nutrition = () => {
                             amount: item.amount
                         }));
 
-                    console.log(`Auto-saving meal ${meal.number} with items:`, itemsConsumed);
+                    console.log(`Auto-saving meal ${meal.number} (${currentMenuType}) with items:`, itemsConsumed);
 
                     await NutritionLog.create({
                         date: selectedDate,
+                        menu_type: currentMenuType,
                         meal_number: meal.number,
                         items_consumed: itemsConsumed,
                         total_calories: meal.data.calories,
@@ -239,6 +259,78 @@ const Nutrition = () => {
             }
         });
     };
+
+    const selectAllMealItems = (mealItems: MealItemDefinition[], itemsSetter: React.Dispatch<React.SetStateAction<Record<string, MealItemSelection>>>, mealSetter: React.Dispatch<React.SetStateAction<MealData>>) => {
+        userMadeChangeRef.current = true;
+
+        let totalCalories = 0;
+        let totalProtein = 0;
+        let totalCarbs = 0;
+        let totalFat = 0;
+
+        const newItems: Record<string, MealItemSelection> = {};
+
+        mealItems.forEach(item => {
+            const multiplier = item.defaultAmount / 100;
+            totalCalories += item.caloriesPer100g * multiplier;
+            totalProtein += item.proteinPer100g * multiplier;
+            totalCarbs += item.carbsPer100g * multiplier;
+            totalFat += item.fatPer100g * multiplier;
+
+            newItems[item.name] = {
+                name: item.name,
+                amount: item.defaultAmount,
+                checked: true
+            };
+        });
+
+        itemsSetter(newItems);
+        mealSetter({
+            calories: totalCalories,
+            protein: totalProtein,
+            carbs: totalCarbs,
+            fat: totalFat
+        });
+    };
+
+    const weekdayMeal1Items: MealItemDefinition[] = [
+        { name: 'לחם כוסמין', icon: BreadIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 216, proteinPer100g: 11.9, carbsPer100g: 47.6, fatPer100g: 1.9 },
+        { name: 'גבינה לבנה 5%', icon: CheeseIcon, defaultAmount: 100, unit: 'גרם', caloriesPer100g: 98, proteinPer100g: 9, carbsPer100g: 4.3, fatPer100g: 5 },
+        { name: 'ביצים', icon: EggsIcon, defaultAmount: 136, unit: 'גרם (2 ביצים)', caloriesPer100g: 155, proteinPer100g: 13, carbsPer100g: 1.1, fatPer100g: 11 },
+        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
+    ];
+
+    const weekdayMeal4Items: MealItemDefinition[] = [
+        { name: 'חזה עוף', icon: ChickenIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
+        { name: 'אורז לבן', icon: RiceIcon, defaultAmount: 175, unit: 'גרם (לפני בישול)', caloriesPer100g: 130, proteinPer100g: 2.7, carbsPer100g: 28, fatPer100g: 0.3 },
+        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
+    ];
+
+    const shabbatMeal1Items: MealItemDefinition[] = [
+        { name: 'חלה לשבת', icon: ChallaIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 280, proteinPer100g: 8, carbsPer100g: 52, fatPer100g: 4.5 },
+        { name: 'דג מרוקאי', icon: MoroccanFishIcon, defaultAmount: 250, unit: 'גרם', caloriesPer100g: 140, proteinPer100g: 20, carbsPer100g: 8, fatPer100g: 3.5 },
+        { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 120, proteinPer100g: 4, carbsPer100g: 22, fatPer100g: 2 },
+        { name: 'ירקות מוקפצים', icon: RoastedVegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+    ];
+
+    const shabbatMeal2Items: MealItemDefinition[] = [
+        { name: 'חלה לשבת', icon: ChallaIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 280, proteinPer100g: 8, carbsPer100g: 52, fatPer100g: 4.5 },
+        { name: 'כרעיי עוף', icon: ChickenDrumstickIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 220, proteinPer100g: 28, carbsPer100g: 0, fatPer100g: 12 },
+        { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 120, proteinPer100g: 4, carbsPer100g: 22, fatPer100g: 2 },
+        { name: 'ירקות בתנור', icon: RoastedVegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+    ];
+
+    const shabbatMeal3Items: MealItemDefinition[] = [
+        { name: 'פילה סלמון', icon: SalmonIcon, defaultAmount: 180, unit: 'גרם', caloriesPer100g: 208, proteinPer100g: 20, carbsPer100g: 0, fatPer100g: 13 },
+        { name: 'בטטה', icon: SweetPotatoIcon, defaultAmount: 250, unit: 'גרם', caloriesPer100g: 86, proteinPer100g: 1.6, carbsPer100g: 20, fatPer100g: 0.1 },
+        { name: 'ירקות בתנור', icon: RoastedVegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+    ];
+
+    const shabbatMeal4Items: MealItemDefinition[] = [
+        { name: 'סטייק סינטה', icon: SteakIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 271, proteinPer100g: 26, carbsPer100g: 0, fatPer100g: 18 },
+        { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 120, proteinPer100g: 4, carbsPer100g: 22, fatPer100g: 2 },
+        { name: 'ירקות מוקפצים', icon: RoastedVegetablesIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+    ];
 
     if (isLoading || !dataLoaded) {
         return (
@@ -351,77 +443,47 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594587-1.png"
-                                    alt="ארוחת בוקר - לחם, גבינה, ביצים וירקות"
+                                    alt="ארוחת בוקר"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
-                                    <span>ארוחה 1</span>
-                                    <span className="text-oxygym-yellow text-xs sm:text-sm">עד 10:00</span>
-                                </CardTitle>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-white text-base sm:text-lg">
+                                        ארוחה 1
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            onClick={() => selectAllMealItems(weekdayMeal1Items, setMeal1Items, setMeal1Data)}
+                                            size="sm"
+                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                        >
+                                            <CheckSquare className="w-3 h-3 ml-1" />
+                                            סמן הכל
+                                        </Button>
+                                        <span className="text-oxygym-yellow text-xs sm:text-sm">עד 10:00</span>
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                <MealItem
-                                    name="לחם כוסמין"
-                                    icon={BreadIcon}
-                                    defaultAmount={168}
-                                    unit="גרם (4 פרוסות)"
-                                    caloriesPer100g={216}
-                                    proteinPer100g={11.9}
-                                    carbsPer100g={47.6}
-                                    fatPer100g={1.9}
-                                    initialChecked={meal1Items['לחם כוסמין']?.checked || false}
-                                    initialAmount={meal1Items['לחם כוסמין']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal1Data, setMeal1Items, 'לחם כוסמין', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="גבינה לבנה 5%"
-                                    icon={CheeseIcon}
-                                    defaultAmount={100}
-                                    unit="גרם"
-                                    caloriesPer100g={98}
-                                    proteinPer100g={9}
-                                    carbsPer100g={4.3}
-                                    fatPer100g={5}
-                                    initialChecked={meal1Items['גבינה לבנה 5%']?.checked || false}
-                                    initialAmount={meal1Items['גבינה לבנה 5%']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal1Data, setMeal1Items, 'גבינה לבנה 5%', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="ביצים"
-                                    icon={EggsIcon}
-                                    defaultAmount={136}
-                                    unit="גרם (2 ביצים)"
-                                    caloriesPer100g={155}
-                                    proteinPer100g={13}
-                                    carbsPer100g={1.1}
-                                    fatPer100g={11}
-                                    initialChecked={meal1Items['ביצים']?.checked || false}
-                                    initialAmount={meal1Items['ביצים']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal1Data, setMeal1Items, 'ביצים', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="ירקות"
-                                    icon={VegetablesIcon}
-                                    defaultAmount={200}
-                                    unit="גרם"
-                                    caloriesPer100g={30}
-                                    proteinPer100g={0.5}
-                                    carbsPer100g={6.5}
-                                    fatPer100g={0.2}
-                                    initialChecked={meal1Items['ירקות']?.checked || false}
-                                    initialAmount={meal1Items['ירקות']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal1Data, setMeal1Items, 'ירקות', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
+                                {weekdayMeal1Items.map(item => (
+                                    <MealItem
+                                        key={item.name}
+                                        name={item.name}
+                                        icon={item.icon}
+                                        defaultAmount={item.defaultAmount}
+                                        unit={item.unit}
+                                        caloriesPer100g={item.caloriesPer100g}
+                                        proteinPer100g={item.proteinPer100g}
+                                        carbsPer100g={item.carbsPer100g}
+                                        fatPer100g={item.fatPer100g}
+                                        initialChecked={meal1Items[item.name]?.checked || false}
+                                        initialAmount={meal1Items[item.name]?.amount}
+                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
+                                            handleMealItemToggle(setMeal1Data, setMeal1Items, item.name, checked, amount, cals, prot, crbs, ft)
+                                        }
+                                    />
+                                ))}
                             </CardContent>
                         </Card>
 
@@ -429,7 +491,7 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
-                                    alt="ארוחה 2 - גיינר עם מים"
+                                    alt="ארוחה 2"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
@@ -462,7 +524,7 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
-                                    alt="ארוחה 3 - גיינר עם מים"
+                                    alt="ארוחה 3"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
@@ -495,284 +557,245 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-4.png"
-                                    alt="ארוחה 4 - חזה עוף, אורז וירקות"
+                                    alt="ארוחה 4"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
-                                    <span>ארוחה 4</span>
-                                    <span className="text-oxygym-yellow text-xs sm:text-sm">עד 22:00</span>
-                                </CardTitle>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-white text-base sm:text-lg">
+                                        ארוחה 4
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            onClick={() => selectAllMealItems(weekdayMeal4Items, setMeal4Items, setMeal4Data)}
+                                            size="sm"
+                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                        >
+                                            <CheckSquare className="w-3 h-3 ml-1" />
+                                            סמן הכל
+                                        </Button>
+                                        <span className="text-oxygym-yellow text-xs sm:text-sm">עד 21:30</span>
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                <MealItem
-                                    name="חזה עוף"
-                                    icon={ChickenIcon}
-                                    defaultAmount={150}
-                                    unit="גרם"
-                                    caloriesPer100g={165}
-                                    proteinPer100g={31}
-                                    carbsPer100g={0}
-                                    fatPer100g={3.6}
-                                    initialChecked={meal4Items['חזה עוף']?.checked || false}
-                                    initialAmount={meal4Items['חזה עוף']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal4Data, setMeal4Items, 'חזה עוף', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="אורז לבן"
-                                    icon={RiceIcon}
-                                    defaultAmount={175}
-                                    unit="גרם (לפני בישול)"
-                                    caloriesPer100g={130}
-                                    proteinPer100g={2.7}
-                                    carbsPer100g={28}
-                                    fatPer100g={0.3}
-                                    initialChecked={meal4Items['אורז לבן']?.checked || false}
-                                    initialAmount={meal4Items['אורז לבן']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal4Data, setMeal4Items, 'אורז לבן', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="ירקות"
-                                    icon={VegetablesIcon}
-                                    defaultAmount={200}
-                                    unit="גרם"
-                                    caloriesPer100g={30}
-                                    proteinPer100g={0.5}
-                                    carbsPer100g={6.5}
-                                    fatPer100g={0.2}
-                                    initialChecked={meal4Items['ירקות']?.checked || false}
-                                    initialAmount={meal4Items['ירקות']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal4Data, setMeal4Items, 'ירקות', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
+                                {weekdayMeal4Items.map(item => (
+                                    <MealItem
+                                        key={item.name}
+                                        name={item.name}
+                                        icon={item.icon}
+                                        defaultAmount={item.defaultAmount}
+                                        unit={item.unit}
+                                        caloriesPer100g={item.caloriesPer100g}
+                                        proteinPer100g={item.proteinPer100g}
+                                        carbsPer100g={item.carbsPer100g}
+                                        fatPer100g={item.fatPer100g}
+                                        initialChecked={meal4Items[item.name]?.checked || false}
+                                        initialAmount={meal4Items[item.name]?.amount}
+                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
+                                            handleMealItemToggle(setMeal4Data, setMeal4Items, item.name, checked, amount, cals, prot, crbs, ft)
+                                        }
+                                    />
+                                ))}
                             </CardContent>
                         </Card>
                     </div>
                 ) : (
                     <div className="space-y-3 sm:space-y-4 mb-6">
-                        <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                            <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white text-base sm:text-lg">
-                                    ⭐ סעודה 1 - שבת
-                                </CardTitle>
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
+                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
+                                <img 
+                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765309536931-file.png"
+                                    alt="סעודה 1 שבת"
+                                    className="max-w-full max-h-full object-contain"
+                                />
+                            </div>
+                            <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-white text-base sm:text-lg flex items-center gap-2">
+                                        <span>⭐</span>
+                                        <span>סעודה 1 - שבת</span>
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            onClick={() => selectAllMealItems(shabbatMeal1Items, setMeal1Items, setMeal1Data)}
+                                            size="sm"
+                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                        >
+                                            <CheckSquare className="w-3 h-3 ml-1" />
+                                            סמן הכל
+                                        </Button>
+                                        <span className="text-oxygym-yellow text-xs sm:text-sm">ליל שבת</span>
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                <MealItem
-                                    name="דג מרוקאי"
-                                    icon={MoroccanFishIcon}
-                                    defaultAmount={200}
-                                    unit="גרם"
-                                    caloriesPer100g={120}
-                                    proteinPer100g={20}
-                                    carbsPer100g={3}
-                                    fatPer100g={3}
-                                    initialChecked={meal1Items['דג מרוקאי']?.checked || false}
-                                    initialAmount={meal1Items['דג מרוקאי']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal1Data, setMeal1Items, 'דג מרוקאי', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="חלה"
-                                    icon={ChallaIcon}
-                                    defaultAmount={100}
-                                    unit="גרם (2 פרוסות)"
-                                    caloriesPer100g={270}
-                                    proteinPer100g={8}
-                                    carbsPer100g={50}
-                                    fatPer100g={4}
-                                    initialChecked={meal1Items['חלה']?.checked || false}
-                                    initialAmount={meal1Items['חלה']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal1Data, setMeal1Items, 'חלה', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="ירקות"
-                                    icon={VegetablesIcon}
-                                    defaultAmount={150}
-                                    unit="גרם"
-                                    caloriesPer100g={35}
-                                    proteinPer100g={1}
-                                    carbsPer100g={7}
-                                    fatPer100g={0.3}
-                                    initialChecked={meal1Items['ירקות']?.checked || false}
-                                    initialAmount={meal1Items['ירקות']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal1Data, setMeal1Items, 'ירקות', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
+                                {shabbatMeal1Items.map(item => (
+                                    <MealItem
+                                        key={item.name}
+                                        name={item.name}
+                                        icon={item.icon}
+                                        defaultAmount={item.defaultAmount}
+                                        unit={item.unit}
+                                        caloriesPer100g={item.caloriesPer100g}
+                                        proteinPer100g={item.proteinPer100g}
+                                        carbsPer100g={item.carbsPer100g}
+                                        fatPer100g={item.fatPer100g}
+                                        initialChecked={meal1Items[item.name]?.checked || false}
+                                        initialAmount={meal1Items[item.name]?.amount}
+                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
+                                            handleMealItemToggle(setMeal1Data, setMeal1Items, item.name, checked, amount, cals, prot, crbs, ft)
+                                        }
+                                    />
+                                ))}
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                            <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white text-base sm:text-lg">
-                                    ⭐ סעודה 2 - שבת
-                                </CardTitle>
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
+                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
+                                <img 
+                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765309643430-file.png"
+                                    alt="סעודה 2 שבת"
+                                    className="max-w-full max-h-full object-contain"
+                                />
+                            </div>
+                            <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-white text-base sm:text-lg flex items-center gap-2">
+                                        <span>⭐</span>
+                                        <span>סעודה 2 - שבת</span>
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            onClick={() => selectAllMealItems(shabbatMeal2Items, setMeal2Items, setMeal2Data)}
+                                            size="sm"
+                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                        >
+                                            <CheckSquare className="w-3 h-3 ml-1" />
+                                            סמן הכל
+                                        </Button>
+                                        <span className="text-oxygym-yellow text-xs sm:text-sm">צהריים</span>
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                <MealItem
-                                    name="כרעיי עוף"
-                                    icon={ChickenDrumstickIcon}
-                                    defaultAmount={250}
-                                    unit="גרם (2 יחידות)"
-                                    caloriesPer100g={210}
-                                    proteinPer100g={26}
-                                    carbsPer100g={0}
-                                    fatPer100g={11}
-                                    initialChecked={meal2Items['כרעיי עוף']?.checked || false}
-                                    initialAmount={meal2Items['כרעיי עוף']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal2Data, setMeal2Items, 'כרעיי עוף', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="אורז (לפני בישול)"
-                                    icon={RiceIcon}
-                                    defaultAmount={175}
-                                    unit="גרם"
-                                    caloriesPer100g={130}
-                                    proteinPer100g={2.7}
-                                    carbsPer100g={28}
-                                    fatPer100g={0.3}
-                                    initialChecked={meal2Items['אורז (לפני בישול)']?.checked || false}
-                                    initialAmount={meal2Items['אורז (לפני בישול)']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal2Data, setMeal2Items, 'אורז (לפני בישול)', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="ירקות"
-                                    icon={VegetablesIcon}
-                                    defaultAmount={200}
-                                    unit="גרם"
-                                    caloriesPer100g={30}
-                                    proteinPer100g={0.5}
-                                    carbsPer100g={6.5}
-                                    fatPer100g={0.2}
-                                    initialChecked={meal2Items['ירקות']?.checked || false}
-                                    initialAmount={meal2Items['ירקות']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal2Data, setMeal2Items, 'ירקות', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
+                                {shabbatMeal2Items.map(item => (
+                                    <MealItem
+                                        key={item.name}
+                                        name={item.name}
+                                        icon={item.icon}
+                                        defaultAmount={item.defaultAmount}
+                                        unit={item.unit}
+                                        caloriesPer100g={item.caloriesPer100g}
+                                        proteinPer100g={item.proteinPer100g}
+                                        carbsPer100g={item.carbsPer100g}
+                                        fatPer100g={item.fatPer100g}
+                                        initialChecked={meal2Items[item.name]?.checked || false}
+                                        initialAmount={meal2Items[item.name]?.amount}
+                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
+                                            handleMealItemToggle(setMeal2Data, setMeal2Items, item.name, checked, amount, cals, prot, crbs, ft)
+                                        }
+                                    />
+                                ))}
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                            <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white text-base sm:text-lg">
-                                    ⭐ סעודה 3 - שבת
-                                </CardTitle>
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
+                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
+                                <img 
+                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765305123949-file.png"
+                                    alt="סעודה 3 שבת"
+                                    className="max-w-full max-h-full object-contain"
+                                />
+                            </div>
+                            <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-white text-base sm:text-lg flex items-center gap-2">
+                                        <span>⭐</span>
+                                        <span>סעודה 3 - שבת</span>
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            onClick={() => selectAllMealItems(shabbatMeal3Items, setMeal3Items, setMeal3Data)}
+                                            size="sm"
+                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                        >
+                                            <CheckSquare className="w-3 h-3 ml-1" />
+                                            סמן הכל
+                                        </Button>
+                                        <span className="text-oxygym-yellow text-xs sm:text-sm">סעודה שלישית</span>
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                <MealItem
-                                    name="פילה סלמון"
-                                    icon={SalmonIcon}
-                                    defaultAmount={180}
-                                    unit="גרם"
-                                    caloriesPer100g={208}
-                                    proteinPer100g={20}
-                                    carbsPer100g={0}
-                                    fatPer100g={13}
-                                    initialChecked={meal3Items['פילה סלמון']?.checked || false}
-                                    initialAmount={meal3Items['פילה סלמון']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal3Data, setMeal3Items, 'פילה סלמון', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="בטטה"
-                                    icon={SweetPotatoIcon}
-                                    defaultAmount={250}
-                                    unit="גרם"
-                                    caloriesPer100g={86}
-                                    proteinPer100g={1.6}
-                                    carbsPer100g={20}
-                                    fatPer100g={0.1}
-                                    initialChecked={meal3Items['בטטה']?.checked || false}
-                                    initialAmount={meal3Items['בטטה']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal3Data, setMeal3Items, 'בטטה', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="ירקות בתנור"
-                                    icon={RoastedVegetablesIcon}
-                                    defaultAmount={200}
-                                    unit="גרם"
-                                    caloriesPer100g={45}
-                                    proteinPer100g={1.5}
-                                    carbsPer100g={8}
-                                    fatPer100g={1}
-                                    initialChecked={meal3Items['ירקות בתנור']?.checked || false}
-                                    initialAmount={meal3Items['ירקות בתנור']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal3Data, setMeal3Items, 'ירקות בתנור', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
+                                {shabbatMeal3Items.map(item => (
+                                    <MealItem
+                                        key={item.name}
+                                        name={item.name}
+                                        icon={item.icon}
+                                        defaultAmount={item.defaultAmount}
+                                        unit={item.unit}
+                                        caloriesPer100g={item.caloriesPer100g}
+                                        proteinPer100g={item.proteinPer100g}
+                                        carbsPer100g={item.carbsPer100g}
+                                        fatPer100g={item.fatPer100g}
+                                        initialChecked={meal3Items[item.name]?.checked || false}
+                                        initialAmount={meal3Items[item.name]?.amount}
+                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
+                                            handleMealItemToggle(setMeal3Data, setMeal3Items, item.name, checked, amount, cals, prot, crbs, ft)
+                                        }
+                                    />
+                                ))}
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                            <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white text-base sm:text-lg">
-                                    ⭐ סעודה 4 - שבת
-                                </CardTitle>
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
+                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
+                                <img 
+                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765305527698-file.png"
+                                    alt="סעודה 4 שבת"
+                                    className="max-w-full max-h-full object-contain"
+                                />
+                            </div>
+                            <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-white text-base sm:text-lg flex items-center gap-2">
+                                        <span>⭐</span>
+                                        <span>סעודה 4 - שבת</span>
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            onClick={() => selectAllMealItems(shabbatMeal4Items, setMeal4Items, setMeal4Data)}
+                                            size="sm"
+                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                        >
+                                            <CheckSquare className="w-3 h-3 ml-1" />
+                                            סמן הכל
+                                        </Button>
+                                        <span className="text-oxygym-yellow text-xs sm:text-sm">מוצאי שבת</span>
+                                    </div>
+                                </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                <MealItem
-                                    name="סטייק סינטה"
-                                    icon={SteakIcon}
-                                    defaultAmount={200}
-                                    unit="גרם"
-                                    caloriesPer100g={271}
-                                    proteinPer100g={26}
-                                    carbsPer100g={0}
-                                    fatPer100g={18}
-                                    initialChecked={meal4Items['סטייק סינטה']?.checked || false}
-                                    initialAmount={meal4Items['סטייק סינטה']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal4Data, setMeal4Items, 'סטייק סינטה', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="סלט בורגול"
-                                    icon={BulgurSaladIcon}
-                                    defaultAmount={150}
-                                    unit="גרם"
-                                    caloriesPer100g={83}
-                                    proteinPer100g={3}
-                                    carbsPer100g={19}
-                                    fatPer100g={0.2}
-                                    initialChecked={meal4Items['סלט בורגול']?.checked || false}
-                                    initialAmount={meal4Items['סלט בורגול']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal4Data, setMeal4Items, 'סלט בורגול', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                                <MealItem
-                                    name="ירקות"
-                                    icon={VegetablesIcon}
-                                    defaultAmount={150}
-                                    unit="גרם"
-                                    caloriesPer100g={30}
-                                    proteinPer100g={0.5}
-                                    carbsPer100g={6.5}
-                                    fatPer100g={0.2}
-                                    initialChecked={meal4Items['ירקות']?.checked || false}
-                                    initialAmount={meal4Items['ירקות']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal4Data, setMeal4Items, 'ירקות', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
+                                {shabbatMeal4Items.map(item => (
+                                    <MealItem
+                                        key={item.name}
+                                        name={item.name}
+                                        icon={item.icon}
+                                        defaultAmount={item.defaultAmount}
+                                        unit={item.unit}
+                                        caloriesPer100g={item.caloriesPer100g}
+                                        proteinPer100g={item.proteinPer100g}
+                                        carbsPer100g={item.carbsPer100g}
+                                        fatPer100g={item.fatPer100g}
+                                        initialChecked={meal4Items[item.name]?.checked || false}
+                                        initialAmount={meal4Items[item.name]?.amount}
+                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
+                                            handleMealItemToggle(setMeal4Data, setMeal4Items, item.name, checked, amount, cals, prot, crbs, ft)
+                                        }
+                                    />
+                                ))}
                             </CardContent>
                         </Card>
                     </div>
