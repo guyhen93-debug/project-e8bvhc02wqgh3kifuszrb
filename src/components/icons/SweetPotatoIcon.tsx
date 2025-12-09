@@ -5,12 +5,11 @@ interface IconProps {
 export const SweetPotatoIcon = ({ className }: IconProps) => {
     return (
         <div className={`${className} flex items-center justify-center`}>
-            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <ellipse cx="50" cy="55" rx="30" ry="25" fill="#CD853F" stroke="#8B4513" strokeWidth="2"/>
-                <ellipse cx="45" cy="50" rx="5" ry="3" fill="#A0522D"/>
-                <ellipse cx="55" cy="53" rx="4" ry="2" fill="#A0522D"/>
-                <ellipse cx="50" cy="60" rx="4" ry="2" fill="#A0522D"/>
-            </svg>
+            <img 
+                src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765305234327-file.png"
+                alt="בטטה"
+                className="w-full h-full object-contain"
+            />
         </div>
     );
 };

@@ -324,6 +324,14 @@ const Nutrition = () => {
                     </div>
                 </div>
 
+                {isShabbatMenu && (
+                    <div className="mb-4 p-3 bg-oxygym-yellow/10 border border-oxygym-yellow rounded-lg">
+                        <p className="text-center text-xs sm:text-sm text-white font-semibold">
+                            💡 כל סעודת שבת מחליפה ארוחה אחת ביום החול
+                        </p>
+                    </div>
+                )}
+
                 <div className="mb-4 sm:mb-6">
                     <CalorieChart
                         protein={totalProtein}
@@ -550,9 +558,8 @@ const Nutrition = () => {
                     <div className="space-y-3 sm:space-y-4 mb-6">
                         <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
                             <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
-                                    <span>⭐ סעודה 1 - שבת</span>
-                                    <span className="text-oxygym-yellow text-xs sm:text-sm">בוקר</span>
+                                <CardTitle className="text-white text-base sm:text-lg">
+                                    ⭐ סעודה 1 - שבת
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
@@ -606,9 +613,8 @@ const Nutrition = () => {
 
                         <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
                             <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
-                                    <span>⭐ סעודה 2 - שבת</span>
-                                    <span className="text-oxygym-yellow text-xs sm:text-sm">צהריים</span>
+                                <CardTitle className="text-white text-base sm:text-lg">
+                                    ⭐ סעודה 2 - שבת
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
@@ -662,9 +668,8 @@ const Nutrition = () => {
 
                         <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
                             <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
-                                    <span>⭐ סעודה 3 - שבת</span>
-                                    <span className="text-oxygym-yellow text-xs sm:text-sm">ערב</span>
+                                <CardTitle className="text-white text-base sm:text-lg">
+                                    ⭐ סעודה 3 - שבת
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
@@ -718,9 +723,8 @@ const Nutrition = () => {
 
                         <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
                             <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
-                                    <span>⭐ סעודה 4 - שבת</span>
-                                    <span className="text-oxygym-yellow text-xs sm:text-sm">מוצ״ש</span>
+                                <CardTitle className="text-white text-base sm:text-lg">
+                                    ⭐ סעודה 4 - שבת
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
