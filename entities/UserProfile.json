@@ -1,0 +1,22 @@
+{
+  "name": "UserProfile",
+  "description": "פרטים אישיים של המשתמש",
+  "properties": {
+    "gender": {
+      "type": "string",
+      "description": "מין - זכר או נקבה"
+    },
+    "age": {
+      "type": "number",
+      "description": "גיל"
+    },
+    "height": {
+      "type": "number",
+      "description": "גובה בס\"מ"
+    },
+    "goal": {
+      "type": "string",
+      "description": "מטרה - חיטוב או מסה"
+    }
+  }
+}

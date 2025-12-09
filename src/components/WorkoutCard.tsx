@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { WorkoutLog } from '@/entities';
 import { useQuery } from '@tanstack/react-query';
+import { useDate } from '@/contexts/DateContext';
 
 interface WorkoutCardProps {
     id: string;
@@ -14,14 +15,14 @@ interface WorkoutCardProps {
 
 export const WorkoutCard = ({ id, title, description, path, imageUrl }: WorkoutCardProps) => {
     const navigate = useNavigate();
-    const today = new Date().toISOString().split('T')[0];
+    const { selectedDate } = useDate();
 
     const { data: workoutData } = useQuery({
-        queryKey: ['workout-status', id, today],
+        queryKey: ['workout-status', id, selectedDate],
         queryFn: async () => {
             try {
                 const logs = await WorkoutLog.filter({ 
-                    date: today, 
+                    date: selectedDate, 
                     workout_type: id.toUpperCase() 
                 });
                 return logs[0] || null;

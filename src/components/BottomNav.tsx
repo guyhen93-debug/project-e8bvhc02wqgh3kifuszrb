@@ -17,7 +17,9 @@ export const BottomNav = () => {
             <div className="flex justify-around items-center h-16">
                 {tabs.map((tab) => {
                     const Icon = tab.icon;
-                    const isActive = location.pathname === tab.path;
+                    const isActive = tab.id === 'workouts' 
+                        ? location.pathname === tab.path || location.pathname.startsWith('/workout-')
+                        : location.pathname === tab.path;
                     
                     return (
                         <button

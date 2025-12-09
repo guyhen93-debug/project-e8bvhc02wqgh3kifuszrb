@@ -7,6 +7,7 @@ import { WeightDialog } from '@/components/WeightDialog';
 import { SleepTracker } from '@/components/SleepTracker';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
+import { ProfileSetup } from '@/components/ProfileSetup';
 import { WorkoutLog, NutritionLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
 
@@ -65,6 +66,7 @@ const Index = () => {
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-20">
+            <ProfileSetup />
             <div className="container mx-auto px-4 py-8 max-w-3xl">
                 <div className="flex items-center justify-center mb-4">
                     <img 

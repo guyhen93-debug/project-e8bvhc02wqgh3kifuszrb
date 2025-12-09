@@ -5,6 +5,7 @@ import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
+import { ShabbatMealCard } from '@/components/ShabbatMealCard';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { BreadIcon } from '@/components/icons/BreadIcon';
 import { ChickenIcon } from '@/components/icons/ChickenIcon';
@@ -61,6 +62,12 @@ const Nutrition = () => {
         refetchOnReconnect: true,
         staleTime: 30000,
     });
+
+    const isShabbat = () => {
+        const date = new Date(selectedDate);
+        const dayOfWeek = date.getDay();
+        return dayOfWeek === 5 || dayOfWeek === 6;
+    };
 
     useEffect(() => {
         console.log('Date changed to:', selectedDate);
@@ -301,6 +308,12 @@ const Nutrition = () => {
                 <div className="mb-4 sm:mb-6">
                     <WaterTracker />
                 </div>
+
+                {isShabbat() && (
+                    <div className="mb-4 sm:mb-6">
+                        <ShabbatMealCard />
+                    </div>
+                )}
 
                 <div className="space-y-3 sm:space-y-4 mb-6">
                     <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
