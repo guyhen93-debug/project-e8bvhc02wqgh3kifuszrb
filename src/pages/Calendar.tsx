@@ -12,7 +12,7 @@ const Calendar = () => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
     const { data: workoutLogs } = useQuery({
-        queryKey: ['workout-logs'],
+        queryKey: ['workout-logs-calendar'],
         queryFn: async () => {
             try {
                 return await WorkoutLog.list('-date', 100);
@@ -21,12 +21,14 @@ const Calendar = () => {
                 return [];
             }
         },
-        refetchInterval: 3000,
-        staleTime: 1000,
+        staleTime: 30000,
+        refetchOnWindowFocus: false,
+        retry: 2,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     });
 
     const { data: nutritionLogs } = useQuery({
-        queryKey: ['nutrition-logs'],
+        queryKey: ['nutrition-logs-calendar'],
         queryFn: async () => {
             try {
                 return await NutritionLog.list('-date', 100);
@@ -35,12 +37,14 @@ const Calendar = () => {
                 return [];
             }
         },
-        refetchInterval: 3000,
-        staleTime: 1000,
+        staleTime: 30000,
+        refetchOnWindowFocus: false,
+        retry: 2,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     });
 
     const { data: weightLogs } = useQuery({
-        queryKey: ['weight-logs'],
+        queryKey: ['weight-logs-calendar'],
         queryFn: async () => {
             try {
                 return await WeightLog.list('-date', 100);
@@ -49,8 +53,10 @@ const Calendar = () => {
                 return [];
             }
         },
-        refetchInterval: 3000,
-        staleTime: 1000,
+        staleTime: 30000,
+        refetchOnWindowFocus: false,
+        retry: 2,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     });
 
     const getDaysInMonth = (date: Date) => {
