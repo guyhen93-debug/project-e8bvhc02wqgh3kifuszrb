@@ -570,8 +570,8 @@ const Nutrition = () => {
                                         proteinPer100g={item.proteinPer100g}
                                         carbsPer100g={item.carbsPer100g}
                                         fatPer100g={item.fatPer100g}
-                                        checked={currentMeals[1].items[item.name]?.checked || false}
-                                        amount={currentMeals[1].items[item.name]?.amount || item.defaultAmount}
+                                        initialChecked={currentMeals[1].items[item.name]?.checked || false}
+                                        initialAmount={currentMeals[1].items[item.name]?.amount}
                                         onToggle={(checked, amount, calories, protein, carbs, fat) =>
                                             handleMealItemToggle(1, item.name, checked, amount, calories, protein, carbs, fat)
                                         }
@@ -600,8 +600,8 @@ const Nutrition = () => {
                                         proteinPer100g={75}
                                         carbsPer100g={10}
                                         fatPer100g={5}
-                                        checked={currentMeals[2].items['שייקר חלבון']?.checked || false}
-                                        amount={currentMeals[2].items['שייקר חלבון']?.amount || 30}
+                                        initialChecked={currentMeals[2].items['שייקר חלבון']?.checked || false}
+                                        initialAmount={currentMeals[2].items['שייקר חלבון']?.amount}
                                         onToggle={(checked, amount, calories, protein, carbs, fat) =>
                                             handleMealItemToggle(2, 'שייקר חלבון', checked, amount, calories, protein, carbs, fat)
                                         }
@@ -630,8 +630,8 @@ const Nutrition = () => {
                                         proteinPer100g={75}
                                         carbsPer100g={10}
                                         fatPer100g={5}
-                                        checked={currentMeals[3].items['שייקר חלבון']?.checked || false}
-                                        amount={currentMeals[3].items['שייקר חלבון']?.amount || 30}
+                                        initialChecked={currentMeals[3].items['שייקר חלבון']?.checked || false}
+                                        initialAmount={currentMeals[3].items['שייקר חלבון']?.amount}
                                         onToggle={(checked, amount, calories, protein, carbs, fat) =>
                                             handleMealItemToggle(3, 'שייקר חלבון', checked, amount, calories, protein, carbs, fat)
                                         }
@@ -684,8 +684,8 @@ const Nutrition = () => {
                                         proteinPer100g={item.proteinPer100g}
                                         carbsPer100g={item.carbsPer100g}
                                         fatPer100g={item.fatPer100g}
-                                        checked={currentMeals[4].items[item.name]?.checked || false}
-                                        amount={currentMeals[4].items[item.name]?.amount || item.defaultAmount}
+                                        initialChecked={currentMeals[4].items[item.name]?.checked || false}
+                                        initialAmount={currentMeals[4].items[item.name]?.amount}
                                         onToggle={(checked, amount, calories, protein, carbs, fat) =>
                                             handleMealItemToggle(4, item.name, checked, amount, calories, protein, carbs, fat)
                                         }
@@ -743,8 +743,8 @@ const Nutrition = () => {
                                         proteinPer100g={item.proteinPer100g}
                                         carbsPer100g={item.carbsPer100g}
                                         fatPer100g={item.fatPer100g}
-                                        checked={currentMeals[1].items[item.name]?.checked || false}
-                                        amount={currentMeals[1].items[item.name]?.amount || item.defaultAmount}
+                                        initialChecked={currentMeals[1].items[item.name]?.checked || false}
+                                        initialAmount={currentMeals[1].items[item.name]?.amount}
                                         onToggle={(checked, amount, calories, protein, carbs, fat) =>
                                             handleMealItemToggle(1, item.name, checked, amount, calories, protein, carbs, fat)
                                         }
@@ -797,8 +797,8 @@ const Nutrition = () => {
                                         proteinPer100g={item.proteinPer100g}
                                         carbsPer100g={item.carbsPer100g}
                                         fatPer100g={item.fatPer100g}
-                                        checked={currentMeals[2].items[item.name]?.checked || false}
-                                        amount={currentMeals[2].items[item.name]?.amount || item.defaultAmount}
+                                        initialChecked={currentMeals[2].items[item.name]?.checked || false}
+                                        initialAmount={currentMeals[2].items[item.name]?.amount}
                                         onToggle={(checked, amount, calories, protein, carbs, fat) =>
                                             handleMealItemToggle(2, item.name, checked, amount, calories, protein, carbs, fat)
                                         }
@@ -851,8 +851,8 @@ const Nutrition = () => {
                                         proteinPer100g={item.proteinPer100g}
                                         carbsPer100g={item.carbsPer100g}
                                         fatPer100g={item.fatPer100g}
-                                        checked={currentMeals[3].items[item.name]?.checked || false}
-                                        amount={currentMeals[3].items[item.name]?.amount || item.defaultAmount}
+                                        initialChecked={currentMeals[3].items[item.name]?.checked || false}
+                                        initialAmount={currentMeals[3].items[item.name]?.amount}
                                         onToggle={(checked, amount, calories, protein, carbs, fat) =>
                                             handleMealItemToggle(3, item.name, checked, amount, calories, protein, carbs, fat)
                                         }
@@ -905,8 +905,8 @@ const Nutrition = () => {
                                         proteinPer100g={item.proteinPer100g}
                                         carbsPer100g={item.carbsPer100g}
                                         fatPer100g={item.fatPer100g}
-                                        checked={currentMeals[4].items[item.name]?.checked || false}
-                                        amount={currentMeals[4].items[item.name]?.amount || item.defaultAmount}
+                                        initialChecked={currentMeals[4].items[item.name]?.checked || false}
+                                        initialAmount={currentMeals[4].items[item.name]?.amount}
                                         onToggle={(checked, amount, calories, protein, carbs, fat) =>
                                             handleMealItemToggle(4, item.name, checked, amount, calories, protein, carbs, fat)
                                         }
@@ -942,16 +942,13 @@ const Nutrition = () => {
                             </div>
                         </div>
 
-                        <div className="h-[200px] sm:h-[250px]">
-                            <CalorieChart
-                                data={[
-                                    { name: 'ארוחה 1', calories: currentMeals[1].data.calories },
-                                    { name: 'ארוחה 2', calories: currentMeals[2].data.calories },
-                                    { name: 'ארוחה 3', calories: currentMeals[3].data.calories },
-                                    { name: 'ארוחה 4', calories: currentMeals[4].data.calories },
-                                ]}
-                            />
-                        </div>
+                        <CalorieChart
+                            protein={totals.protein}
+                            carbs={totals.carbs}
+                            fat={totals.fat}
+                            totalCalories={totals.calories}
+                            targetCalories={2409}
+                        />
                     </CardContent>
                 </Card>
 
