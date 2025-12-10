@@ -56,14 +56,27 @@ const Nutrition = () => {
     const { toast } = useToast();
     const { selectedDate, isToday } = useDate();
     const [isShabbatMenu, setIsShabbatMenu] = useState(false);
-    const [meal1Data, setMeal1Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [meal2Data, setMeal2Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [meal3Data, setMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [meal4Data, setMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [meal1Items, setMeal1Items] = useState<Record<string, MealItemSelection>>({});
-    const [meal2Items, setMeal2Items] = useState<Record<string, MealItemSelection>>({});
-    const [meal3Items, setMeal3Items] = useState<Record<string, MealItemSelection>>({});
-    const [meal4Items, setMeal4Items] = useState<Record<string, MealItemSelection>>({});
+    
+    // Weekday meals state
+    const [weekdayMeal1Data, setWeekdayMeal1Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [weekdayMeal2Data, setWeekdayMeal2Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [weekdayMeal3Data, setWeekdayMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [weekdayMeal4Data, setWeekdayMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [weekdayMeal1Items, setWeekdayMeal1Items] = useState<Record<string, MealItemSelection>>({});
+    const [weekdayMeal2Items, setWeekdayMeal2Items] = useState<Record<string, MealItemSelection>>({});
+    const [weekdayMeal3Items, setWeekdayMeal3Items] = useState<Record<string, MealItemSelection>>({});
+    const [weekdayMeal4Items, setWeekdayMeal4Items] = useState<Record<string, MealItemSelection>>({});
+
+    // Shabbat meals state
+    const [shabbatMeal1Data, setShabbatMeal1Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [shabbatMeal2Data, setShabbatMeal2Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [shabbatMeal3Data, setShabbatMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [shabbatMeal4Data, setShabbatMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const [shabbatMeal1Items, setShabbatMeal1Items] = useState<Record<string, MealItemSelection>>({});
+    const [shabbatMeal2Items, setShabbatMeal2Items] = useState<Record<string, MealItemSelection>>({});
+    const [shabbatMeal3Items, setShabbatMeal3Items] = useState<Record<string, MealItemSelection>>({});
+    const [shabbatMeal4Items, setShabbatMeal4Items] = useState<Record<string, MealItemSelection>>({});
+
     const [saving, setSaving] = useState(false);
     const [dataLoaded, setDataLoaded] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -71,6 +84,26 @@ const Nutrition = () => {
     const userMadeChangeRef = useRef(false);
 
     const currentMenuType = isShabbatMenu ? 'shabbat' : 'weekday';
+
+    // Display data based on current menu
+    const meal1Data = isShabbatMenu ? shabbatMeal1Data : weekdayMeal1Data;
+    const meal2Data = isShabbatMenu ? shabbatMeal2Data : weekdayMeal2Data;
+    const meal3Data = isShabbatMenu ? shabbatMeal3Data : weekdayMeal3Data;
+    const meal4Data = isShabbatMenu ? shabbatMeal4Data : weekdayMeal4Data;
+    const meal1Items = isShabbatMenu ? shabbatMeal1Items : weekdayMeal1Items;
+    const meal2Items = isShabbatMenu ? shabbatMeal2Items : weekdayMeal2Items;
+    const meal3Items = isShabbatMenu ? shabbatMeal3Items : weekdayMeal3Items;
+    const meal4Items = isShabbatMenu ? shabbatMeal4Items : weekdayMeal4Items;
+
+    // Setters based on current menu
+    const setMeal1Data = isShabbatMenu ? setShabbatMeal1Data : setWeekdayMeal1Data;
+    const setMeal2Data = isShabbatMenu ? setShabbatMeal2Data : setWeekdayMeal2Data;
+    const setMeal3Data = isShabbatMenu ? setShabbatMeal3Data : setWeekdayMeal3Data;
+    const setMeal4Data = isShabbatMenu ? setShabbatMeal4Data : setWeekdayMeal4Data;
+    const setMeal1Items = isShabbatMenu ? setShabbatMeal1Items : setWeekdayMeal1Items;
+    const setMeal2Items = isShabbatMenu ? setShabbatMeal2Items : setWeekdayMeal2Items;
+    const setMeal3Items = isShabbatMenu ? setShabbatMeal3Items : setWeekdayMeal3Items;
+    const setMeal4Items = isShabbatMenu ? setShabbatMeal4Items : setWeekdayMeal4Items;
 
     const { data: allDateMeals, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['nutrition-logs', selectedDate],
@@ -86,31 +119,43 @@ const Nutrition = () => {
         staleTime: 30000,
     });
 
-    const selectedDateMeals = allDateMeals?.filter((log: any) => log.menu_type === currentMenuType) || [];
-
+    // Load data from DB when date changes
     useEffect(() => {
-        console.log('Date or menu type changed to:', selectedDate, currentMenuType);
-        console.log('Filtered meals for current menu:', selectedDateMeals);
+        console.log('Date changed to:', selectedDate);
         isInitialLoadRef.current = true;
         userMadeChangeRef.current = false;
         
-        setMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setMeal2Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setMeal3Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setMeal4Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setMeal1Items({});
-        setMeal2Items({});
-        setMeal3Items({});
-        setMeal4Items({});
+        // Reset all states
+        setWeekdayMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setWeekdayMeal2Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setWeekdayMeal3Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setWeekdayMeal4Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setWeekdayMeal1Items({});
+        setWeekdayMeal2Items({});
+        setWeekdayMeal3Items({});
+        setWeekdayMeal4Items({});
+        
+        setShabbatMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setShabbatMeal2Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setShabbatMeal3Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setShabbatMeal4Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+        setShabbatMeal1Items({});
+        setShabbatMeal2Items({});
+        setShabbatMeal3Items({});
+        setShabbatMeal4Items({});
+        
         setDataLoaded(false);
         
-        if (selectedDateMeals && selectedDateMeals.length > 0) {
-            console.log('Processing loaded meals for', currentMenuType);
-            selectedDateMeals.forEach((log: any) => {
+        if (allDateMeals && allDateMeals.length > 0) {
+            console.log('Processing loaded meals for both menus');
+            
+            // Process weekday meals
+            const weekdayMeals = allDateMeals.filter((log: any) => log.menu_type === 'weekday');
+            weekdayMeals.forEach((log: any) => {
                 const items: Record<string, MealItemSelection> = {};
                 
                 if (log.items_consumed && Array.isArray(log.items_consumed) && log.items_consumed.length > 0) {
-                    console.log(`Meal ${log.meal_number} items from DB:`, log.items_consumed);
+                    console.log(`Weekday Meal ${log.meal_number} items from DB:`, log.items_consumed);
                     log.items_consumed.forEach((item: any) => {
                         items[item.name] = {
                             name: item.name,
@@ -122,8 +167,8 @@ const Nutrition = () => {
 
                 switch (log.meal_number) {
                     case 1:
-                        setMeal1Items(items);
-                        setMeal1Data({
+                        setWeekdayMeal1Items(items);
+                        setWeekdayMeal1Data({
                             calories: log.total_calories || 0,
                             protein: log.protein || 0,
                             carbs: log.carbs || 0,
@@ -131,8 +176,8 @@ const Nutrition = () => {
                         });
                         break;
                     case 2:
-                        setMeal2Items(items);
-                        setMeal2Data({
+                        setWeekdayMeal2Items(items);
+                        setWeekdayMeal2Data({
                             calories: log.total_calories || 0,
                             protein: log.protein || 0,
                             carbs: log.carbs || 0,
@@ -140,8 +185,8 @@ const Nutrition = () => {
                         });
                         break;
                     case 3:
-                        setMeal3Items(items);
-                        setMeal3Data({
+                        setWeekdayMeal3Items(items);
+                        setWeekdayMeal3Data({
                             calories: log.total_calories || 0,
                             protein: log.protein || 0,
                             carbs: log.carbs || 0,
@@ -149,8 +194,8 @@ const Nutrition = () => {
                         });
                         break;
                     case 4:
-                        setMeal4Items(items);
-                        setMeal4Data({
+                        setWeekdayMeal4Items(items);
+                        setWeekdayMeal4Data({
                             calories: log.total_calories || 0,
                             protein: log.protein || 0,
                             carbs: log.carbs || 0,
@@ -159,22 +204,86 @@ const Nutrition = () => {
                         break;
                 }
             });
-            setDataLoaded(true);
-            setTimeout(() => {
-                isInitialLoadRef.current = false;
-            }, 100);
-        } else {
-            setDataLoaded(true);
-            setTimeout(() => {
-                isInitialLoadRef.current = false;
-            }, 100);
-        }
-    }, [selectedDate, currentMenuType, allDateMeals]);
 
-    const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories;
-    const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein;
-    const totalCarbs = meal1Data.carbs + meal2Data.carbs + meal3Data.carbs + meal4Data.carbs;
-    const totalFat = meal1Data.fat + meal2Data.fat + meal3Data.fat + meal4Data.fat;
+            // Process shabbat meals
+            const shabbatMeals = allDateMeals.filter((log: any) => log.menu_type === 'shabbat');
+            shabbatMeals.forEach((log: any) => {
+                const items: Record<string, MealItemSelection> = {};
+                
+                if (log.items_consumed && Array.isArray(log.items_consumed) && log.items_consumed.length > 0) {
+                    console.log(`Shabbat Meal ${log.meal_number} items from DB:`, log.items_consumed);
+                    log.items_consumed.forEach((item: any) => {
+                        items[item.name] = {
+                            name: item.name,
+                            amount: item.amount,
+                            checked: true,
+                        };
+                    });
+                }
+
+                switch (log.meal_number) {
+                    case 1:
+                        setShabbatMeal1Items(items);
+                        setShabbatMeal1Data({
+                            calories: log.total_calories || 0,
+                            protein: log.protein || 0,
+                            carbs: log.carbs || 0,
+                            fat: log.fat || 0
+                        });
+                        break;
+                    case 2:
+                        setShabbatMeal2Items(items);
+                        setShabbatMeal2Data({
+                            calories: log.total_calories || 0,
+                            protein: log.protein || 0,
+                            carbs: log.carbs || 0,
+                            fat: log.fat || 0
+                        });
+                        break;
+                    case 3:
+                        setShabbatMeal3Items(items);
+                        setShabbatMeal3Data({
+                            calories: log.total_calories || 0,
+                            protein: log.protein || 0,
+                            carbs: log.carbs || 0,
+                            fat: log.fat || 0
+                        });
+                        break;
+                    case 4:
+                        setShabbatMeal4Items(items);
+                        setShabbatMeal4Data({
+                            calories: log.total_calories || 0,
+                            protein: log.protein || 0,
+                            carbs: log.carbs || 0,
+                            fat: log.fat || 0
+                        });
+                        break;
+                }
+            });
+        }
+        
+        setDataLoaded(true);
+        setTimeout(() => {
+            isInitialLoadRef.current = false;
+        }, 100);
+    }, [selectedDate, allDateMeals]);
+
+    // Calculate COMBINED totals from BOTH menus
+    const totalCalories = 
+        weekdayMeal1Data.calories + weekdayMeal2Data.calories + weekdayMeal3Data.calories + weekdayMeal4Data.calories +
+        shabbatMeal1Data.calories + shabbatMeal2Data.calories + shabbatMeal3Data.calories + shabbatMeal4Data.calories;
+    
+    const totalProtein = 
+        weekdayMeal1Data.protein + weekdayMeal2Data.protein + weekdayMeal3Data.protein + weekdayMeal4Data.protein +
+        shabbatMeal1Data.protein + shabbatMeal2Data.protein + shabbatMeal3Data.protein + shabbatMeal4Data.protein;
+    
+    const totalCarbs = 
+        weekdayMeal1Data.carbs + weekdayMeal2Data.carbs + weekdayMeal3Data.carbs + weekdayMeal4Data.carbs +
+        shabbatMeal1Data.carbs + shabbatMeal2Data.carbs + shabbatMeal3Data.carbs + shabbatMeal4Data.carbs;
+    
+    const totalFat = 
+        weekdayMeal1Data.fat + weekdayMeal2Data.fat + weekdayMeal3Data.fat + weekdayMeal4Data.fat +
+        shabbatMeal1Data.fat + shabbatMeal2Data.fat + shabbatMeal3Data.fat + shabbatMeal4Data.fat;
 
     const autoSave = async () => {
         if (isInitialLoadRef.current || !userMadeChangeRef.current) {
@@ -246,7 +355,13 @@ const Nutrition = () => {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [meal1Data, meal2Data, meal3Data, meal4Data, meal1Items, meal2Items, meal3Items, meal4Items, currentMenuType]);
+    }, [
+        weekdayMeal1Data, weekdayMeal2Data, weekdayMeal3Data, weekdayMeal4Data,
+        weekdayMeal1Items, weekdayMeal2Items, weekdayMeal3Items, weekdayMeal4Items,
+        shabbatMeal1Data, shabbatMeal2Data, shabbatMeal3Data, shabbatMeal4Data,
+        shabbatMeal1Items, shabbatMeal2Items, shabbatMeal3Items, shabbatMeal4Items,
+        currentMenuType
+    ]);
 
     const handleMealItemToggle = (
         mealSetter: React.Dispatch<React.SetStateAction<MealData>>,
