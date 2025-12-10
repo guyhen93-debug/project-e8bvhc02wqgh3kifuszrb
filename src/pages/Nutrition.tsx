@@ -478,10 +478,6 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594587-1.png"
                                     alt="ארוחת בוקר"
                                     className="max-w-full max-h-full object-contain"
-                                    onError={(e) => {
-                                        console.error('Failed to load image:', e.currentTarget.src);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4">
@@ -541,10 +537,6 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
                                     alt="ארוחה 2"
                                     className="max-w-full max-h-full object-contain"
-                                    onError={(e) => {
-                                        console.error('Failed to load image:', e.currentTarget.src);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4">
@@ -578,10 +570,6 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
                                     alt="ארוחה 3"
                                     className="max-w-full max-h-full object-contain"
-                                    onError={(e) => {
-                                        console.error('Failed to load image:', e.currentTarget.src);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4">
@@ -615,10 +603,6 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-4.png"
                                     alt="ארוחה 4"
                                     className="max-w-full max-h-full object-contain"
-                                    onError={(e) => {
-                                        console.error('Failed to load image:', e.currentTarget.src);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4">
@@ -675,16 +659,8 @@ const Nutrition = () => {
                 ) : (
                     <div className="space-y-3 sm:space-y-4 mb-6">
                         <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765309536931-file.png"
-                                    alt="סעודה 1 שבת - דג מרוקאי, חלה, ירקות"
-                                    className="max-w-full max-h-full object-contain"
-                                    onError={(e) => {
-                                        console.error('Failed to load Shabbat image 1:', e.currentTarget.src);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
-                                />
+                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center p-2">
+                                <div className="text-6xl">🐟</div>
                             </div>
                             <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
                                 <div className="flex items-center justify-between">
@@ -739,16 +715,8 @@ const Nutrition = () => {
                         </Card>
 
                         <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765309643430-file.png"
-                                    alt="סעודה 2 שבת - כרעיי עוף, אורז, ירקות"
-                                    className="max-w-full max-h-full object-contain"
-                                    onError={(e) => {
-                                        console.error('Failed to load Shabbat image 2:', e.currentTarget.src);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
-                                />
+                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center p-2">
+                                <div className="text-6xl">🍗</div>
                             </div>
                             <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
                                 <div className="flex items-center justify-between">
@@ -803,16 +771,8 @@ const Nutrition = () => {
                         </Card>
 
                         <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765305123949-file.png"
-                                    alt="סעודה 3 שבת - סלמון, בטטה, ירקות"
-                                    className="max-w-full max-h-full object-contain"
-                                    onError={(e) => {
-                                        console.error('Failed to load Shabbat image 3:', e.currentTarget.src);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
-                                />
+                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-gradient-to-br from-pink-50 to-rose-100 flex items-center justify-center p-2">
+                                <div className="text-6xl">🐟</div>
                             </div>
                             <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
                                 <div className="flex items-center justify-between">
@@ -867,16 +827,8 @@ const Nutrition = () => {
                         </Card>
 
                         <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765305527698-file.png"
-                                    alt="סעודה 4 שבת - סטייק, סלט בורגול, ירקות"
-                                    className="max-w-full max-h-full object-contain"
-                                    onError={(e) => {
-                                        console.error('Failed to load Shabbat image 4:', e.currentTarget.src);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
-                                />
+                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-2">
+                                <div className="text-6xl">🥩</div>
                             </div>
                             <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
                                 <div className="flex items-center justify-between">
