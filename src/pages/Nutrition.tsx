@@ -122,15 +122,39 @@ const Nutrition = () => {
                 switch (log.meal_number) {
                     case 1:
                         setMeal1Items(items);
+                        setMeal1Data({
+                            calories: log.total_calories || 0,
+                            protein: log.protein || 0,
+                            carbs: log.carbs || 0,
+                            fat: log.fat || 0
+                        });
                         break;
                     case 2:
                         setMeal2Items(items);
+                        setMeal2Data({
+                            calories: log.total_calories || 0,
+                            protein: log.protein || 0,
+                            carbs: log.carbs || 0,
+                            fat: log.fat || 0
+                        });
                         break;
                     case 3:
                         setMeal3Items(items);
+                        setMeal3Data({
+                            calories: log.total_calories || 0,
+                            protein: log.protein || 0,
+                            carbs: log.carbs || 0,
+                            fat: log.fat || 0
+                        });
                         break;
                     case 4:
                         setMeal4Items(items);
+                        setMeal4Data({
+                            calories: log.total_calories || 0,
+                            protein: log.protein || 0,
+                            carbs: log.carbs || 0,
+                            fat: log.fat || 0
+                        });
                         break;
                 }
             });
@@ -221,7 +245,7 @@ const Nutrition = () => {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [meal1Data, meal2Data, meal3Data, meal4Data, meal1Items, meal2Items, meal3Items, meal4Items]);
+    }, [meal1Data, meal2Data, meal3Data, meal4Data, meal1Items, meal2Items, meal3Items, meal4Items, currentMenuType]);
 
     const handleMealItemToggle = (
         mealSetter: React.Dispatch<React.SetStateAction<MealData>>,
@@ -312,34 +336,33 @@ const Nutrition = () => {
 
     const weekdayMeal4Items: MealItemDefinition[] = [
         { name: 'חזה עוף', icon: ChickenIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
-        { name: 'אורז לבן', icon: RiceIcon, defaultAmount: 175, unit: 'גרם (לפני בישול)', caloriesPer100g: 130, proteinPer100g: 2.7, carbsPer100g: 28, fatPer100g: 0.3 },
+        { name: 'אורז לבן', icon: RiceIcon, defaultAmount: 80, unit: 'גרם (לפני בישול)', caloriesPer100g: 349, proteinPer100g: 7.3, carbsPer100g: 78.5, fatPer100g: 0.7 },
         { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
     ];
 
     const shabbatMeal1Items: MealItemDefinition[] = [
-        { name: 'חלה לשבת', icon: ChallaIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 280, proteinPer100g: 8, carbsPer100g: 52, fatPer100g: 4.5 },
-        { name: 'דג מרוקאי', icon: MoroccanFishIcon, defaultAmount: 250, unit: 'גרם', caloriesPer100g: 140, proteinPer100g: 20, carbsPer100g: 8, fatPer100g: 3.5 },
-        { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 120, proteinPer100g: 4, carbsPer100g: 22, fatPer100g: 2 },
-        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+        { name: 'דג מרוקאי', icon: MoroccanFishIcon, defaultAmount: 160, unit: 'גרם (נתח דג)', caloriesPer100g: 128, proteinPer100g: 26, carbsPer100g: 0, fatPer100g: 2.7 },
+        { name: 'חלה', icon: ChallaIcon, defaultAmount: 100, unit: 'גרם (חלה קטנה)', caloriesPer100g: 239, proteinPer100g: 8, carbsPer100g: 48, fatPer100g: 1.7 },
+        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
     ];
 
     const shabbatMeal2Items: MealItemDefinition[] = [
-        { name: 'חלה לשבת', icon: ChallaIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 280, proteinPer100g: 8, carbsPer100g: 52, fatPer100g: 4.5 },
-        { name: 'כרעיי עוף', icon: ChickenDrumstickIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 220, proteinPer100g: 28, carbsPer100g: 0, fatPer100g: 12 },
-        { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 120, proteinPer100g: 4, carbsPer100g: 22, fatPer100g: 2 },
-        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+        { name: 'שוק עוף', icon: ChickenDrumstickIcon, defaultAmount: 70, unit: 'גרם', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
+        { name: 'ירך עוף', icon: ChickenDrumstickIcon, defaultAmount: 70, unit: 'גרם', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
+        { name: 'אורז', icon: RiceIcon, defaultAmount: 50, unit: 'גרם (לפני בישול)', caloriesPer100g: 349, proteinPer100g: 7.3, carbsPer100g: 78.5, fatPer100g: 0.7 },
+        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם (סלט)', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
     ];
 
     const shabbatMeal3Items: MealItemDefinition[] = [
-        { name: 'פילה סלמון', icon: SalmonIcon, defaultAmount: 180, unit: 'גרם', caloriesPer100g: 208, proteinPer100g: 20, carbsPer100g: 0, fatPer100g: 13 },
-        { name: 'בטטה', icon: SweetPotatoIcon, defaultAmount: 250, unit: 'גרם', caloriesPer100g: 86, proteinPer100g: 1.6, carbsPer100g: 20, fatPer100g: 0.1 },
-        { name: 'ירקות בתנור', icon: RoastedVegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+        { name: 'סלמון', icon: SalmonIcon, defaultAmount: 120, unit: 'גרם', caloriesPer100g: 203, proteinPer100g: 20.4, carbsPer100g: 0, fatPer100g: 13.4 },
+        { name: 'בטטה', icon: SweetPotatoIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 87, proteinPer100g: 1.6, carbsPer100g: 20, fatPer100g: 0.1 },
+        { name: 'ירקות בתנור', icon: RoastedVegetablesIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
     ];
 
     const shabbatMeal4Items: MealItemDefinition[] = [
-        { name: 'סטייק סינטה', icon: SteakIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 271, proteinPer100g: 26, carbsPer100g: 0, fatPer100g: 18 },
-        { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 120, proteinPer100g: 4, carbsPer100g: 22, fatPer100g: 2 },
-        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+        { name: 'סינטה', icon: SteakIcon, defaultAmount: 100, unit: 'גרם', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
+        { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 50, unit: 'גרם', caloriesPer100g: 364, proteinPer100g: 12, carbsPer100g: 76, fatPer100g: 1.3 },
+        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
     ];
 
     if (isLoading || !dataLoaded) {
@@ -607,7 +630,7 @@ const Nutrition = () => {
                                                 סמן הכל
                                             </Button>
                                         )}
-                                        <span className="text-oxygym-yellow text-xs sm:text-sm">עד 21:30</span>
+                                        <span className="text-oxygym-yellow text-xs sm:text-sm">עד 22:00</span>
                                     </div>
                                 </div>
                             </CardHeader>
@@ -639,7 +662,7 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765309536931-file.png"
-                                    alt="סעודה 1 שבת"
+                                    alt="סעודה 1 שבת - דג מרוקאי, חלה, ירקות"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
@@ -699,7 +722,7 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765309643430-file.png"
-                                    alt="סעודה 2 שבת"
+                                    alt="סעודה 2 שבת - כרעיי עוף, אורז, ירקות"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
@@ -759,7 +782,7 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765305123949-file.png"
-                                    alt="סעודה 3 שבת"
+                                    alt="סעודה 3 שבת - סלמון, בטטה, ירקות"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
@@ -819,7 +842,7 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765305527698-file.png"
-                                    alt="סעודה 4 שבת"
+                                    alt="סעודה 4 שבת - סטייק, סלט בורגול, ירקות"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
