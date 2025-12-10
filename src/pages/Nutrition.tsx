@@ -52,6 +52,44 @@ interface MealItemDefinition {
     fatPer100g: number;
 }
 
+// Meal definitions
+const WEEKDAY_MEAL_1_DEFINITIONS: MealItemDefinition[] = [
+    { name: 'לחם כוסמין', icon: BreadIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 216, proteinPer100g: 11.9, carbsPer100g: 47.6, fatPer100g: 1.9 },
+    { name: 'גבינה לבנה 5%', icon: CheeseIcon, defaultAmount: 100, unit: 'גרם', caloriesPer100g: 98, proteinPer100g: 9, carbsPer100g: 4.3, fatPer100g: 5 },
+    { name: 'ביצים', icon: EggsIcon, defaultAmount: 136, unit: 'גרם (2 ביצים)', caloriesPer100g: 155, proteinPer100g: 13, carbsPer100g: 1.1, fatPer100g: 11 },
+    { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
+];
+
+const WEEKDAY_MEAL_4_DEFINITIONS: MealItemDefinition[] = [
+    { name: 'חזה עוף', icon: ChickenIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
+    { name: 'אורז לבן', icon: RiceIcon, defaultAmount: 80, unit: 'גרם (לפני בישול)', caloriesPer100g: 349, proteinPer100g: 7.3, carbsPer100g: 78.5, fatPer100g: 0.7 },
+    { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
+];
+
+const SHABBAT_MEAL_1_DEFINITIONS: MealItemDefinition[] = [
+    { name: 'דג מרוקאי', icon: MoroccanFishIcon, defaultAmount: 160, unit: 'גרם (נתח דג)', caloriesPer100g: 128, proteinPer100g: 26, carbsPer100g: 0, fatPer100g: 2.7 },
+    { name: 'חלה', icon: ChallaIcon, defaultAmount: 100, unit: 'גרם (חלה קטנה)', caloriesPer100g: 239, proteinPer100g: 8, carbsPer100g: 48, fatPer100g: 1.7 },
+    { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
+];
+
+const SHABBAT_MEAL_2_DEFINITIONS: MealItemDefinition[] = [
+    { name: 'כרעיי עוף', icon: ChickenDrumstickIcon, defaultAmount: 140, unit: 'גרם (שוק + ירך)', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
+    { name: 'אורז', icon: RiceIcon, defaultAmount: 50, unit: 'גרם (לפני בישול)', caloriesPer100g: 349, proteinPer100g: 7.3, carbsPer100g: 78.5, fatPer100g: 0.7 },
+    { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם (סלט)', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
+];
+
+const SHABBAT_MEAL_3_DEFINITIONS: MealItemDefinition[] = [
+    { name: 'סלמון', icon: SalmonIcon, defaultAmount: 120, unit: 'גרם', caloriesPer100g: 203, proteinPer100g: 20.4, carbsPer100g: 0, fatPer100g: 13.4 },
+    { name: 'בטטה', icon: SweetPotatoIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 87, proteinPer100g: 1.6, carbsPer100g: 20, fatPer100g: 0.1 },
+    { name: 'ירקות בתנור', icon: RoastedVegetablesIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
+];
+
+const SHABBAT_MEAL_4_DEFINITIONS: MealItemDefinition[] = [
+    { name: 'סינטה', icon: SirloinSteakIcon, defaultAmount: 100, unit: 'גרם', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
+    { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 50, unit: 'גרם', caloriesPer100g: 364, proteinPer100g: 12, carbsPer100g: 76, fatPer100g: 1.3 },
+    { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
+];
+
 const Nutrition = () => {
     const { toast } = useToast();
     const { selectedDate, isToday } = useDate();
@@ -443,43 +481,6 @@ const Nutrition = () => {
         return mealItems.every(item => currentItems[item.name]?.checked === true);
     };
 
-    const weekdayMeal1Items: MealItemDefinition[] = [
-        { name: 'לחם כוסמין', icon: BreadIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 216, proteinPer100g: 11.9, carbsPer100g: 47.6, fatPer100g: 1.9 },
-        { name: 'גבינה לבנה 5%', icon: CheeseIcon, defaultAmount: 100, unit: 'גרם', caloriesPer100g: 98, proteinPer100g: 9, carbsPer100g: 4.3, fatPer100g: 5 },
-        { name: 'ביצים', icon: EggsIcon, defaultAmount: 136, unit: 'גרם (2 ביצים)', caloriesPer100g: 155, proteinPer100g: 13, carbsPer100g: 1.1, fatPer100g: 11 },
-        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
-    ];
-
-    const weekdayMeal4Items: MealItemDefinition[] = [
-        { name: 'חזה עוף', icon: ChickenIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6 },
-        { name: 'אורז לבן', icon: RiceIcon, defaultAmount: 80, unit: 'גרם (לפני בישול)', caloriesPer100g: 349, proteinPer100g: 7.3, carbsPer100g: 78.5, fatPer100g: 0.7 },
-        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
-    ];
-
-    const shabbatMeal1Items: MealItemDefinition[] = [
-        { name: 'דג מרוקאי', icon: MoroccanFishIcon, defaultAmount: 160, unit: 'גרם (נתח דג)', caloriesPer100g: 128, proteinPer100g: 26, carbsPer100g: 0, fatPer100g: 2.7 },
-        { name: 'חלה', icon: ChallaIcon, defaultAmount: 100, unit: 'גרם (חלה קטנה)', caloriesPer100g: 239, proteinPer100g: 8, carbsPer100g: 48, fatPer100g: 1.7 },
-        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
-    ];
-
-    const shabbatMeal2Items: MealItemDefinition[] = [
-        { name: 'כרעיי עוף', icon: ChickenDrumstickIcon, defaultAmount: 140, unit: 'גרם (שוק + ירך)', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
-        { name: 'אורז', icon: RiceIcon, defaultAmount: 50, unit: 'גרם (לפני בישול)', caloriesPer100g: 349, proteinPer100g: 7.3, carbsPer100g: 78.5, fatPer100g: 0.7 },
-        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם (סלט)', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
-    ];
-
-    const shabbatMeal3Items: MealItemDefinition[] = [
-        { name: 'סלמון', icon: SalmonIcon, defaultAmount: 120, unit: 'גרם', caloriesPer100g: 203, proteinPer100g: 20.4, carbsPer100g: 0, fatPer100g: 13.4 },
-        { name: 'בטטה', icon: SweetPotatoIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 87, proteinPer100g: 1.6, carbsPer100g: 20, fatPer100g: 0.1 },
-        { name: 'ירקות בתנור', icon: RoastedVegetablesIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
-    ];
-
-    const shabbatMeal4Items: MealItemDefinition[] = [
-        { name: 'סינטה', icon: SirloinSteakIcon, defaultAmount: 100, unit: 'גרם', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
-        { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 50, unit: 'גרם', caloriesPer100g: 364, proteinPer100g: 12, carbsPer100g: 76, fatPer100g: 1.3 },
-        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
-    ];
-
     if (isLoading || !dataLoaded) {
         return (
             <div className="min-h-screen bg-oxygym-dark flex items-center justify-center pb-20">
@@ -601,7 +602,7 @@ const Nutrition = () => {
                                         ארוחה 1
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        {isAllSelected(weekdayMeal1Items, meal1Items) ? (
+                                        {isAllSelected(WEEKDAY_MEAL_1_DEFINITIONS, meal1Items) ? (
                                             <Button
                                                 onClick={() => clearAllMealItems(setMeal1Items, setMeal1Data)}
                                                 size="sm"
@@ -612,7 +613,7 @@ const Nutrition = () => {
                                             </Button>
                                         ) : (
                                             <Button
-                                                onClick={() => selectAllMealItems(weekdayMeal1Items, setMeal1Items, setMeal1Data)}
+                                                onClick={() => selectAllMealItems(WEEKDAY_MEAL_1_DEFINITIONS, setMeal1Items, setMeal1Data)}
                                                 size="sm"
                                                 className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
                                             >
@@ -625,7 +626,7 @@ const Nutrition = () => {
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {weekdayMeal1Items.map(item => (
+                                {WEEKDAY_MEAL_1_DEFINITIONS.map(item => (
                                     <MealItem
                                         key={item.name}
                                         name={item.name}
@@ -726,7 +727,7 @@ const Nutrition = () => {
                                         ארוחה 4
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        {isAllSelected(weekdayMeal4Items, meal4Items) ? (
+                                        {isAllSelected(WEEKDAY_MEAL_4_DEFINITIONS, meal4Items) ? (
                                             <Button
                                                 onClick={() => clearAllMealItems(setMeal4Items, setMeal4Data)}
                                                 size="sm"
@@ -737,7 +738,7 @@ const Nutrition = () => {
                                             </Button>
                                         ) : (
                                             <Button
-                                                onClick={() => selectAllMealItems(weekdayMeal4Items, setMeal4Items, setMeal4Data)}
+                                                onClick={() => selectAllMealItems(WEEKDAY_MEAL_4_DEFINITIONS, setMeal4Items, setMeal4Data)}
                                                 size="sm"
                                                 className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
                                             >
@@ -750,7 +751,7 @@ const Nutrition = () => {
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {weekdayMeal4Items.map(item => (
+                                {WEEKDAY_MEAL_4_DEFINITIONS.map(item => (
                                     <MealItem
                                         key={item.name}
                                         name={item.name}
@@ -788,7 +789,7 @@ const Nutrition = () => {
                                         <span>סעודה 1 - שבת</span>
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        {isAllSelected(shabbatMeal1Items, meal1Items) ? (
+                                        {isAllSelected(SHABBAT_MEAL_1_DEFINITIONS, meal1Items) ? (
                                             <Button
                                                 onClick={() => clearAllMealItems(setMeal1Items, setMeal1Data)}
                                                 size="sm"
@@ -799,7 +800,7 @@ const Nutrition = () => {
                                             </Button>
                                         ) : (
                                             <Button
-                                                onClick={() => selectAllMealItems(shabbatMeal1Items, setMeal1Items, setMeal1Data)}
+                                                onClick={() => selectAllMealItems(SHABBAT_MEAL_1_DEFINITIONS, setMeal1Items, setMeal1Data)}
                                                 size="sm"
                                                 className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
                                             >
@@ -812,7 +813,7 @@ const Nutrition = () => {
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {shabbatMeal1Items.map(item => (
+                                {SHABBAT_MEAL_1_DEFINITIONS.map(item => (
                                     <MealItem
                                         key={item.name}
                                         name={item.name}
@@ -848,7 +849,7 @@ const Nutrition = () => {
                                         <span>סעודה 2 - שבת</span>
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        {isAllSelected(shabbatMeal2Items, meal2Items) ? (
+                                        {isAllSelected(SHABBAT_MEAL_2_DEFINITIONS, meal2Items) ? (
                                             <Button
                                                 onClick={() => clearAllMealItems(setMeal2Items, setMeal2Data)}
                                                 size="sm"
@@ -859,7 +860,7 @@ const Nutrition = () => {
                                             </Button>
                                         ) : (
                                             <Button
-                                                onClick={() => selectAllMealItems(shabbatMeal2Items, setMeal2Items, setMeal2Data)}
+                                                onClick={() => selectAllMealItems(SHABBAT_MEAL_2_DEFINITIONS, setMeal2Items, setMeal2Data)}
                                                 size="sm"
                                                 className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
                                             >
@@ -872,7 +873,7 @@ const Nutrition = () => {
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {shabbatMeal2Items.map(item => (
+                                {SHABBAT_MEAL_2_DEFINITIONS.map(item => (
                                     <MealItem
                                         key={item.name}
                                         name={item.name}
@@ -908,7 +909,7 @@ const Nutrition = () => {
                                         <span>סעודה 3 - שבת</span>
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        {isAllSelected(shabbatMeal3Items, meal3Items) ? (
+                                        {isAllSelected(SHABBAT_MEAL_3_DEFINITIONS, meal3Items) ? (
                                             <Button
                                                 onClick={() => clearAllMealItems(setMeal3Items, setMeal3Data)}
                                                 size="sm"
@@ -919,7 +920,7 @@ const Nutrition = () => {
                                             </Button>
                                         ) : (
                                             <Button
-                                                onClick={() => selectAllMealItems(shabbatMeal3Items, setMeal3Items, setMeal3Data)}
+                                                onClick={() => selectAllMealItems(SHABBAT_MEAL_3_DEFINITIONS, setMeal3Items, setMeal3Data)}
                                                 size="sm"
                                                 className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
                                             >
@@ -932,7 +933,7 @@ const Nutrition = () => {
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {shabbatMeal3Items.map(item => (
+                                {SHABBAT_MEAL_3_DEFINITIONS.map(item => (
                                     <MealItem
                                         key={item.name}
                                         name={item.name}
@@ -968,7 +969,7 @@ const Nutrition = () => {
                                         <span>סעודה 4 - שבת</span>
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        {isAllSelected(shabbatMeal4Items, meal4Items) ? (
+                                        {isAllSelected(SHABBAT_MEAL_4_DEFINITIONS, meal4Items) ? (
                                             <Button
                                                 onClick={() => clearAllMealItems(setMeal4Items, setMeal4Data)}
                                                 size="sm"
@@ -979,7 +980,7 @@ const Nutrition = () => {
                                             </Button>
                                         ) : (
                                             <Button
-                                                onClick={() => selectAllMealItems(shabbatMeal4Items, setMeal4Items, setMeal4Data)}
+                                                onClick={() => selectAllMealItems(SHABBAT_MEAL_4_DEFINITIONS, setMeal4Items, setMeal4Data)}
                                                 size="sm"
                                                 className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
                                             >
@@ -992,7 +993,7 @@ const Nutrition = () => {
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {shabbatMeal4Items.map(item => (
+                                {SHABBAT_MEAL_4_DEFINITIONS.map(item => (
                                     <MealItem
                                         key={item.name}
                                         name={item.name}
