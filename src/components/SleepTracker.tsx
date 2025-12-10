@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Moon, Plus, Minus, Check } from 'lucide-react';
 import { useDate } from '@/contexts/DateContext';
+import { SleepLog } from '@/entities';
+import { useQuery } from '@tanstack/react-query';
 
 export const SleepTracker = () => {
     const { selectedDate } = useDate();
@@ -13,32 +15,52 @@ export const SleepTracker = () => {
     const minTarget = 7;
     const maxTarget = 9;
 
+    const { data: sleepData, refetch } = useQuery({
+        queryKey: ['sleep-log', selectedDate],
+        queryFn: async () => {
+            const logs = await SleepLog.filter({ date: selectedDate });
+            return logs[0] || null;
+        },
+    });
+
     useEffect(() => {
-        const saved = localStorage.getItem(`sleep-${selectedDate}`);
-        if (saved) {
-            setHours(parseFloat(saved));
+        if (sleepData) {
+            setHours(sleepData.hours || 0);
         } else {
             setHours(0);
         }
-    }, [selectedDate]);
+    }, [sleepData, selectedDate]);
 
-    const handleAdd = () => {
+    const saveHours = async (newHours: number) => {
+        try {
+            if (sleepData) {
+                await SleepLog.update(sleepData.id, { hours: newHours });
+            } else {
+                await SleepLog.create({ date: selectedDate, hours: newHours });
+            }
+            refetch();
+        } catch (error) {
+            console.error('Error saving sleep log:', error);
+        }
+    };
+
+    const handleAdd = async () => {
         const newHours = Math.min(hours + 0.5, 12);
         setHours(newHours);
-        localStorage.setItem(`sleep-${selectedDate}`, newHours.toString());
+        await saveHours(newHours);
     };
 
-    const handleSubtract = () => {
+    const handleSubtract = async () => {
         const newHours = Math.max(hours - 0.5, 0);
         setHours(newHours);
-        localStorage.setItem(`sleep-${selectedDate}`, newHours.toString());
+        await saveHours(newHours);
     };
 
-    const handleInputSubmit = () => {
+    const handleInputSubmit = async () => {
         const value = parseFloat(inputValue);
         if (!isNaN(value) && value >= 0 && value <= 12) {
             setHours(value);
-            localStorage.setItem(`sleep-${selectedDate}`, value.toString());
+            await saveHours(value);
             setInputValue('');
             setShowInput(false);
         }

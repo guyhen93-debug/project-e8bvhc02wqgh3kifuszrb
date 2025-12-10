@@ -1,0 +1,14 @@
+{
+    "name": "SleepLog",
+    "description": "תיעוד שעות שינה יומי",
+    "properties": {
+        "date": {
+            "type": "string",
+            "description": "תאריך"
+        },
+        "hours": {
+            "type": "number",
+            "description": "שעות שינה"
+        }
+    }
+}

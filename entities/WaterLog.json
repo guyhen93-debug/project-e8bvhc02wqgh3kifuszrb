@@ -1,0 +1,14 @@
+{
+    "name": "WaterLog",
+    "description": "תיעוד שתיית מים יומי",
+    "properties": {
+        "date": {
+            "type": "string",
+            "description": "תאריך"
+        },
+        "glasses": {
+            "type": "number",
+            "description": "מספר כוסות (250 מ״ל כל אחת)"
+        }
+    }
+}

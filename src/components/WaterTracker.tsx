@@ -3,6 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Droplet, Plus, Minus } from 'lucide-react';
 import { useDate } from '@/contexts/DateContext';
+import { WaterLog } from '@/entities';
+import { useQuery } from '@tanstack/react-query';
 
 export const WaterTracker = () => {
     const { selectedDate } = useDate();
@@ -12,25 +14,52 @@ export const WaterTracker = () => {
     const totalLiters = (glasses * glassSize) / 1000;
     const targetLiters = 3;
 
+    const { data: waterData, refetch } = useQuery({
+        queryKey: ['water-log', selectedDate],
+        queryFn: async () => {
+            const logs = await WaterLog.filter({ date: selectedDate });
+            return logs[0] || null;
+        },
+    });
+
     useEffect(() => {
-        const saved = localStorage.getItem(`water-${selectedDate}`);
-        if (saved) {
-            setGlasses(parseInt(saved));
+        if (waterData) {
+            setGlasses(waterData.glasses || 0);
         } else {
             setGlasses(0);
         }
-    }, [selectedDate]);
+    }, [waterData, selectedDate]);
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
         const newGlasses = Math.min(glasses + 1, targetGlasses);
         setGlasses(newGlasses);
-        localStorage.setItem(`water-${selectedDate}`, newGlasses.toString());
+        
+        try {
+            if (waterData) {
+                await WaterLog.update(waterData.id, { glasses: newGlasses });
+            } else {
+                await WaterLog.create({ date: selectedDate, glasses: newGlasses });
+            }
+            refetch();
+        } catch (error) {
+            console.error('Error saving water log:', error);
+        }
     };
 
-    const handleSubtract = () => {
+    const handleSubtract = async () => {
         const newGlasses = Math.max(glasses - 1, 0);
         setGlasses(newGlasses);
-        localStorage.setItem(`water-${selectedDate}`, newGlasses.toString());
+        
+        try {
+            if (waterData) {
+                await WaterLog.update(waterData.id, { glasses: newGlasses });
+            } else {
+                await WaterLog.create({ date: selectedDate, glasses: newGlasses });
+            }
+            refetch();
+        } catch (error) {
+            console.error('Error saving water log:', error);
+        }
     };
 
     const percentage = Math.min((glasses / targetGlasses) * 100, 100);
