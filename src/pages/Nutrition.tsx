@@ -71,14 +71,11 @@ const Nutrition = () => {
 
     const currentMenuType = isShabbatMenu ? 'shabbat' : 'weekday';
 
-    const { data: selectedDateMeals, isLoading, isError, error, refetch } = useQuery({
-        queryKey: ['nutrition-logs', selectedDate, currentMenuType],
+    const { data: allDateMeals, isLoading, isError, error, refetch } = useQuery({
+        queryKey: ['nutrition-logs', selectedDate],
         queryFn: async () => {
-            const logs = await NutritionLog.filter({ 
-                date: selectedDate,
-                menu_type: currentMenuType 
-            });
-            console.log('Loaded nutrition logs for date:', selectedDate, 'menu type:', currentMenuType, logs);
+            const logs = await NutritionLog.filter({ date: selectedDate });
+            console.log('Loaded ALL nutrition logs for date:', selectedDate, logs);
             return logs;
         },
         retry: 3,
@@ -88,8 +85,11 @@ const Nutrition = () => {
         staleTime: 30000,
     });
 
+    const selectedDateMeals = allDateMeals?.filter((log: any) => log.menu_type === currentMenuType) || [];
+
     useEffect(() => {
         console.log('Date or menu type changed to:', selectedDate, currentMenuType);
+        console.log('Filtered meals for current menu:', selectedDateMeals);
         isInitialLoadRef.current = true;
         userMadeChangeRef.current = false;
         
@@ -104,7 +104,7 @@ const Nutrition = () => {
         setDataLoaded(false);
         
         if (selectedDateMeals && selectedDateMeals.length > 0) {
-            console.log('Processing loaded meals...');
+            console.log('Processing loaded meals for', currentMenuType);
             selectedDateMeals.forEach((log: any) => {
                 const items: Record<string, MealItemSelection> = {};
                 
@@ -168,7 +168,7 @@ const Nutrition = () => {
                 isInitialLoadRef.current = false;
             }, 100);
         }
-    }, [selectedDate, currentMenuType, selectedDateMeals]);
+    }, [selectedDate, currentMenuType, allDateMeals]);
 
     const totalCalories = meal1Data.calories + meal2Data.calories + meal3Data.calories + meal4Data.calories;
     const totalProtein = meal1Data.protein + meal2Data.protein + meal3Data.protein + meal4Data.protein;
@@ -184,11 +184,11 @@ const Nutrition = () => {
         try {
             setSaving(true);
 
-            const existingLogs = await NutritionLog.filter({ 
-                date: selectedDate,
-                menu_type: currentMenuType 
-            });
-            for (const log of existingLogs) {
+            const existingLogs = await NutritionLog.filter({ date: selectedDate });
+            const logsToDelete = existingLogs.filter((log: any) => log.menu_type === currentMenuType);
+            
+            console.log('Deleting existing logs for', currentMenuType, logsToDelete);
+            for (const log of logsToDelete) {
                 await NutritionLog.delete(log.id);
             }
 
@@ -223,7 +223,7 @@ const Nutrition = () => {
                 }
             }
 
-            console.log('Auto-saved nutrition');
+            console.log('Auto-saved nutrition for', currentMenuType);
         } catch (error) {
             console.error('Error auto-saving nutrition:', error);
         } finally {
@@ -478,6 +478,10 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594587-1.png"
                                     alt="ארוחת בוקר"
                                     className="max-w-full max-h-full object-contain"
+                                    onError={(e) => {
+                                        console.error('Failed to load image:', e.currentTarget.src);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4">
@@ -537,6 +541,10 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
                                     alt="ארוחה 2"
                                     className="max-w-full max-h-full object-contain"
+                                    onError={(e) => {
+                                        console.error('Failed to load image:', e.currentTarget.src);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4">
@@ -570,6 +578,10 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
                                     alt="ארוחה 3"
                                     className="max-w-full max-h-full object-contain"
+                                    onError={(e) => {
+                                        console.error('Failed to load image:', e.currentTarget.src);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4">
@@ -603,6 +615,10 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-4.png"
                                     alt="ארוחה 4"
                                     className="max-w-full max-h-full object-contain"
+                                    onError={(e) => {
+                                        console.error('Failed to load image:', e.currentTarget.src);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4">
@@ -664,6 +680,10 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765309536931-file.png"
                                     alt="סעודה 1 שבת - דג מרוקאי, חלה, ירקות"
                                     className="max-w-full max-h-full object-contain"
+                                    onError={(e) => {
+                                        console.error('Failed to load Shabbat image 1:', e.currentTarget.src);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
@@ -724,6 +744,10 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765309643430-file.png"
                                     alt="סעודה 2 שבת - כרעיי עוף, אורז, ירקות"
                                     className="max-w-full max-h-full object-contain"
+                                    onError={(e) => {
+                                        console.error('Failed to load Shabbat image 2:', e.currentTarget.src);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
@@ -784,6 +808,10 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765305123949-file.png"
                                     alt="סעודה 3 שבת - סלמון, בטטה, ירקות"
                                     className="max-w-full max-h-full object-contain"
+                                    onError={(e) => {
+                                        console.error('Failed to load Shabbat image 3:', e.currentTarget.src);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
@@ -844,6 +872,10 @@ const Nutrition = () => {
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765305527698-file.png"
                                     alt="סעודה 4 שבת - סטייק, סלט בורגול, ירקות"
                                     className="max-w-full max-h-full object-contain"
+                                    onError={(e) => {
+                                        console.error('Failed to load Shabbat image 4:', e.currentTarget.src);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
                                 />
                             </div>
                             <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
