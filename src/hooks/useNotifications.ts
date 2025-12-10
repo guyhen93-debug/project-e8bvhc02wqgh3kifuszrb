@@ -27,7 +27,7 @@ export const useNotifications = () => {
 
     // Check if notifications are supported
     useEffect(() => {
-        const supported = 'Notification' in window && 'serviceWorker' in navigator;
+        const supported = 'Notification' in window;
         setIsSupported(supported);
         
         if (supported) {
@@ -49,23 +49,6 @@ export const useNotifications = () => {
     const saveSettings = useCallback((newSettings: NotificationSettings) => {
         setSettings(newSettings);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
-    }, []);
-
-    // Register service worker
-    const registerServiceWorker = useCallback(async () => {
-        if (!('serviceWorker' in navigator)) {
-            console.log('Service Workers not supported');
-            return false;
-        }
-
-        try {
-            const registration = await navigator.serviceWorker.register('/service-worker.js');
-            console.log('Service Worker registered:', registration);
-            return true;
-        } catch (error) {
-            console.error('Service Worker registration failed:', error);
-            return false;
-        }
     }, []);
 
     // Schedule daily notifications
@@ -133,9 +116,6 @@ export const useNotifications = () => {
         }
 
         try {
-            // Register service worker first
-            await registerServiceWorker();
-
             // Request permission
             const result = await Notification.requestPermission();
             setPermission(result);
@@ -166,7 +146,7 @@ export const useNotifications = () => {
             return false;
         }
         return false;
-    }, [isSupported, registerServiceWorker, scheduleDailyNotifications, saveSettings, toast]);
+    }, [isSupported, scheduleDailyNotifications, saveSettings, toast]);
 
     // Enable notifications
     const enableNotifications = useCallback(async () => {
