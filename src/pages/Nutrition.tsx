@@ -22,6 +22,7 @@ import { RoastedVegetablesIcon } from '@/components/icons/RoastedVegetablesIcon'
 import { MoroccanFishIcon } from '@/components/icons/MoroccanFishIcon';
 import { ChickenDrumstickIcon } from '@/components/icons/ChickenDrumstickIcon';
 import { BulgurSaladIcon } from '@/components/icons/BulgurSaladIcon';
+import { SirloinSteakIcon } from '@/components/icons/SirloinSteakIcon';
 import { useToast } from '@/hooks/use-toast';
 import { NutritionLog } from '@/entities';
 import { useQuery } from '@tanstack/react-query';
@@ -360,7 +361,7 @@ const Nutrition = () => {
     ];
 
     const shabbatMeal4Items: MealItemDefinition[] = [
-        { name: 'סינטה', icon: SteakIcon, defaultAmount: 100, unit: 'גרם', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
+        { name: 'סינטה', icon: SirloinSteakIcon, defaultAmount: 100, unit: 'גרם', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
         { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 50, unit: 'גרם', caloriesPer100g: 364, proteinPer100g: 12, carbsPer100g: 76, fatPer100g: 1.3 },
         { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
     ];
