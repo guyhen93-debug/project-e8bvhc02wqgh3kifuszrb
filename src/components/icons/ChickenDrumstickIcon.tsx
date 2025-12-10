@@ -5,7 +5,7 @@ interface IconProps {
 export const ChickenDrumstickIcon = ({ className }: IconProps) => {
     return (
         <img 
-            src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765309740238-file.png"
+            src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765361736881-Gemini-Generated-Image-homjt9homjt9homj.png"
             alt="כרעיי עוף"
             className={className}
         />

@@ -348,8 +348,7 @@ const Nutrition = () => {
     ];
 
     const shabbatMeal2Items: MealItemDefinition[] = [
-        { name: 'שוק עוף', icon: ChickenDrumstickIcon, defaultAmount: 70, unit: 'גרם', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
-        { name: 'ירך עוף', icon: ChickenDrumstickIcon, defaultAmount: 70, unit: 'גרם', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
+        { name: 'כרעיי עוף', icon: ChickenDrumstickIcon, defaultAmount: 140, unit: 'גרם (שוק + ירך)', caloriesPer100g: 234, proteinPer100g: 27, carbsPer100g: 0, fatPer100g: 14 },
         { name: 'אורז', icon: RiceIcon, defaultAmount: 50, unit: 'גרם (לפני בישול)', caloriesPer100g: 349, proteinPer100g: 7.3, carbsPer100g: 78.5, fatPer100g: 0.7 },
         { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם (סלט)', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
     ];
