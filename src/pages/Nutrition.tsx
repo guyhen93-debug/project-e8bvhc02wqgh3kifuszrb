@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { RefreshCw, AlertCircle, CheckSquare, X } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckSquare, X, Bell, BellOff, Info } from 'lucide-react';
 import { BreadIcon } from '@/components/icons/BreadIcon';
 import { ChickenIcon } from '@/components/icons/ChickenIcon';
 import { VegetablesIcon } from '@/components/icons/VegetablesIcon';
@@ -24,6 +26,7 @@ import { ChickenDrumstickIcon } from '@/components/icons/ChickenDrumstickIcon';
 import { BulgurSaladIcon } from '@/components/icons/BulgurSaladIcon';
 import { SirloinSteakIcon } from '@/components/icons/SirloinSteakIcon';
 import { useToast } from '@/hooks/use-toast';
+import { useNotifications } from '@/hooks/useNotifications';
 import { NutritionLog } from '@/entities';
 import { useQuery } from '@tanstack/react-query';
 import { useDate } from '@/contexts/DateContext';
@@ -95,6 +98,10 @@ const Nutrition = () => {
     const { selectedDate, isToday } = useDate();
     const [isShabbatMenu, setIsShabbatMenu] = useState(false);
     
+    // Notification hook
+    const { isSupported, permission, settings, toggleNotifications } = useNotifications();
+    const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
     // Weekday meals state
     const [weekdayMeal1Data, setWeekdayMeal1Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
     const [weekdayMeal2Data, setWeekdayMeal2Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
@@ -122,6 +129,11 @@ const Nutrition = () => {
     const userMadeChangeRef = useRef(false);
 
     const currentMenuType = isShabbatMenu ? 'shabbat' : 'weekday';
+
+    // Update notifications enabled state from settings
+    useEffect(() => {
+        setNotificationsEnabled(settings.enabled);
+    }, [settings.enabled]);
 
     // Display data based on current menu
     const meal1Data = isShabbatMenu ? shabbatMeal1Data : weekdayMeal1Data;
@@ -163,7 +175,6 @@ const Nutrition = () => {
         isInitialLoadRef.current = true;
         userMadeChangeRef.current = false;
         
-        // Reset all states
         setWeekdayMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
         setWeekdayMeal2Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
         setWeekdayMeal3Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
@@ -187,13 +198,11 @@ const Nutrition = () => {
         if (allDateMeals && allDateMeals.length > 0) {
             console.log('Processing loaded meals for both menus');
             
-            // Process weekday meals
             const weekdayMeals = allDateMeals.filter((log: any) => log.menu_type === 'weekday');
             weekdayMeals.forEach((log: any) => {
                 const items: Record<string, MealItemSelection> = {};
                 
                 if (log.items_consumed && Array.isArray(log.items_consumed) && log.items_consumed.length > 0) {
-                    console.log(`Weekday Meal ${log.meal_number} items from DB:`, log.items_consumed);
                     log.items_consumed.forEach((item: any) => {
                         items[item.name] = {
                             name: item.name,
@@ -206,50 +215,28 @@ const Nutrition = () => {
                 switch (log.meal_number) {
                     case 1:
                         setWeekdayMeal1Items(items);
-                        setWeekdayMeal1Data({
-                            calories: log.total_calories || 0,
-                            protein: log.protein || 0,
-                            carbs: log.carbs || 0,
-                            fat: log.fat || 0
-                        });
+                        setWeekdayMeal1Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
                         break;
                     case 2:
                         setWeekdayMeal2Items(items);
-                        setWeekdayMeal2Data({
-                            calories: log.total_calories || 0,
-                            protein: log.protein || 0,
-                            carbs: log.carbs || 0,
-                            fat: log.fat || 0
-                        });
+                        setWeekdayMeal2Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
                         break;
                     case 3:
                         setWeekdayMeal3Items(items);
-                        setWeekdayMeal3Data({
-                            calories: log.total_calories || 0,
-                            protein: log.protein || 0,
-                            carbs: log.carbs || 0,
-                            fat: log.fat || 0
-                        });
+                        setWeekdayMeal3Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
                         break;
                     case 4:
                         setWeekdayMeal4Items(items);
-                        setWeekdayMeal4Data({
-                            calories: log.total_calories || 0,
-                            protein: log.protein || 0,
-                            carbs: log.carbs || 0,
-                            fat: log.fat || 0
-                        });
+                        setWeekdayMeal4Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
                         break;
                 }
             });
 
-            // Process shabbat meals
             const shabbatMeals = allDateMeals.filter((log: any) => log.menu_type === 'shabbat');
             shabbatMeals.forEach((log: any) => {
                 const items: Record<string, MealItemSelection> = {};
                 
                 if (log.items_consumed && Array.isArray(log.items_consumed) && log.items_consumed.length > 0) {
-                    console.log(`Shabbat Meal ${log.meal_number} items from DB:`, log.items_consumed);
                     log.items_consumed.forEach((item: any) => {
                         items[item.name] = {
                             name: item.name,
@@ -262,39 +249,19 @@ const Nutrition = () => {
                 switch (log.meal_number) {
                     case 1:
                         setShabbatMeal1Items(items);
-                        setShabbatMeal1Data({
-                            calories: log.total_calories || 0,
-                            protein: log.protein || 0,
-                            carbs: log.carbs || 0,
-                            fat: log.fat || 0
-                        });
+                        setShabbatMeal1Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
                         break;
                     case 2:
                         setShabbatMeal2Items(items);
-                        setShabbatMeal2Data({
-                            calories: log.total_calories || 0,
-                            protein: log.protein || 0,
-                            carbs: log.carbs || 0,
-                            fat: log.fat || 0
-                        });
+                        setShabbatMeal2Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
                         break;
                     case 3:
                         setShabbatMeal3Items(items);
-                        setShabbatMeal3Data({
-                            calories: log.total_calories || 0,
-                            protein: log.protein || 0,
-                            carbs: log.carbs || 0,
-                            fat: log.fat || 0
-                        });
+                        setShabbatMeal3Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
                         break;
                     case 4:
                         setShabbatMeal4Items(items);
-                        setShabbatMeal4Data({
-                            calories: log.total_calories || 0,
-                            protein: log.protein || 0,
-                            carbs: log.carbs || 0,
-                            fat: log.fat || 0
-                        });
+                        setShabbatMeal4Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
                         break;
                 }
             });
@@ -306,7 +273,6 @@ const Nutrition = () => {
         }, 100);
     }, [selectedDate, allDateMeals]);
 
-    // Calculate COMBINED totals from BOTH menus
     const totalCalories = 
         weekdayMeal1Data.calories + weekdayMeal2Data.calories + weekdayMeal3Data.calories + weekdayMeal4Data.calories +
         shabbatMeal1Data.calories + shabbatMeal2Data.calories + shabbatMeal3Data.calories + shabbatMeal4Data.calories;
@@ -325,17 +291,14 @@ const Nutrition = () => {
 
     const autoSave = async () => {
         if (isInitialLoadRef.current || !userMadeChangeRef.current) {
-            console.log('Skipping auto-save during initial load or no user changes');
             return;
         }
 
         try {
             setSaving(true);
-
             const existingLogs = await NutritionLog.filter({ date: selectedDate });
             const logsToDelete = existingLogs.filter((log: any) => log.menu_type === currentMenuType);
             
-            console.log('Deleting existing logs for', currentMenuType, logsToDelete);
             for (const log of logsToDelete) {
                 await NutritionLog.delete(log.id);
             }
@@ -351,12 +314,7 @@ const Nutrition = () => {
                 if (meal.data.calories > 0) {
                     const itemsConsumed = Object.values(meal.items)
                         .filter(item => item.checked)
-                        .map(item => ({
-                            name: item.name,
-                            amount: item.amount
-                        }));
-
-                    console.log(`Auto-saving meal ${meal.number} (${currentMenuType}) with items:`, itemsConsumed);
+                        .map(item => ({ name: item.name, amount: item.amount }));
 
                     await NutritionLog.create({
                         date: selectedDate,
@@ -370,8 +328,6 @@ const Nutrition = () => {
                     });
                 }
             }
-
-            console.log('Auto-saved nutrition for', currentMenuType);
         } catch (error) {
             console.error('Error auto-saving nutrition:', error);
         } finally {
@@ -481,6 +437,15 @@ const Nutrition = () => {
         return mealItems.every(item => currentItems[item.name]?.checked === true);
     };
 
+    const handleNotificationToggle = async (checked: boolean) => {
+        const success = await toggleNotifications(checked);
+        if (!success && checked) {
+            setNotificationsEnabled(false);
+        }
+    };
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
     if (isLoading || !dataLoaded) {
         return (
             <div className="min-h-screen bg-oxygym-dark flex items-center justify-center pb-20">
@@ -502,10 +467,7 @@ const Nutrition = () => {
                         <p className="text-muted-foreground mb-6">
                             לא הצלחנו לטעון את נתוני התזונה. בדוק את החיבור לאינטרנט ונסה שוב.
                         </p>
-                        <Button
-                            onClick={() => refetch()}
-                            className="w-full bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold"
-                        >
+                        <Button onClick={() => refetch()} className="w-full bg-oxygym-yellow hover:bg-yellow-500 text-black font-bold">
                             <RefreshCw className="w-4 h-4 ml-2" />
                             נסה שוב
                         </Button>
@@ -538,6 +500,50 @@ const Nutrition = () => {
                             📅 עורך נתונים של {new Date(selectedDate).toLocaleDateString('he-IL')}
                         </p>
                     </div>
+                )}
+
+                {isSupported && (
+                    <Card className="mb-4 sm:mb-6 bg-oxygym-darkGrey border-border">
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                    {notificationsEnabled ? (
+                                        <Bell className="w-5 h-5 text-oxygym-yellow" />
+                                    ) : (
+                                        <BellOff className="w-5 h-5 text-muted-foreground" />
+                                    )}
+                                    <div>
+                                        <Label htmlFor="notifications-toggle" className="text-white font-semibold cursor-pointer">
+                                            הפעל תזכורות לארוחות
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">תקבל תזכורת למלא כל ארוחה בזמנה</p>
+                                    </div>
+                                </div>
+                                <Switch
+                                    id="notifications-toggle"
+                                    checked={notificationsEnabled}
+                                    onCheckedChange={handleNotificationToggle}
+                                    className="data-[state=checked]:bg-oxygym-yellow"
+                                />
+                            </div>
+                            {isIOS && (
+                                <div className="mt-3 flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                    <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                                    <p className="text-xs text-blue-200">
+                                        <strong>באייפון:</strong> יש להוסיף את האפליקציה למסך הבית כדי לקבל התראות. לחץ על כפתור השיתוף ובחר "הוסף למסך הבית".
+                                    </p>
+                                </div>
+                            )}
+                            {notificationsEnabled && (
+                                <div className="mt-3 text-xs text-muted-foreground space-y-1">
+                                    <p>🕙 10:00 - ארוחה 1</p>
+                                    <p>🕧 12:30 - ארוחה 2</p>
+                                    <p>🕞 15:30 - ארוחה 3</p>
+                                    <p>🕙 22:00 - ארוחה 4</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 )}
 
                 <div className="mb-4 sm:mb-6 flex justify-center">
@@ -778,7 +784,7 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765350340296-1.png"
-                                    alt="סעודה 1 שבת - דג מרוקאי וחלה"
+                                    alt="סעודה 1 שבת"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
@@ -838,7 +844,7 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765350647080-2.png"
-                                    alt="סעודה 2 שבת - כרעיי עוף, אורז וסלט"
+                                    alt="סעודה 2 שבת"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
@@ -898,7 +904,7 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765351039028-3.png"
-                                    alt="סעודה 3 שבת - סלמון, בטטה וירקות בתנור"
+                                    alt="סעודה 3 שבת"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
@@ -958,7 +964,7 @@ const Nutrition = () => {
                             <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
                                 <img 
                                     src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765351280343-4.png"
-                                    alt="סעודה 4 שבת - סטייק, סלט בורגול וירקות"
+                                    alt="סעודה 4 שבת"
                                     className="max-w-full max-h-full object-contain"
                                 />
                             </div>
