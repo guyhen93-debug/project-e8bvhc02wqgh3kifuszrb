@@ -5,7 +5,7 @@ import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { RefreshCw, AlertCircle, CheckSquare } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckSquare, X } from 'lucide-react';
 import { BreadIcon } from '@/components/icons/BreadIcon';
 import { ChickenIcon } from '@/components/icons/ChickenIcon';
 import { VegetablesIcon } from '@/components/icons/VegetablesIcon';
@@ -293,6 +293,16 @@ const Nutrition = () => {
         });
     };
 
+    const clearAllMealItems = (itemsSetter: React.Dispatch<React.SetStateAction<Record<string, MealItemSelection>>>, mealSetter: React.Dispatch<React.SetStateAction<MealData>>) => {
+        userMadeChangeRef.current = true;
+        itemsSetter({});
+        mealSetter({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    };
+
+    const isAllSelected = (mealItems: MealItemDefinition[], currentItems: Record<string, MealItemSelection>) => {
+        return mealItems.every(item => currentItems[item.name]?.checked === true);
+    };
+
     const weekdayMeal1Items: MealItemDefinition[] = [
         { name: 'לחם כוסמין', icon: BreadIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 216, proteinPer100g: 11.9, carbsPer100g: 47.6, fatPer100g: 1.9 },
         { name: 'גבינה לבנה 5%', icon: CheeseIcon, defaultAmount: 100, unit: 'גרם', caloriesPer100g: 98, proteinPer100g: 9, carbsPer100g: 4.3, fatPer100g: 5 },
@@ -310,14 +320,14 @@ const Nutrition = () => {
         { name: 'חלה לשבת', icon: ChallaIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 280, proteinPer100g: 8, carbsPer100g: 52, fatPer100g: 4.5 },
         { name: 'דג מרוקאי', icon: MoroccanFishIcon, defaultAmount: 250, unit: 'גרם', caloriesPer100g: 140, proteinPer100g: 20, carbsPer100g: 8, fatPer100g: 3.5 },
         { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 120, proteinPer100g: 4, carbsPer100g: 22, fatPer100g: 2 },
-        { name: 'ירקות מוקפצים', icon: RoastedVegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
     ];
 
     const shabbatMeal2Items: MealItemDefinition[] = [
         { name: 'חלה לשבת', icon: ChallaIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 280, proteinPer100g: 8, carbsPer100g: 52, fatPer100g: 4.5 },
         { name: 'כרעיי עוף', icon: ChickenDrumstickIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 220, proteinPer100g: 28, carbsPer100g: 0, fatPer100g: 12 },
         { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 120, proteinPer100g: 4, carbsPer100g: 22, fatPer100g: 2 },
-        { name: 'ירקות בתנור', icon: RoastedVegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
     ];
 
     const shabbatMeal3Items: MealItemDefinition[] = [
@@ -329,7 +339,7 @@ const Nutrition = () => {
     const shabbatMeal4Items: MealItemDefinition[] = [
         { name: 'סטייק סינטה', icon: SteakIcon, defaultAmount: 200, unit: 'גרם', caloriesPer100g: 271, proteinPer100g: 26, carbsPer100g: 0, fatPer100g: 18 },
         { name: 'סלט בורגול', icon: BulgurSaladIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 120, proteinPer100g: 4, carbsPer100g: 22, fatPer100g: 2 },
-        { name: 'ירקות מוקפצים', icon: RoastedVegetablesIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
+        { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 150, unit: 'גרם', caloriesPer100g: 80, proteinPer100g: 2, carbsPer100g: 12, fatPer100g: 3 }
     ];
 
     if (isLoading || !dataLoaded) {
@@ -453,14 +463,25 @@ const Nutrition = () => {
                                         ארוחה 1
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        <Button
-                                            onClick={() => selectAllMealItems(weekdayMeal1Items, setMeal1Items, setMeal1Data)}
-                                            size="sm"
-                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
-                                        >
-                                            <CheckSquare className="w-3 h-3 ml-1" />
-                                            סמן הכל
-                                        </Button>
+                                        {isAllSelected(weekdayMeal1Items, meal1Items) ? (
+                                            <Button
+                                                onClick={() => clearAllMealItems(setMeal1Items, setMeal1Data)}
+                                                size="sm"
+                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
+                                            >
+                                                <X className="w-3 h-3 ml-1" />
+                                                בטל הכל
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={() => selectAllMealItems(weekdayMeal1Items, setMeal1Items, setMeal1Data)}
+                                                size="sm"
+                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                            >
+                                                <CheckSquare className="w-3 h-3 ml-1" />
+                                                סמן הכל
+                                            </Button>
+                                        )}
                                         <span className="text-oxygym-yellow text-xs sm:text-sm">עד 10:00</span>
                                     </div>
                                 </div>
@@ -567,14 +588,25 @@ const Nutrition = () => {
                                         ארוחה 4
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        <Button
-                                            onClick={() => selectAllMealItems(weekdayMeal4Items, setMeal4Items, setMeal4Data)}
-                                            size="sm"
-                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
-                                        >
-                                            <CheckSquare className="w-3 h-3 ml-1" />
-                                            סמן הכל
-                                        </Button>
+                                        {isAllSelected(weekdayMeal4Items, meal4Items) ? (
+                                            <Button
+                                                onClick={() => clearAllMealItems(setMeal4Items, setMeal4Data)}
+                                                size="sm"
+                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
+                                            >
+                                                <X className="w-3 h-3 ml-1" />
+                                                בטל הכל
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={() => selectAllMealItems(weekdayMeal4Items, setMeal4Items, setMeal4Data)}
+                                                size="sm"
+                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                            >
+                                                <CheckSquare className="w-3 h-3 ml-1" />
+                                                סמן הכל
+                                            </Button>
+                                        )}
                                         <span className="text-oxygym-yellow text-xs sm:text-sm">עד 21:30</span>
                                     </div>
                                 </div>
@@ -618,14 +650,25 @@ const Nutrition = () => {
                                         <span>סעודה 1 - שבת</span>
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        <Button
-                                            onClick={() => selectAllMealItems(shabbatMeal1Items, setMeal1Items, setMeal1Data)}
-                                            size="sm"
-                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
-                                        >
-                                            <CheckSquare className="w-3 h-3 ml-1" />
-                                            סמן הכל
-                                        </Button>
+                                        {isAllSelected(shabbatMeal1Items, meal1Items) ? (
+                                            <Button
+                                                onClick={() => clearAllMealItems(setMeal1Items, setMeal1Data)}
+                                                size="sm"
+                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
+                                            >
+                                                <X className="w-3 h-3 ml-1" />
+                                                בטל הכל
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={() => selectAllMealItems(shabbatMeal1Items, setMeal1Items, setMeal1Data)}
+                                                size="sm"
+                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                            >
+                                                <CheckSquare className="w-3 h-3 ml-1" />
+                                                סמן הכל
+                                            </Button>
+                                        )}
                                         <span className="text-oxygym-yellow text-xs sm:text-sm">ליל שבת</span>
                                     </div>
                                 </div>
@@ -667,14 +710,25 @@ const Nutrition = () => {
                                         <span>סעודה 2 - שבת</span>
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        <Button
-                                            onClick={() => selectAllMealItems(shabbatMeal2Items, setMeal2Items, setMeal2Data)}
-                                            size="sm"
-                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
-                                        >
-                                            <CheckSquare className="w-3 h-3 ml-1" />
-                                            סמן הכל
-                                        </Button>
+                                        {isAllSelected(shabbatMeal2Items, meal2Items) ? (
+                                            <Button
+                                                onClick={() => clearAllMealItems(setMeal2Items, setMeal2Data)}
+                                                size="sm"
+                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
+                                            >
+                                                <X className="w-3 h-3 ml-1" />
+                                                בטל הכל
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={() => selectAllMealItems(shabbatMeal2Items, setMeal2Items, setMeal2Data)}
+                                                size="sm"
+                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                            >
+                                                <CheckSquare className="w-3 h-3 ml-1" />
+                                                סמן הכל
+                                            </Button>
+                                        )}
                                         <span className="text-oxygym-yellow text-xs sm:text-sm">צהריים</span>
                                     </div>
                                 </div>
@@ -716,14 +770,25 @@ const Nutrition = () => {
                                         <span>סעודה 3 - שבת</span>
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        <Button
-                                            onClick={() => selectAllMealItems(shabbatMeal3Items, setMeal3Items, setMeal3Data)}
-                                            size="sm"
-                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
-                                        >
-                                            <CheckSquare className="w-3 h-3 ml-1" />
-                                            סמן הכל
-                                        </Button>
+                                        {isAllSelected(shabbatMeal3Items, meal3Items) ? (
+                                            <Button
+                                                onClick={() => clearAllMealItems(setMeal3Items, setMeal3Data)}
+                                                size="sm"
+                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
+                                            >
+                                                <X className="w-3 h-3 ml-1" />
+                                                בטל הכל
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={() => selectAllMealItems(shabbatMeal3Items, setMeal3Items, setMeal3Data)}
+                                                size="sm"
+                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                            >
+                                                <CheckSquare className="w-3 h-3 ml-1" />
+                                                סמן הכל
+                                            </Button>
+                                        )}
                                         <span className="text-oxygym-yellow text-xs sm:text-sm">סעודה שלישית</span>
                                     </div>
                                 </div>
@@ -765,14 +830,25 @@ const Nutrition = () => {
                                         <span>סעודה 4 - שבת</span>
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
-                                        <Button
-                                            onClick={() => selectAllMealItems(shabbatMeal4Items, setMeal4Items, setMeal4Data)}
-                                            size="sm"
-                                            className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
-                                        >
-                                            <CheckSquare className="w-3 h-3 ml-1" />
-                                            סמן הכל
-                                        </Button>
+                                        {isAllSelected(shabbatMeal4Items, meal4Items) ? (
+                                            <Button
+                                                onClick={() => clearAllMealItems(setMeal4Items, setMeal4Data)}
+                                                size="sm"
+                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
+                                            >
+                                                <X className="w-3 h-3 ml-1" />
+                                                בטל הכל
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={() => selectAllMealItems(shabbatMeal4Items, setMeal4Items, setMeal4Data)}
+                                                size="sm"
+                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                            >
+                                                <CheckSquare className="w-3 h-3 ml-1" />
+                                                סמן הכל
+                                            </Button>
+                                        )}
                                         <span className="text-oxygym-yellow text-xs sm:text-sm">מוצאי שבת</span>
                                     </div>
                                 </div>
