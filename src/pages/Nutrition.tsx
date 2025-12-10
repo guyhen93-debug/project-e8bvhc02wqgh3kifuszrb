@@ -839,8 +839,12 @@ const Nutrition = () => {
                         </Card>
 
                         <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center p-2">
-                                <div className="text-6xl">🥩</div>
+                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
+                                <img 
+                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765351280343-4.png"
+                                    alt="סעודה 4 שבת - סטייק, סלט בורגול וירקות"
+                                    className="max-w-full max-h-full object-contain"
+                                />
                             </div>
                             <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
                                 <div className="flex items-center justify-between">
