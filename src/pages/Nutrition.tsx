@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -55,6 +55,11 @@ interface MealItemDefinition {
     fatPer100g: number;
 }
 
+interface MealState {
+    data: MealData;
+    items: Record<string, MealItemSelection>;
+}
+
 // Meal definitions
 const WEEKDAY_MEAL_1_DEFINITIONS: MealItemDefinition[] = [
     { name: 'לחם כוסמין', icon: BreadIcon, defaultAmount: 168, unit: 'גרם (4 פרוסות)', caloriesPer100g: 216, proteinPer100g: 11.9, carbsPer100g: 47.6, fatPer100g: 1.9 },
@@ -93,67 +98,47 @@ const SHABBAT_MEAL_4_DEFINITIONS: MealItemDefinition[] = [
     { name: 'ירקות', icon: VegetablesIcon, defaultAmount: 300, unit: 'גרם', caloriesPer100g: 30, proteinPer100g: 0.5, carbsPer100g: 6.5, fatPer100g: 0.2 }
 ];
 
+const emptyMealState: MealState = {
+    data: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+    items: {}
+};
+
 const Nutrition = () => {
     const { toast } = useToast();
     const { selectedDate, isToday } = useDate();
     const [isShabbatMenu, setIsShabbatMenu] = useState(false);
-    
-    // Notification hook
-    const { isSupported, permission, settings, toggleNotifications } = useNotifications();
-    const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-
-    // Weekday meals state
-    const [weekdayMeal1Data, setWeekdayMeal1Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [weekdayMeal2Data, setWeekdayMeal2Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [weekdayMeal3Data, setWeekdayMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [weekdayMeal4Data, setWeekdayMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [weekdayMeal1Items, setWeekdayMeal1Items] = useState<Record<string, MealItemSelection>>({});
-    const [weekdayMeal2Items, setWeekdayMeal2Items] = useState<Record<string, MealItemSelection>>({});
-    const [weekdayMeal3Items, setWeekdayMeal3Items] = useState<Record<string, MealItemSelection>>({});
-    const [weekdayMeal4Items, setWeekdayMeal4Items] = useState<Record<string, MealItemSelection>>({});
-
-    // Shabbat meals state
-    const [shabbatMeal1Data, setShabbatMeal1Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [shabbatMeal2Data, setShabbatMeal2Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [shabbatMeal3Data, setShabbatMeal3Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [shabbatMeal4Data, setShabbatMeal4Data] = useState<MealData>({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-    const [shabbatMeal1Items, setShabbatMeal1Items] = useState<Record<string, MealItemSelection>>({});
-    const [shabbatMeal2Items, setShabbatMeal2Items] = useState<Record<string, MealItemSelection>>({});
-    const [shabbatMeal3Items, setShabbatMeal3Items] = useState<Record<string, MealItemSelection>>({});
-    const [shabbatMeal4Items, setShabbatMeal4Items] = useState<Record<string, MealItemSelection>>({});
-
     const [saving, setSaving] = useState(false);
-    const [dataLoaded, setDataLoaded] = useState(false);
     const saveTimeoutRef = useRef<NodeJS.Timeout>();
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
 
+    // Notification hook
+    const { isSupported, permission, settings, toggleNotifications } = useNotifications();
+    const [notificationsEnabled, setNotificationsEnabled] = useState(settings.enabled);
+
+    // Simplified state - one object per menu type
+    const [weekdayMeals, setWeekdayMeals] = useState<Record<number, MealState>>({
+        1: { ...emptyMealState },
+        2: { ...emptyMealState },
+        3: { ...emptyMealState },
+        4: { ...emptyMealState },
+    });
+
+    const [shabbatMeals, setShabbatMeals] = useState<Record<number, MealState>>({
+        1: { ...emptyMealState },
+        2: { ...emptyMealState },
+        3: { ...emptyMealState },
+        4: { ...emptyMealState },
+    });
+
     const currentMenuType = isShabbatMenu ? 'shabbat' : 'weekday';
+    const currentMeals = isShabbatMenu ? shabbatMeals : weekdayMeals;
+    const setCurrentMeals = isShabbatMenu ? setShabbatMeals : setWeekdayMeals;
 
     // Update notifications enabled state from settings
     useEffect(() => {
         setNotificationsEnabled(settings.enabled);
     }, [settings.enabled]);
-
-    // Display data based on current menu
-    const meal1Data = isShabbatMenu ? shabbatMeal1Data : weekdayMeal1Data;
-    const meal2Data = isShabbatMenu ? shabbatMeal2Data : weekdayMeal2Data;
-    const meal3Data = isShabbatMenu ? shabbatMeal3Data : weekdayMeal3Data;
-    const meal4Data = isShabbatMenu ? shabbatMeal4Data : weekdayMeal4Data;
-    const meal1Items = isShabbatMenu ? shabbatMeal1Items : weekdayMeal1Items;
-    const meal2Items = isShabbatMenu ? shabbatMeal2Items : weekdayMeal2Items;
-    const meal3Items = isShabbatMenu ? shabbatMeal3Items : weekdayMeal3Items;
-    const meal4Items = isShabbatMenu ? shabbatMeal4Items : weekdayMeal4Items;
-
-    // Setters based on current menu
-    const setMeal1Data = isShabbatMenu ? setShabbatMeal1Data : setWeekdayMeal1Data;
-    const setMeal2Data = isShabbatMenu ? setShabbatMeal2Data : setWeekdayMeal2Data;
-    const setMeal3Data = isShabbatMenu ? setShabbatMeal3Data : setWeekdayMeal3Data;
-    const setMeal4Data = isShabbatMenu ? setShabbatMeal4Data : setWeekdayMeal4Data;
-    const setMeal1Items = isShabbatMenu ? setShabbatMeal1Items : setWeekdayMeal1Items;
-    const setMeal2Items = isShabbatMenu ? setShabbatMeal2Items : setWeekdayMeal2Items;
-    const setMeal3Items = isShabbatMenu ? setShabbatMeal3Items : setWeekdayMeal3Items;
-    const setMeal4Items = isShabbatMenu ? setShabbatMeal4Items : setWeekdayMeal4Items;
 
     const { data: allDateMeals, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['nutrition-logs', selectedDate],
@@ -169,125 +154,112 @@ const Nutrition = () => {
         staleTime: 30000,
     });
 
-    // Load data from DB when date changes
+    // Load data when date changes or data is fetched
     useEffect(() => {
-        console.log('Date changed to:', selectedDate);
+        if (!allDateMeals) return;
+
+        console.log('Loading data for date:', selectedDate);
         isInitialLoadRef.current = true;
         userMadeChangeRef.current = false;
-        
-        setWeekdayMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setWeekdayMeal2Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setWeekdayMeal3Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setWeekdayMeal4Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setWeekdayMeal1Items({});
-        setWeekdayMeal2Items({});
-        setWeekdayMeal3Items({});
-        setWeekdayMeal4Items({});
-        
-        setShabbatMeal1Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setShabbatMeal2Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setShabbatMeal3Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setShabbatMeal4Data({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-        setShabbatMeal1Items({});
-        setShabbatMeal2Items({});
-        setShabbatMeal3Items({});
-        setShabbatMeal4Items({});
-        
-        setDataLoaded(false);
-        
-        if (allDateMeals && allDateMeals.length > 0) {
-            console.log('Processing loaded meals for both menus');
-            
-            const weekdayMeals = allDateMeals.filter((log: any) => log.menu_type === 'weekday');
-            weekdayMeals.forEach((log: any) => {
-                const items: Record<string, MealItemSelection> = {};
-                
-                if (log.items_consumed && Array.isArray(log.items_consumed) && log.items_consumed.length > 0) {
-                    log.items_consumed.forEach((item: any) => {
-                        items[item.name] = {
-                            name: item.name,
-                            amount: item.amount,
-                            checked: true,
-                        };
-                    });
-                }
 
-                switch (log.meal_number) {
-                    case 1:
-                        setWeekdayMeal1Items(items);
-                        setWeekdayMeal1Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
-                        break;
-                    case 2:
-                        setWeekdayMeal2Items(items);
-                        setWeekdayMeal2Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
-                        break;
-                    case 3:
-                        setWeekdayMeal3Items(items);
-                        setWeekdayMeal3Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
-                        break;
-                    case 4:
-                        setWeekdayMeal4Items(items);
-                        setWeekdayMeal4Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
-                        break;
-                }
-            });
+        const newWeekdayMeals: Record<number, MealState> = {
+            1: { ...emptyMealState },
+            2: { ...emptyMealState },
+            3: { ...emptyMealState },
+            4: { ...emptyMealState },
+        };
 
-            const shabbatMeals = allDateMeals.filter((log: any) => log.menu_type === 'shabbat');
-            shabbatMeals.forEach((log: any) => {
-                const items: Record<string, MealItemSelection> = {};
-                
-                if (log.items_consumed && Array.isArray(log.items_consumed) && log.items_consumed.length > 0) {
-                    log.items_consumed.forEach((item: any) => {
-                        items[item.name] = {
-                            name: item.name,
-                            amount: item.amount,
-                            checked: true,
-                        };
-                    });
-                }
+        const newShabbatMeals: Record<number, MealState> = {
+            1: { ...emptyMealState },
+            2: { ...emptyMealState },
+            3: { ...emptyMealState },
+            4: { ...emptyMealState },
+        };
 
-                switch (log.meal_number) {
-                    case 1:
-                        setShabbatMeal1Items(items);
-                        setShabbatMeal1Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
-                        break;
-                    case 2:
-                        setShabbatMeal2Items(items);
-                        setShabbatMeal2Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
-                        break;
-                    case 3:
-                        setShabbatMeal3Items(items);
-                        setShabbatMeal3Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
-                        break;
-                    case 4:
-                        setShabbatMeal4Items(items);
-                        setShabbatMeal4Data({ calories: log.total_calories || 0, protein: log.protein || 0, carbs: log.carbs || 0, fat: log.fat || 0 });
-                        break;
-                }
-            });
-        }
-        
-        setDataLoaded(true);
+        // Process weekday meals
+        const weekdayLogs = allDateMeals.filter((log: any) => log.menu_type === 'weekday');
+        weekdayLogs.forEach((log: any) => {
+            const items: Record<string, MealItemSelection> = {};
+            if (log.items_consumed && Array.isArray(log.items_consumed)) {
+                log.items_consumed.forEach((item: any) => {
+                    items[item.name] = {
+                        name: item.name,
+                        amount: item.amount,
+                        checked: true,
+                    };
+                });
+            }
+
+            const mealNum = log.meal_number;
+            if (mealNum >= 1 && mealNum <= 4) {
+                newWeekdayMeals[mealNum] = {
+                    data: {
+                        calories: log.total_calories || 0,
+                        protein: log.protein || 0,
+                        carbs: log.carbs || 0,
+                        fat: log.fat || 0
+                    },
+                    items
+                };
+            }
+        });
+
+        // Process shabbat meals
+        const shabbatLogs = allDateMeals.filter((log: any) => log.menu_type === 'shabbat');
+        shabbatLogs.forEach((log: any) => {
+            const items: Record<string, MealItemSelection> = {};
+            if (log.items_consumed && Array.isArray(log.items_consumed)) {
+                log.items_consumed.forEach((item: any) => {
+                    items[item.name] = {
+                        name: item.name,
+                        amount: item.amount,
+                        checked: true,
+                    };
+                });
+            }
+
+            const mealNum = log.meal_number;
+            if (mealNum >= 1 && mealNum <= 4) {
+                newShabbatMeals[mealNum] = {
+                    data: {
+                        calories: log.total_calories || 0,
+                        protein: log.protein || 0,
+                        carbs: log.carbs || 0,
+                        fat: log.fat || 0
+                    },
+                    items
+                };
+            }
+        });
+
+        setWeekdayMeals(newWeekdayMeals);
+        setShabbatMeals(newShabbatMeals);
+
         setTimeout(() => {
             isInitialLoadRef.current = false;
         }, 100);
     }, [selectedDate, allDateMeals]);
 
-    const totalCalories = 
-        weekdayMeal1Data.calories + weekdayMeal2Data.calories + weekdayMeal3Data.calories + weekdayMeal4Data.calories +
-        shabbatMeal1Data.calories + shabbatMeal2Data.calories + shabbatMeal3Data.calories + shabbatMeal4Data.calories;
-    
-    const totalProtein = 
-        weekdayMeal1Data.protein + weekdayMeal2Data.protein + weekdayMeal3Data.protein + weekdayMeal4Data.protein +
-        shabbatMeal1Data.protein + shabbatMeal2Data.protein + shabbatMeal3Data.protein + shabbatMeal4Data.protein;
-    
-    const totalCarbs = 
-        weekdayMeal1Data.carbs + weekdayMeal2Data.carbs + weekdayMeal3Data.carbs + weekdayMeal4Data.carbs +
-        shabbatMeal1Data.carbs + shabbatMeal2Data.carbs + shabbatMeal3Data.carbs + shabbatMeal4Data.carbs;
-    
-    const totalFat = 
-        weekdayMeal1Data.fat + weekdayMeal2Data.fat + weekdayMeal3Data.fat + weekdayMeal4Data.fat +
-        shabbatMeal1Data.fat + shabbatMeal2Data.fat + shabbatMeal3Data.fat + shabbatMeal4Data.fat;
+    // Calculate totals
+    const totals = useMemo(() => {
+        let calories = 0, protein = 0, carbs = 0, fat = 0;
+
+        Object.values(weekdayMeals).forEach(meal => {
+            calories += meal.data.calories;
+            protein += meal.data.protein;
+            carbs += meal.data.carbs;
+            fat += meal.data.fat;
+        });
+
+        Object.values(shabbatMeals).forEach(meal => {
+            calories += meal.data.calories;
+            protein += meal.data.protein;
+            carbs += meal.data.carbs;
+            fat += meal.data.fat;
+        });
+
+        return { calories, protein, carbs, fat };
+    }, [weekdayMeals, shabbatMeals]);
 
     const autoSave = async () => {
         if (isInitialLoadRef.current || !userMadeChangeRef.current) {
@@ -298,19 +270,13 @@ const Nutrition = () => {
             setSaving(true);
             const existingLogs = await NutritionLog.filter({ date: selectedDate });
             const logsToDelete = existingLogs.filter((log: any) => log.menu_type === currentMenuType);
-            
+
             for (const log of logsToDelete) {
                 await NutritionLog.delete(log.id);
             }
 
-            const meals = [
-                { number: 1, data: meal1Data, items: meal1Items },
-                { number: 2, data: meal2Data, items: meal2Items },
-                { number: 3, data: meal3Data, items: meal3Items },
-                { number: 4, data: meal4Data, items: meal4Items },
-            ];
-
-            for (const meal of meals) {
+            for (let mealNum = 1; mealNum <= 4; mealNum++) {
+                const meal = currentMeals[mealNum];
                 if (meal.data.calories > 0) {
                     const itemsConsumed = Object.values(meal.items)
                         .filter(item => item.checked)
@@ -319,7 +285,7 @@ const Nutrition = () => {
                     await NutritionLog.create({
                         date: selectedDate,
                         menu_type: currentMenuType,
-                        meal_number: meal.number,
+                        meal_number: mealNum,
                         items_consumed: itemsConsumed,
                         total_calories: meal.data.calories,
                         protein: meal.data.protein,
@@ -349,17 +315,23 @@ const Nutrition = () => {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [
-        weekdayMeal1Data, weekdayMeal2Data, weekdayMeal3Data, weekdayMeal4Data,
-        weekdayMeal1Items, weekdayMeal2Items, weekdayMeal3Items, weekdayMeal4Items,
-        shabbatMeal1Data, shabbatMeal2Data, shabbatMeal3Data, shabbatMeal4Data,
-        shabbatMeal1Items, shabbatMeal2Items, shabbatMeal3Items, shabbatMeal4Items,
-        currentMenuType
-    ]);
+    }, [weekdayMeals, shabbatMeals, currentMenuType]);
+
+    const updateMeal = (mealNum: number, updates: Partial<MealState>) => {
+        userMadeChangeRef.current = true;
+        setCurrentMeals(prev => ({
+            ...prev,
+            [mealNum]: {
+                ...prev[mealNum],
+                ...updates,
+                data: updates.data ? { ...prev[mealNum].data, ...updates.data } : prev[mealNum].data,
+                items: updates.items ? { ...prev[mealNum].items, ...updates.items } : prev[mealNum].items,
+            }
+        }));
+    };
 
     const handleMealItemToggle = (
-        mealSetter: React.Dispatch<React.SetStateAction<MealData>>,
-        itemsSetter: React.Dispatch<React.SetStateAction<Record<string, MealItemSelection>>>,
+        mealNum: number,
         itemName: string,
         checked: boolean,
         amount: number,
@@ -368,35 +340,29 @@ const Nutrition = () => {
         carbs: number,
         fat: number
     ) => {
-        userMadeChangeRef.current = true;
-        
-        itemsSetter(prev => ({
-            ...prev,
+        const meal = currentMeals[mealNum];
+        const newItems = {
+            ...meal.items,
             [itemName]: { name: itemName, amount, checked }
-        }));
+        };
 
-        mealSetter(prev => {
-            if (checked) {
-                return {
-                    calories: prev.calories + calories,
-                    protein: prev.protein + protein,
-                    carbs: prev.carbs + carbs,
-                    fat: prev.fat + fat,
-                };
-            } else {
-                return {
-                    calories: Math.max(0, prev.calories - calories),
-                    protein: Math.max(0, prev.protein - protein),
-                    carbs: Math.max(0, prev.carbs - carbs),
-                    fat: Math.max(0, prev.fat - fat),
-                };
-            }
-        });
+        const newData = { ...meal.data };
+        if (checked) {
+            newData.calories += calories;
+            newData.protein += protein;
+            newData.carbs += carbs;
+            newData.fat += fat;
+        } else {
+            newData.calories = Math.max(0, newData.calories - calories);
+            newData.protein = Math.max(0, newData.protein - protein);
+            newData.carbs = Math.max(0, newData.carbs - carbs);
+            newData.fat = Math.max(0, newData.fat - fat);
+        }
+
+        updateMeal(mealNum, { data: newData, items: newItems });
     };
 
-    const selectAllMealItems = (mealItems: MealItemDefinition[], itemsSetter: React.Dispatch<React.SetStateAction<Record<string, MealItemSelection>>>, mealSetter: React.Dispatch<React.SetStateAction<MealData>>) => {
-        userMadeChangeRef.current = true;
-
+    const selectAllMealItems = (mealNum: number, mealItems: MealItemDefinition[]) => {
         let totalCalories = 0;
         let totalProtein = 0;
         let totalCarbs = 0;
@@ -418,23 +384,22 @@ const Nutrition = () => {
             };
         });
 
-        itemsSetter(newItems);
-        mealSetter({
-            calories: totalCalories,
-            protein: totalProtein,
-            carbs: totalCarbs,
-            fat: totalFat
+        updateMeal(mealNum, {
+            data: { calories: totalCalories, protein: totalProtein, carbs: totalCarbs, fat: totalFat },
+            items: newItems
         });
     };
 
-    const clearAllMealItems = (itemsSetter: React.Dispatch<React.SetStateAction<Record<string, MealItemSelection>>>, mealSetter: React.Dispatch<React.SetStateAction<MealData>>) => {
-        userMadeChangeRef.current = true;
-        itemsSetter({});
-        mealSetter({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+    const clearAllMealItems = (mealNum: number) => {
+        updateMeal(mealNum, {
+            data: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+            items: {}
+        });
     };
 
-    const isAllSelected = (mealItems: MealItemDefinition[], currentItems: Record<string, MealItemSelection>) => {
-        return mealItems.every(item => currentItems[item.name]?.checked === true);
+    const isAllSelected = (mealNum: number, mealItems: MealItemDefinition[]) => {
+        const meal = currentMeals[mealNum];
+        return mealItems.every(item => meal.items[item.name]?.checked === true);
     };
 
     const handleNotificationToggle = async (checked: boolean) => {
@@ -446,7 +411,7 @@ const Nutrition = () => {
 
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
-    if (isLoading || !dataLoaded) {
+    if (isLoading) {
         return (
             <div className="min-h-screen bg-oxygym-dark flex items-center justify-center pb-20">
                 <div className="text-center">
@@ -502,137 +467,272 @@ const Nutrition = () => {
                     </div>
                 )}
 
-                {isSupported && (
-                    <Card className="mb-4 sm:mb-6 bg-oxygym-darkGrey border-border">
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                    {notificationsEnabled ? (
-                                        <Bell className="w-5 h-5 text-oxygym-yellow" />
-                                    ) : (
-                                        <BellOff className="w-5 h-5 text-muted-foreground" />
-                                    )}
-                                    <div>
-                                        <Label htmlFor="notifications-toggle" className="text-white font-semibold cursor-pointer">
-                                            הפעל תזכורות לארוחות
-                                        </Label>
-                                        <p className="text-xs text-muted-foreground">תקבל תזכורת למלא כל ארוחה בזמנה</p>
-                                    </div>
-                                </div>
-                                <Switch
-                                    id="notifications-toggle"
-                                    checked={notificationsEnabled}
-                                    onCheckedChange={handleNotificationToggle}
-                                    className="data-[state=checked]:bg-oxygym-yellow"
-                                />
-                            </div>
-                            {isIOS && (
-                                <div className="mt-3 flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                                    <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                                    <p className="text-xs text-blue-200">
-                                        <strong>באייפון:</strong> יש להוסיף את האפליקציה למסך הבית כדי לקבל התראות. לחץ על כפתור השיתוף ובחר "הוסף למסך הבית".
+                {/* Notification Settings */}
+                <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4 sm:mb-6">
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                {notificationsEnabled ? (
+                                    <Bell className="w-5 h-5 text-oxygym-yellow" />
+                                ) : (
+                                    <BellOff className="w-5 h-5 text-muted-foreground" />
+                                )}
+                                <div>
+                                    <Label htmlFor="notifications" className="text-white font-bold text-sm sm:text-base cursor-pointer">
+                                        תזכורות ארוחות
+                                    </Label>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                        קבל תזכורת למלא כל ארוחה
                                     </p>
                                 </div>
-                            )}
-                            {notificationsEnabled && (
-                                <div className="mt-3 text-xs text-muted-foreground space-y-1">
-                                    <p>🕙 10:00 - ארוחה 1</p>
-                                    <p>🕧 12:30 - ארוחה 2</p>
-                                    <p>🕞 15:30 - ארוחה 3</p>
-                                    <p>🕙 22:00 - ארוחה 4</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                )}
+                            </div>
+                            <Switch
+                                id="notifications"
+                                checked={notificationsEnabled}
+                                onCheckedChange={handleNotificationToggle}
+                                disabled={!isSupported}
+                            />
+                        </div>
+                        {isIOS && isSupported && (
+                            <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-2">
+                                <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-xs text-blue-400">
+                                    <strong>עבור iOS:</strong> הוסף את האתר למסך הבית כדי לקבל התראות גם כשהדפדפן סגור
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
-                <div className="mb-4 sm:mb-6 flex justify-center">
-                    <div className="inline-flex bg-oxygym-darkGrey rounded-lg p-1 border border-border">
-                        <button
-                            onClick={() => setIsShabbatMenu(false)}
-                            className={`px-6 py-2 rounded-md text-sm font-semibold transition-all ${
-                                !isShabbatMenu 
-                                    ? 'bg-oxygym-yellow text-black' 
-                                    : 'text-white hover:text-oxygym-yellow'
-                            }`}
-                        >
-                            תפריט חול
-                        </button>
-                        <button
-                            onClick={() => setIsShabbatMenu(true)}
-                            className={`px-6 py-2 rounded-md text-sm font-semibold transition-all flex items-center gap-2 ${
-                                isShabbatMenu 
-                                    ? 'bg-oxygym-yellow text-black' 
-                                    : 'text-white hover:text-oxygym-yellow'
-                            }`}
-                        >
-                            ⭐ תפריט שבת
-                        </button>
-                    </div>
-                </div>
-
-                {isShabbatMenu && (
-                    <div className="mb-4 p-3 bg-oxygym-yellow/10 border border-oxygym-yellow rounded-lg">
-                        <p className="text-center text-xs sm:text-sm text-white font-semibold">
-                            💡 כל סעודת שבת מחליפה ארוחה אחת ביום החול
+                {/* Menu Type Toggle */}
+                <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4 sm:mb-6">
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="menu-toggle" className="text-white font-bold text-sm sm:text-base cursor-pointer">
+                                {isShabbatMenu ? '🕯️ תפריט שבת' : '📅 תפריט יומי'}
+                            </Label>
+                            <Switch
+                                id="menu-toggle"
+                                checked={isShabbatMenu}
+                                onCheckedChange={setIsShabbatMenu}
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            {isShabbatMenu ? 'תפריט מיוחד לשבת' : 'תפריט רגיל לימי חול'}
                         </p>
-                    </div>
+                    </CardContent>
+                </Card>
+
+                {/* Weekday Meals */}
+                {!isShabbatMenu && (
+                    <>
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-lg sm:text-xl text-white">ארוחה 1 - בוקר (10:00)</CardTitle>
+                                    <div className="flex gap-2">
+                                        {!isAllSelected(1, WEEKDAY_MEAL_1_DEFINITIONS) ? (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => selectAllMealItems(1, WEEKDAY_MEAL_1_DEFINITIONS)}
+                                                className="h-8 text-xs text-oxygym-yellow hover:text-oxygym-yellow hover:bg-oxygym-yellow/10"
+                                            >
+                                                <CheckSquare className="w-4 h-4 ml-1" />
+                                                סמן הכל
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => clearAllMealItems(1)}
+                                                className="h-8 text-xs text-red-400 hover:text-red-400 hover:bg-red-400/10"
+                                            >
+                                                <X className="w-4 h-4 ml-1" />
+                                                נקה
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {currentMeals[1].data.calories.toFixed(0)} קלוריות | {currentMeals[1].data.protein.toFixed(0)}ג׳ חלבון
+                                </p>
+                            </CardHeader>
+                            <CardContent className="space-y-3 pt-0">
+                                {WEEKDAY_MEAL_1_DEFINITIONS.map((item) => (
+                                    <MealItem
+                                        key={item.name}
+                                        name={item.name}
+                                        icon={item.icon}
+                                        defaultAmount={item.defaultAmount}
+                                        unit={item.unit}
+                                        caloriesPer100g={item.caloriesPer100g}
+                                        proteinPer100g={item.proteinPer100g}
+                                        carbsPer100g={item.carbsPer100g}
+                                        fatPer100g={item.fatPer100g}
+                                        checked={currentMeals[1].items[item.name]?.checked || false}
+                                        amount={currentMeals[1].items[item.name]?.amount || item.defaultAmount}
+                                        onToggle={(checked, amount, calories, protein, carbs, fat) =>
+                                            handleMealItemToggle(1, item.name, checked, amount, calories, protein, carbs, fat)
+                                        }
+                                    />
+                                ))}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-lg sm:text-xl text-white">ארוחה 2 (12:30)</CardTitle>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {currentMeals[2].data.calories.toFixed(0)} קלוריות | {currentMeals[2].data.protein.toFixed(0)}ג׳ חלבון
+                                </p>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <div className="space-y-3">
+                                    <MealItem
+                                        name="שייקר חלבון"
+                                        icon={ShakerIcon}
+                                        defaultAmount={30}
+                                        unit="גרם אבקה"
+                                        caloriesPer100g={380}
+                                        proteinPer100g={75}
+                                        carbsPer100g={10}
+                                        fatPer100g={5}
+                                        checked={currentMeals[2].items['שייקר חלבון']?.checked || false}
+                                        amount={currentMeals[2].items['שייקר חלבון']?.amount || 30}
+                                        onToggle={(checked, amount, calories, protein, carbs, fat) =>
+                                            handleMealItemToggle(2, 'שייקר חלבון', checked, amount, calories, protein, carbs, fat)
+                                        }
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-lg sm:text-xl text-white">ארוחה 3 (15:30)</CardTitle>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {currentMeals[3].data.calories.toFixed(0)} קלוריות | {currentMeals[3].data.protein.toFixed(0)}ג׳ חלבון
+                                </p>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <div className="space-y-3">
+                                    <MealItem
+                                        name="שייקר חלבון"
+                                        icon={ShakerIcon}
+                                        defaultAmount={30}
+                                        unit="גרם אבקה"
+                                        caloriesPer100g={380}
+                                        proteinPer100g={75}
+                                        carbsPer100g={10}
+                                        fatPer100g={5}
+                                        checked={currentMeals[3].items['שייקר חלבון']?.checked || false}
+                                        amount={currentMeals[3].items['שייקר חלבון']?.amount || 30}
+                                        onToggle={(checked, amount, calories, protein, carbs, fat) =>
+                                            handleMealItemToggle(3, 'שייקר חלבון', checked, amount, calories, protein, carbs, fat)
+                                        }
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-6">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-lg sm:text-xl text-white">ארוחה 4 - ערב (22:00)</CardTitle>
+                                    <div className="flex gap-2">
+                                        {!isAllSelected(4, WEEKDAY_MEAL_4_DEFINITIONS) ? (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => selectAllMealItems(4, WEEKDAY_MEAL_4_DEFINITIONS)}
+                                                className="h-8 text-xs text-oxygym-yellow hover:text-oxygym-yellow hover:bg-oxygym-yellow/10"
+                                            >
+                                                <CheckSquare className="w-4 h-4 ml-1" />
+                                                סמן הכל
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => clearAllMealItems(4)}
+                                                className="h-8 text-xs text-red-400 hover:text-red-400 hover:bg-red-400/10"
+                                            >
+                                                <X className="w-4 h-4 ml-1" />
+                                                נקה
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {currentMeals[4].data.calories.toFixed(0)} קלוריות | {currentMeals[4].data.protein.toFixed(0)}ג׳ חלבון
+                                </p>
+                            </CardHeader>
+                            <CardContent className="space-y-3 pt-0">
+                                {WEEKDAY_MEAL_4_DEFINITIONS.map((item) => (
+                                    <MealItem
+                                        key={item.name}
+                                        name={item.name}
+                                        icon={item.icon}
+                                        defaultAmount={item.defaultAmount}
+                                        unit={item.unit}
+                                        caloriesPer100g={item.caloriesPer100g}
+                                        proteinPer100g={item.proteinPer100g}
+                                        carbsPer100g={item.carbsPer100g}
+                                        fatPer100g={item.fatPer100g}
+                                        checked={currentMeals[4].items[item.name]?.checked || false}
+                                        amount={currentMeals[4].items[item.name]?.amount || item.defaultAmount}
+                                        onToggle={(checked, amount, calories, protein, carbs, fat) =>
+                                            handleMealItemToggle(4, item.name, checked, amount, calories, protein, carbs, fat)
+                                        }
+                                    />
+                                ))}
+                            </CardContent>
+                        </Card>
+                    </>
                 )}
 
-                <div className="mb-4 sm:mb-6">
-                    <CalorieChart
-                        protein={totalProtein}
-                        carbs={totalCarbs}
-                        fat={totalFat}
-                        totalCalories={totalCalories}
-                    />
-                </div>
-
-                <div className="mb-4 sm:mb-6">
-                    <WaterTracker />
-                </div>
-
-                {!isShabbatMenu ? (
-                    <div className="space-y-3 sm:space-y-4 mb-6">
-                        <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594587-1.png"
-                                    alt="ארוחת בוקר"
-                                    className="max-w-full max-h-full object-contain"
-                                />
-                            </div>
-                            <CardHeader className="p-3 sm:p-4">
+                {/* Shabbat Meals */}
+                {isShabbatMenu && (
+                    <>
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
+                            <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-white text-base sm:text-lg">
-                                        ארוחה 1
-                                    </CardTitle>
-                                    <div className="flex items-center gap-2">
-                                        {isAllSelected(WEEKDAY_MEAL_1_DEFINITIONS, meal1Items) ? (
+                                    <CardTitle className="text-lg sm:text-xl text-white">🕯️ סעודה ראשונה - ערב שבת</CardTitle>
+                                    <div className="flex gap-2">
+                                        {!isAllSelected(1, SHABBAT_MEAL_1_DEFINITIONS) ? (
                                             <Button
-                                                onClick={() => clearAllMealItems(setMeal1Items, setMeal1Data)}
                                                 size="sm"
-                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
+                                                variant="ghost"
+                                                onClick={() => selectAllMealItems(1, SHABBAT_MEAL_1_DEFINITIONS)}
+                                                className="h-8 text-xs text-oxygym-yellow hover:text-oxygym-yellow hover:bg-oxygym-yellow/10"
                                             >
-                                                <X className="w-3 h-3 ml-1" />
-                                                בטל הכל
+                                                <CheckSquare className="w-4 h-4 ml-1" />
+                                                סמן הכל
                                             </Button>
                                         ) : (
                                             <Button
-                                                onClick={() => selectAllMealItems(WEEKDAY_MEAL_1_DEFINITIONS, setMeal1Items, setMeal1Data)}
                                                 size="sm"
-                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                                variant="ghost"
+                                                onClick={() => clearAllMealItems(1)}
+                                                className="h-8 text-xs text-red-400 hover:text-red-400 hover:bg-red-400/10"
                                             >
-                                                <CheckSquare className="w-3 h-3 ml-1" />
-                                                סמן הכל
+                                                <X className="w-4 h-4 ml-1" />
+                                                נקה
                                             </Button>
                                         )}
-                                        <span className="text-oxygym-yellow text-xs sm:text-sm">עד 10:00</span>
                                     </div>
                                 </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {currentMeals[1].data.calories.toFixed(0)} קלוריות | {currentMeals[1].data.protein.toFixed(0)}ג׳ חלבון
+                                </p>
                             </CardHeader>
-                            <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {WEEKDAY_MEAL_1_DEFINITIONS.map(item => (
+                            <CardContent className="space-y-3 pt-0">
+                                {SHABBAT_MEAL_1_DEFINITIONS.map((item) => (
                                     <MealItem
                                         key={item.name}
                                         name={item.name}
@@ -643,121 +743,50 @@ const Nutrition = () => {
                                         proteinPer100g={item.proteinPer100g}
                                         carbsPer100g={item.carbsPer100g}
                                         fatPer100g={item.fatPer100g}
-                                        initialChecked={meal1Items[item.name]?.checked || false}
-                                        initialAmount={meal1Items[item.name]?.amount}
-                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                            handleMealItemToggle(setMeal1Data, setMeal1Items, item.name, checked, amount, cals, prot, crbs, ft)
+                                        checked={currentMeals[1].items[item.name]?.checked || false}
+                                        amount={currentMeals[1].items[item.name]?.amount || item.defaultAmount}
+                                        onToggle={(checked, amount, calories, protein, carbs, fat) =>
+                                            handleMealItemToggle(1, item.name, checked, amount, calories, protein, carbs, fat)
                                         }
                                     />
                                 ))}
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
-                                    alt="ארוחה 2"
-                                    className="max-w-full max-h-full object-contain"
-                                />
-                            </div>
-                            <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
-                                    <span>ארוחה 2</span>
-                                    <span className="text-oxygym-yellow text-xs sm:text-sm">עד 12:30</span>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                <MealItem
-                                    name="גיינר עם מים"
-                                    icon={ShakerIcon}
-                                    defaultAmount={150}
-                                    unit="גרם (2 כפות)"
-                                    caloriesPer100g={388}
-                                    proteinPer100g={15}
-                                    carbsPer100g={75}
-                                    fatPer100g={3.1}
-                                    initialChecked={meal2Items['גיינר עם מים']?.checked || false}
-                                    initialAmount={meal2Items['גיינר עם מים']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal2Data, setMeal2Items, 'גיינר עם מים', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-2.png"
-                                    alt="ארוחה 3"
-                                    className="max-w-full max-h-full object-contain"
-                                />
-                            </div>
-                            <CardHeader className="p-3 sm:p-4">
-                                <CardTitle className="text-white flex items-center justify-between text-base sm:text-lg">
-                                    <span>ארוחה 3</span>
-                                    <span className="text-oxygym-yellow text-xs sm:text-sm">עד 15:30</span>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                <MealItem
-                                    name="גיינר עם מים"
-                                    icon={ShakerIcon}
-                                    defaultAmount={150}
-                                    unit="גרם (2 כפות)"
-                                    caloriesPer100g={388}
-                                    proteinPer100g={15}
-                                    carbsPer100g={75}
-                                    fatPer100g={3.1}
-                                    initialChecked={meal3Items['גיינר עם מים']?.checked || false}
-                                    initialAmount={meal3Items['גיינר עם מים']?.amount}
-                                    onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                        handleMealItemToggle(setMeal3Data, setMeal3Items, 'גיינר עם מים', checked, amount, cals, prot, crbs, ft)
-                                    }
-                                />
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-oxygym-darkGrey border-border overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765106594588-4.png"
-                                    alt="ארוחה 4"
-                                    className="max-w-full max-h-full object-contain"
-                                />
-                            </div>
-                            <CardHeader className="p-3 sm:p-4">
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
+                            <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-white text-base sm:text-lg">
-                                        ארוחה 4
-                                    </CardTitle>
-                                    <div className="flex items-center gap-2">
-                                        {isAllSelected(WEEKDAY_MEAL_4_DEFINITIONS, meal4Items) ? (
+                                    <CardTitle className="text-lg sm:text-xl text-white">☀️ סעודה שנייה - יום שבת</CardTitle>
+                                    <div className="flex gap-2">
+                                        {!isAllSelected(2, SHABBAT_MEAL_2_DEFINITIONS) ? (
                                             <Button
-                                                onClick={() => clearAllMealItems(setMeal4Items, setMeal4Data)}
                                                 size="sm"
-                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
+                                                variant="ghost"
+                                                onClick={() => selectAllMealItems(2, SHABBAT_MEAL_2_DEFINITIONS)}
+                                                className="h-8 text-xs text-oxygym-yellow hover:text-oxygym-yellow hover:bg-oxygym-yellow/10"
                                             >
-                                                <X className="w-3 h-3 ml-1" />
-                                                בטל הכל
+                                                <CheckSquare className="w-4 h-4 ml-1" />
+                                                סמן הכל
                                             </Button>
                                         ) : (
                                             <Button
-                                                onClick={() => selectAllMealItems(WEEKDAY_MEAL_4_DEFINITIONS, setMeal4Items, setMeal4Data)}
                                                 size="sm"
-                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                                variant="ghost"
+                                                onClick={() => clearAllMealItems(2)}
+                                                className="h-8 text-xs text-red-400 hover:text-red-400 hover:bg-red-400/10"
                                             >
-                                                <CheckSquare className="w-3 h-3 ml-1" />
-                                                סמן הכל
+                                                <X className="w-4 h-4 ml-1" />
+                                                נקה
                                             </Button>
                                         )}
-                                        <span className="text-oxygym-yellow text-xs sm:text-sm">עד 22:00</span>
                                     </div>
                                 </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {currentMeals[2].data.calories.toFixed(0)} קלוריות | {currentMeals[2].data.protein.toFixed(0)}ג׳ חלבון
+                                </p>
                             </CardHeader>
-                            <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {WEEKDAY_MEAL_4_DEFINITIONS.map(item => (
+                            <CardContent className="space-y-3 pt-0">
+                                {SHABBAT_MEAL_2_DEFINITIONS.map((item) => (
                                     <MealItem
                                         key={item.name}
                                         name={item.name}
@@ -768,118 +797,50 @@ const Nutrition = () => {
                                         proteinPer100g={item.proteinPer100g}
                                         carbsPer100g={item.carbsPer100g}
                                         fatPer100g={item.fatPer100g}
-                                        initialChecked={meal4Items[item.name]?.checked || false}
-                                        initialAmount={meal4Items[item.name]?.amount}
-                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                            handleMealItemToggle(setMeal4Data, setMeal4Items, item.name, checked, amount, cals, prot, crbs, ft)
-                                        }
-                                    />
-                                ))}
-                            </CardContent>
-                        </Card>
-                    </div>
-                ) : (
-                    <div className="space-y-3 sm:space-y-4 mb-6">
-                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765350340296-1.png"
-                                    alt="סעודה 1 שבת"
-                                    className="max-w-full max-h-full object-contain"
-                                />
-                            </div>
-                            <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
-                                <div className="flex items-center justify-between">
-                                    <CardTitle className="text-white text-base sm:text-lg flex items-center gap-2">
-                                        <span>⭐</span>
-                                        <span>סעודה 1 - שבת</span>
-                                    </CardTitle>
-                                    <div className="flex items-center gap-2">
-                                        {isAllSelected(SHABBAT_MEAL_1_DEFINITIONS, meal1Items) ? (
-                                            <Button
-                                                onClick={() => clearAllMealItems(setMeal1Items, setMeal1Data)}
-                                                size="sm"
-                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
-                                            >
-                                                <X className="w-3 h-3 ml-1" />
-                                                בטל הכל
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                onClick={() => selectAllMealItems(SHABBAT_MEAL_1_DEFINITIONS, setMeal1Items, setMeal1Data)}
-                                                size="sm"
-                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
-                                            >
-                                                <CheckSquare className="w-3 h-3 ml-1" />
-                                                סמן הכל
-                                            </Button>
-                                        )}
-                                        <span className="text-oxygym-yellow text-xs sm:text-sm">ליל שבת</span>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {SHABBAT_MEAL_1_DEFINITIONS.map(item => (
-                                    <MealItem
-                                        key={item.name}
-                                        name={item.name}
-                                        icon={item.icon}
-                                        defaultAmount={item.defaultAmount}
-                                        unit={item.unit}
-                                        caloriesPer100g={item.caloriesPer100g}
-                                        proteinPer100g={item.proteinPer100g}
-                                        carbsPer100g={item.carbsPer100g}
-                                        fatPer100g={item.fatPer100g}
-                                        initialChecked={meal1Items[item.name]?.checked || false}
-                                        initialAmount={meal1Items[item.name]?.amount}
-                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                            handleMealItemToggle(setMeal1Data, setMeal1Items, item.name, checked, amount, cals, prot, crbs, ft)
+                                        checked={currentMeals[2].items[item.name]?.checked || false}
+                                        amount={currentMeals[2].items[item.name]?.amount || item.defaultAmount}
+                                        onToggle={(checked, amount, calories, protein, carbs, fat) =>
+                                            handleMealItemToggle(2, item.name, checked, amount, calories, protein, carbs, fat)
                                         }
                                     />
                                 ))}
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765350647080-2.png"
-                                    alt="סעודה 2 שבת"
-                                    className="max-w-full max-h-full object-contain"
-                                />
-                            </div>
-                            <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
+                            <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-white text-base sm:text-lg flex items-center gap-2">
-                                        <span>⭐</span>
-                                        <span>סעודה 2 - שבת</span>
-                                    </CardTitle>
-                                    <div className="flex items-center gap-2">
-                                        {isAllSelected(SHABBAT_MEAL_2_DEFINITIONS, meal2Items) ? (
+                                    <CardTitle className="text-lg sm:text-xl text-white">🌆 סעודה שלישית - אחר הצהריים</CardTitle>
+                                    <div className="flex gap-2">
+                                        {!isAllSelected(3, SHABBAT_MEAL_3_DEFINITIONS) ? (
                                             <Button
-                                                onClick={() => clearAllMealItems(setMeal2Items, setMeal2Data)}
                                                 size="sm"
-                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
+                                                variant="ghost"
+                                                onClick={() => selectAllMealItems(3, SHABBAT_MEAL_3_DEFINITIONS)}
+                                                className="h-8 text-xs text-oxygym-yellow hover:text-oxygym-yellow hover:bg-oxygym-yellow/10"
                                             >
-                                                <X className="w-3 h-3 ml-1" />
-                                                בטל הכל
+                                                <CheckSquare className="w-4 h-4 ml-1" />
+                                                סמן הכל
                                             </Button>
                                         ) : (
                                             <Button
-                                                onClick={() => selectAllMealItems(SHABBAT_MEAL_2_DEFINITIONS, setMeal2Items, setMeal2Data)}
                                                 size="sm"
-                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                                variant="ghost"
+                                                onClick={() => clearAllMealItems(3)}
+                                                className="h-8 text-xs text-red-400 hover:text-red-400 hover:bg-red-400/10"
                                             >
-                                                <CheckSquare className="w-3 h-3 ml-1" />
-                                                סמן הכל
+                                                <X className="w-4 h-4 ml-1" />
+                                                נקה
                                             </Button>
                                         )}
-                                        <span className="text-oxygym-yellow text-xs sm:text-sm">צהריים</span>
                                     </div>
                                 </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {currentMeals[3].data.calories.toFixed(0)} קלוריות | {currentMeals[3].data.protein.toFixed(0)}ג׳ חלבון
+                                </p>
                             </CardHeader>
-                            <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {SHABBAT_MEAL_2_DEFINITIONS.map(item => (
+                            <CardContent className="space-y-3 pt-0">
+                                {SHABBAT_MEAL_3_DEFINITIONS.map((item) => (
                                     <MealItem
                                         key={item.name}
                                         name={item.name}
@@ -890,56 +851,50 @@ const Nutrition = () => {
                                         proteinPer100g={item.proteinPer100g}
                                         carbsPer100g={item.carbsPer100g}
                                         fatPer100g={item.fatPer100g}
-                                        initialChecked={meal2Items[item.name]?.checked || false}
-                                        initialAmount={meal2Items[item.name]?.amount}
-                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                            handleMealItemToggle(setMeal2Data, setMeal2Items, item.name, checked, amount, cals, prot, crbs, ft)
+                                        checked={currentMeals[3].items[item.name]?.checked || false}
+                                        amount={currentMeals[3].items[item.name]?.amount || item.defaultAmount}
+                                        onToggle={(checked, amount, calories, protein, carbs, fat) =>
+                                            handleMealItemToggle(3, item.name, checked, amount, calories, protein, carbs, fat)
                                         }
                                     />
                                 ))}
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765351039028-3.png"
-                                    alt="סעודה 3 שבת"
-                                    className="max-w-full max-h-full object-contain"
-                                />
-                            </div>
-                            <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
+                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-6">
+                            <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-white text-base sm:text-lg flex items-center gap-2">
-                                        <span>⭐</span>
-                                        <span>סעודה 3 - שבת</span>
-                                    </CardTitle>
-                                    <div className="flex items-center gap-2">
-                                        {isAllSelected(SHABBAT_MEAL_3_DEFINITIONS, meal3Items) ? (
+                                    <CardTitle className="text-lg sm:text-xl text-white">🌙 סעודה רביעית - מוצאי שבת</CardTitle>
+                                    <div className="flex gap-2">
+                                        {!isAllSelected(4, SHABBAT_MEAL_4_DEFINITIONS) ? (
                                             <Button
-                                                onClick={() => clearAllMealItems(setMeal3Items, setMeal3Data)}
                                                 size="sm"
-                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
+                                                variant="ghost"
+                                                onClick={() => selectAllMealItems(4, SHABBAT_MEAL_4_DEFINITIONS)}
+                                                className="h-8 text-xs text-oxygym-yellow hover:text-oxygym-yellow hover:bg-oxygym-yellow/10"
                                             >
-                                                <X className="w-3 h-3 ml-1" />
-                                                בטל הכל
+                                                <CheckSquare className="w-4 h-4 ml-1" />
+                                                סמן הכל
                                             </Button>
                                         ) : (
                                             <Button
-                                                onClick={() => selectAllMealItems(SHABBAT_MEAL_3_DEFINITIONS, setMeal3Items, setMeal3Data)}
                                                 size="sm"
-                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
+                                                variant="ghost"
+                                                onClick={() => clearAllMealItems(4)}
+                                                className="h-8 text-xs text-red-400 hover:text-red-400 hover:bg-red-400/10"
                                             >
-                                                <CheckSquare className="w-3 h-3 ml-1" />
-                                                סמן הכל
+                                                <X className="w-4 h-4 ml-1" />
+                                                נקה
                                             </Button>
                                         )}
-                                        <span className="text-oxygym-yellow text-xs sm:text-sm">סעודה שלישית</span>
                                     </div>
                                 </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {currentMeals[4].data.calories.toFixed(0)} קלוריות | {currentMeals[4].data.protein.toFixed(0)}ג׳ חלבון
+                                </p>
                             </CardHeader>
-                            <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {SHABBAT_MEAL_3_DEFINITIONS.map(item => (
+                            <CardContent className="space-y-3 pt-0">
+                                {SHABBAT_MEAL_4_DEFINITIONS.map((item) => (
                                     <MealItem
                                         key={item.name}
                                         name={item.name}
@@ -950,77 +905,57 @@ const Nutrition = () => {
                                         proteinPer100g={item.proteinPer100g}
                                         carbsPer100g={item.carbsPer100g}
                                         fatPer100g={item.fatPer100g}
-                                        initialChecked={meal3Items[item.name]?.checked || false}
-                                        initialAmount={meal3Items[item.name]?.amount}
-                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                            handleMealItemToggle(setMeal3Data, setMeal3Items, item.name, checked, amount, cals, prot, crbs, ft)
+                                        checked={currentMeals[4].items[item.name]?.checked || false}
+                                        amount={currentMeals[4].items[item.name]?.amount || item.defaultAmount}
+                                        onToggle={(checked, amount, calories, protein, carbs, fat) =>
+                                            handleMealItemToggle(4, item.name, checked, amount, calories, protein, carbs, fat)
                                         }
                                     />
                                 ))}
                             </CardContent>
                         </Card>
-
-                        <Card className="bg-oxygym-darkGrey border-oxygym-yellow border-2 overflow-hidden">
-                            <div className="relative h-60 sm:h-72 w-full overflow-hidden bg-[#F5E6D3] flex items-center justify-center p-2">
-                                <img 
-                                    src="https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/superdev-project-images/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb/1765351280343-4.png"
-                                    alt="סעודה 4 שבת"
-                                    className="max-w-full max-h-full object-contain"
-                                />
-                            </div>
-                            <CardHeader className="p-3 sm:p-4 bg-oxygym-yellow/5">
-                                <div className="flex items-center justify-between">
-                                    <CardTitle className="text-white text-base sm:text-lg flex items-center gap-2">
-                                        <span>⭐</span>
-                                        <span>סעודה 4 - שבת</span>
-                                    </CardTitle>
-                                    <div className="flex items-center gap-2">
-                                        {isAllSelected(SHABBAT_MEAL_4_DEFINITIONS, meal4Items) ? (
-                                            <Button
-                                                onClick={() => clearAllMealItems(setMeal4Items, setMeal4Data)}
-                                                size="sm"
-                                                className="bg-red-600 hover:bg-red-700 text-white text-xs h-7"
-                                            >
-                                                <X className="w-3 h-3 ml-1" />
-                                                בטל הכל
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                onClick={() => selectAllMealItems(SHABBAT_MEAL_4_DEFINITIONS, setMeal4Items, setMeal4Data)}
-                                                size="sm"
-                                                className="bg-oxygym-yellow hover:bg-yellow-500 text-black text-xs h-7"
-                                            >
-                                                <CheckSquare className="w-3 h-3 ml-1" />
-                                                סמן הכל
-                                            </Button>
-                                        )}
-                                        <span className="text-oxygym-yellow text-xs sm:text-sm">מוצאי שבת</span>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-1.5 sm:space-y-2 p-3 sm:p-4 pt-0">
-                                {SHABBAT_MEAL_4_DEFINITIONS.map(item => (
-                                    <MealItem
-                                        key={item.name}
-                                        name={item.name}
-                                        icon={item.icon}
-                                        defaultAmount={item.defaultAmount}
-                                        unit={item.unit}
-                                        caloriesPer100g={item.caloriesPer100g}
-                                        proteinPer100g={item.proteinPer100g}
-                                        carbsPer100g={item.carbsPer100g}
-                                        fatPer100g={item.fatPer100g}
-                                        initialChecked={meal4Items[item.name]?.checked || false}
-                                        initialAmount={meal4Items[item.name]?.amount}
-                                        onToggle={(checked, amount, cals, prot, crbs, ft) => 
-                                            handleMealItemToggle(setMeal4Data, setMeal4Items, item.name, checked, amount, cals, prot, crbs, ft)
-                                        }
-                                    />
-                                ))}
-                            </CardContent>
-                        </Card>
-                    </div>
+                    </>
                 )}
+
+                {/* Summary and Charts */}
+                <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4 sm:mb-6">
+                    <CardHeader>
+                        <CardTitle className="text-lg sm:text-xl text-white">סיכום יומי</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                            <div className="bg-oxygym-dark p-3 sm:p-4 rounded-lg">
+                                <p className="text-xs sm:text-sm text-muted-foreground mb-1">קלוריות</p>
+                                <p className="text-xl sm:text-2xl font-bold text-oxygym-yellow">{totals.calories.toFixed(0)}</p>
+                            </div>
+                            <div className="bg-oxygym-dark p-3 sm:p-4 rounded-lg">
+                                <p className="text-xs sm:text-sm text-muted-foreground mb-1">חלבון</p>
+                                <p className="text-xl sm:text-2xl font-bold text-green-400">{totals.protein.toFixed(0)}ג׳</p>
+                            </div>
+                            <div className="bg-oxygym-dark p-3 sm:p-4 rounded-lg">
+                                <p className="text-xs sm:text-sm text-muted-foreground mb-1">פחמימות</p>
+                                <p className="text-xl sm:text-2xl font-bold text-blue-400">{totals.carbs.toFixed(0)}ג׳</p>
+                            </div>
+                            <div className="bg-oxygym-dark p-3 sm:p-4 rounded-lg">
+                                <p className="text-xs sm:text-sm text-muted-foreground mb-1">שומן</p>
+                                <p className="text-xl sm:text-2xl font-bold text-orange-400">{totals.fat.toFixed(0)}ג׳</p>
+                            </div>
+                        </div>
+
+                        <div className="h-[200px] sm:h-[250px]">
+                            <CalorieChart
+                                data={[
+                                    { name: 'ארוחה 1', calories: currentMeals[1].data.calories },
+                                    { name: 'ארוחה 2', calories: currentMeals[2].data.calories },
+                                    { name: 'ארוחה 3', calories: currentMeals[3].data.calories },
+                                    { name: 'ארוחה 4', calories: currentMeals[4].data.calories },
+                                ]}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <WaterTracker date={selectedDate} />
             </div>
         </div>
     );
