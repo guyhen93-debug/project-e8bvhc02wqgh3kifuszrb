@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 interface NotificationSettings {
-    enabled: boolean;
+    mealReminders: boolean;
+    weighInReminder: boolean;
     lastScheduled: string | null;
+    weighInLastScheduled: string | null;
 }
 
 // Meal reminder times (24h format)
@@ -14,13 +16,18 @@ const MEAL_TIMES = [
     { hour: 22, minute: 0, meal: 'ארוחה 4' },
 ];
 
+// Weigh-in reminder (Thursday at 06:30)
+const WEIGH_IN_TIME = { day: 4, hour: 6, minute: 30 }; // 4 = Thursday
+
 const STORAGE_KEY = 'oxygym-notification-settings';
 
 export const useNotifications = () => {
     const { toast } = useToast();
     const [settings, setSettings] = useState<NotificationSettings>({
-        enabled: false,
+        mealReminders: false,
+        weighInReminder: false,
         lastScheduled: null,
+        weighInLastScheduled: null,
     });
     const [permission, setPermission] = useState<NotificationPermission>('default');
     const [isSupported, setIsSupported] = useState(false);
@@ -38,7 +45,18 @@ export const useNotifications = () => {
         const savedSettings = localStorage.getItem(STORAGE_KEY);
         if (savedSettings) {
             try {
-                setSettings(JSON.parse(savedSettings));
+                const parsed = JSON.parse(savedSettings);
+                // Migrate old settings format
+                if (typeof parsed.enabled !== 'undefined') {
+                    setSettings({
+                        mealReminders: parsed.enabled,
+                        weighInReminder: false,
+                        lastScheduled: parsed.lastScheduled,
+                        weighInLastScheduled: null,
+                    });
+                } else {
+                    setSettings(parsed);
+                }
             } catch (error) {
                 console.error('Failed to load notification settings:', error);
             }
@@ -51,8 +69,79 @@ export const useNotifications = () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
     }, []);
 
-    // Schedule daily notifications
-    const scheduleDailyNotifications = useCallback(async () => {
+    // Calculate next Thursday at 06:30
+    const calculateNextThursday = useCallback(() => {
+        const now = new Date();
+        const thursdayTime = new Date();
+        
+        // Set to Thursday 06:30
+        thursdayTime.setHours(WEIGH_IN_TIME.hour, WEIGH_IN_TIME.minute, 0, 0);
+        
+        const currentDay = now.getDay();
+        const daysUntilThursday = (WEIGH_IN_TIME.day - currentDay + 7) % 7;
+        
+        // If today is Thursday but time hasn't passed yet
+        if (currentDay === WEIGH_IN_TIME.day && now < thursdayTime) {
+            // Use today
+            return thursdayTime;
+        }
+        
+        // If today is Thursday and time has passed, or it's another day
+        if (daysUntilThursday === 0) {
+            // Next Thursday (7 days from now)
+            thursdayTime.setDate(thursdayTime.getDate() + 7);
+        } else {
+            // Add days until next Thursday
+            thursdayTime.setDate(thursdayTime.getDate() + daysUntilThursday);
+        }
+        
+        return thursdayTime;
+    }, []);
+
+    // Schedule weekly weigh-in notification
+    const scheduleWeighInNotification = useCallback(() => {
+        if (!isSupported || permission !== 'granted') {
+            return;
+        }
+
+        const now = new Date();
+        const nextThursday = calculateNextThursday();
+        const timeUntilNotification = nextThursday.getTime() - now.getTime();
+
+        console.log(`Scheduling weigh-in notification for ${nextThursday.toLocaleString('he-IL')}`);
+        console.log(`Time until notification: ${Math.round(timeUntilNotification / 1000 / 60 / 60)} hours`);
+
+        // Schedule the notification
+        setTimeout(() => {
+            if (Notification.permission === 'granted') {
+                const notification = new Notification('יום שקילה! ⚖️', {
+                    body: 'לפני אוכל/קפה, אחרי שירותים, בלי בגדים. לא לשכוח לעדכן!',
+                    icon: 'https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/project-favicons/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb-8d04fe90-f5f4-47bc-bc85-6678dc2d65b4.png',
+                    badge: 'https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/project-favicons/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb-8d04fe90-f5f4-47bc-bc85-6678dc2d65b4.png',
+                    tag: 'weekly-weigh-in',
+                    requireInteraction: true,
+                    vibrate: [300, 200, 300],
+                });
+
+                notification.onclick = () => {
+                    window.focus();
+                    notification.close();
+                    window.location.href = '/';
+                };
+
+                // Re-schedule for next week
+                scheduleWeighInNotification();
+            }
+        }, timeUntilNotification);
+
+        saveSettings({
+            ...settings,
+            weighInLastScheduled: now.toISOString(),
+        });
+    }, [isSupported, permission, calculateNextThursday, saveSettings, settings]);
+
+    // Schedule daily meal notifications
+    const scheduleMealNotifications = useCallback(async () => {
         if (!isSupported || permission !== 'granted') {
             return;
         }
@@ -91,7 +180,7 @@ export const useNotifications = () => {
                     };
 
                     // Re-schedule for next day
-                    scheduleDailyNotifications();
+                    scheduleMealNotifications();
                 }
             }, timeUntilNotification);
 
@@ -99,10 +188,10 @@ export const useNotifications = () => {
         }
 
         saveSettings({
-            enabled: true,
+            ...settings,
             lastScheduled: today,
         });
-    }, [isSupported, permission, saveSettings]);
+    }, [isSupported, permission, saveSettings, settings]);
 
     // Request notification permission
     const requestPermission = useCallback(async () => {
@@ -122,10 +211,18 @@ export const useNotifications = () => {
 
             if (result === 'granted') {
                 toast({
-                    title: '✅ התזכורות הופעלו',
-                    description: 'תקבל תזכורות לארוחות בשעות הקבועות',
+                    title: '✅ ההתראות הופעלו',
+                    description: 'תקבל התראות בהתאם להגדרות',
                 });
-                await scheduleDailyNotifications();
+                
+                // Schedule based on current settings
+                if (settings.mealReminders) {
+                    await scheduleMealNotifications();
+                }
+                if (settings.weighInReminder) {
+                    scheduleWeighInNotification();
+                }
+                
                 return true;
             } else if (result === 'denied') {
                 toast({
@@ -133,7 +230,12 @@ export const useNotifications = () => {
                     description: 'לא ניתן לשלוח התראות. שנה בהגדרות הדפדפן.',
                     variant: 'destructive',
                 });
-                saveSettings({ enabled: false, lastScheduled: null });
+                saveSettings({ 
+                    mealReminders: false, 
+                    weighInReminder: false,
+                    lastScheduled: null,
+                    weighInLastScheduled: null,
+                });
                 return false;
             }
         } catch (error) {
@@ -146,56 +248,97 @@ export const useNotifications = () => {
             return false;
         }
         return false;
-    }, [isSupported, scheduleDailyNotifications, saveSettings, toast]);
+    }, [isSupported, scheduleMealNotifications, scheduleWeighInNotification, saveSettings, toast, settings]);
 
-    // Enable notifications
-    const enableNotifications = useCallback(async () => {
-        if (permission === 'granted') {
-            await scheduleDailyNotifications();
-            return true;
-        } else {
-            return await requestPermission();
-        }
-    }, [permission, scheduleDailyNotifications, requestPermission]);
-
-    // Disable notifications
-    const disableNotifications = useCallback(() => {
-        saveSettings({ enabled: false, lastScheduled: null });
-        toast({
-            title: '🔕 התזכורות כובו',
-            description: 'לא תקבל עוד תזכורות לארוחות',
-        });
-    }, [saveSettings, toast]);
-
-    // Toggle notifications
-    const toggleNotifications = useCallback(async (enabled: boolean) => {
+    // Toggle meal notifications
+    const toggleMealNotifications = useCallback(async (enabled: boolean) => {
         if (enabled) {
-            return await enableNotifications();
+            if (permission === 'granted') {
+                await scheduleMealNotifications();
+                saveSettings({ ...settings, mealReminders: true });
+                toast({
+                    title: '✅ תזכורות ארוחות הופעלו',
+                    description: 'תקבל תזכורות לארוחות בשעות הקבועות',
+                });
+                return true;
+            } else {
+                const granted = await requestPermission();
+                if (granted) {
+                    saveSettings({ ...settings, mealReminders: true });
+                }
+                return granted;
+            }
         } else {
-            disableNotifications();
+            saveSettings({ ...settings, mealReminders: false });
+            toast({
+                title: '🔕 תזכורות ארוחות כובו',
+                description: 'לא תקבל עוד תזכורות לארוחות',
+            });
             return true;
         }
-    }, [enableNotifications, disableNotifications]);
+    }, [permission, scheduleMealNotifications, requestPermission, saveSettings, settings, toast]);
+
+    // Toggle weigh-in notification
+    const toggleWeighInNotification = useCallback(async (enabled: boolean) => {
+        if (enabled) {
+            if (permission === 'granted') {
+                scheduleWeighInNotification();
+                saveSettings({ ...settings, weighInReminder: true });
+                toast({
+                    title: '✅ תזכורת שקילה הופעלה',
+                    description: 'תקבל תזכורת כל יום חמישי ב-06:30',
+                });
+                return true;
+            } else {
+                const granted = await requestPermission();
+                if (granted) {
+                    saveSettings({ ...settings, weighInReminder: true });
+                }
+                return granted;
+            }
+        } else {
+            saveSettings({ ...settings, weighInReminder: false });
+            toast({
+                title: '🔕 תזכורת שקילה כובתה',
+                description: 'לא תקבל עוד תזכורות שקילה',
+            });
+            return true;
+        }
+    }, [permission, scheduleWeighInNotification, requestPermission, saveSettings, settings, toast]);
 
     // Check if we need to reschedule (e.g., after app restart)
     useEffect(() => {
-        if (settings.enabled && permission === 'granted') {
-            const now = new Date();
-            const lastScheduled = settings.lastScheduled ? new Date(settings.lastScheduled) : null;
-            
-            // If not scheduled today, reschedule
-            if (!lastScheduled || lastScheduled.toDateString() !== now.toDateString()) {
-                scheduleDailyNotifications();
+        if (permission === 'granted') {
+            // Reschedule meal notifications if enabled
+            if (settings.mealReminders) {
+                const now = new Date();
+                const lastScheduled = settings.lastScheduled ? new Date(settings.lastScheduled) : null;
+                
+                if (!lastScheduled || lastScheduled.toDateString() !== now.toDateString()) {
+                    scheduleMealNotifications();
+                }
+            }
+
+            // Reschedule weigh-in notification if enabled
+            if (settings.weighInReminder) {
+                const now = new Date();
+                const lastScheduled = settings.weighInLastScheduled ? new Date(settings.weighInLastScheduled) : null;
+                const nextThursday = calculateNextThursday();
+                
+                // If last scheduled was more than a week ago, or never scheduled
+                if (!lastScheduled || (now.getTime() - lastScheduled.getTime()) > 7 * 24 * 60 * 60 * 1000) {
+                    scheduleWeighInNotification();
+                }
             }
         }
-    }, [settings.enabled, settings.lastScheduled, permission, scheduleDailyNotifications]);
+    }, [settings.mealReminders, settings.weighInReminder, settings.lastScheduled, settings.weighInLastScheduled, permission, scheduleMealNotifications, scheduleWeighInNotification, calculateNextThursday]);
 
     return {
         isSupported,
         permission,
         settings,
-        toggleNotifications,
-        enableNotifications,
-        disableNotifications,
+        toggleMealNotifications,
+        toggleWeighInNotification,
+        requestPermission,
     };
 };
