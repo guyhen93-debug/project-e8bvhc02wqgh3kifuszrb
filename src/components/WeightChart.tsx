@@ -22,7 +22,7 @@ export const WeightChart = () => {
         weight: log.weight,
         sortDate: new Date(log.date).getTime(),
     }))
-    .sort((a, b) => b.sortDate - a.sortDate)
+    .sort((a, b) => a.sortDate - b.sortDate)
     .map(({ date, weight }) => ({ date, weight })) || [];
 
     if (chartData.length === 0) {
@@ -59,7 +59,6 @@ export const WeightChart = () => {
                             dataKey="date" 
                             stroke="#999"
                             style={{ fontSize: '12px' }}
-                            reversed={true}
                         />
                         <YAxis 
                             stroke="#999"
@@ -67,7 +66,7 @@ export const WeightChart = () => {
                             domain={[yAxisMin, yAxisMax]}
                             tickFormatter={(value) => `${value}`}
                             width={45}
-                            orientation="right"
+                            orientation="left"
                         />
                         <Tooltip 
                             contentStyle={{ 
