@@ -22,7 +22,7 @@ export const WeightChart = () => {
         weight: log.weight,
         sortDate: new Date(log.date).getTime(),
     }))
-    .sort((a, b) => a.sortDate - b.sortDate)
+    .sort((a, b) => b.sortDate - a.sortDate)
     .map(({ date, weight }) => ({ date, weight })) || [];
 
     if (chartData.length === 0) {
@@ -59,7 +59,6 @@ export const WeightChart = () => {
                             dataKey="date" 
                             stroke="#999"
                             style={{ fontSize: '12px' }}
-                            reversed={true}
                         />
                         <YAxis 
                             stroke="#999"
