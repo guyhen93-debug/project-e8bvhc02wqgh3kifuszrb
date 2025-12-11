@@ -22,7 +22,7 @@ export const WeightChart = () => {
         weight: log.weight,
         sortDate: new Date(log.date).getTime(),
     }))
-    .sort((a, b) => b.sortDate - a.sortDate)
+    .sort((a, b) => a.sortDate - b.sortDate)
     .map(({ date, weight }) => ({ date, weight })) || [];
 
     if (chartData.length === 0) {
