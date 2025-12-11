@@ -22,7 +22,7 @@ export const WeightChart = () => {
         weight: log.weight,
         sortDate: new Date(log.date).getTime(),
     }))
-    .sort((a, b) => a.sortDate - b.sortDate)
+    .sort((a, b) => b.sortDate - a.sortDate)
     .map(({ date, weight }) => ({ date, weight })) || [];
 
     if (chartData.length === 0) {
@@ -52,28 +52,30 @@ export const WeightChart = () => {
                 <CardTitle className="text-white">גרף משקל</CardTitle>
             </CardHeader>
             <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={chartData} margin={{ left: 50, right: 10, top: 5, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={220}>
+                    <LineChart data={chartData} margin={{ left: 5, right: 5, top: 10, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                         <XAxis 
                             dataKey="date" 
                             stroke="#999"
                             style={{ fontSize: '12px' }}
+                            reversed={true}
                         />
                         <YAxis 
                             stroke="#999"
-                            style={{ fontSize: '11px' }}
+                            style={{ fontSize: '12px' }}
                             domain={[yAxisMin, yAxisMax]}
                             tickFormatter={(value) => `${value}`}
-                            width={80}
-                            tickMargin={30}
+                            width={45}
+                            orientation="right"
                         />
                         <Tooltip 
                             contentStyle={{ 
                                 backgroundColor: '#1a1a1a', 
                                 border: '1px solid #333',
                                 borderRadius: '8px',
-                                color: '#fff'
+                                color: '#fff',
+                                direction: 'rtl'
                             }}
                             formatter={(value: any) => [`${value} ק"ג`, 'משקל']}
                         />
@@ -82,7 +84,8 @@ export const WeightChart = () => {
                             dataKey="weight" 
                             stroke="#FFE600" 
                             strokeWidth={3}
-                            dot={{ fill: '#FFE600', r: 4 }}
+                            dot={{ fill: '#FFE600', r: 5 }}
+                            activeDot={{ r: 7 }}
                         />
                     </LineChart>
                 </ResponsiveContainer>
