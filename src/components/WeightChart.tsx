@@ -59,7 +59,6 @@ export const WeightChart = () => {
                             dataKey="date" 
                             stroke="#999"
                             style={{ fontSize: '12px' }}
-                            reversed={true}
                         />
                         <YAxis 
                             stroke="#999"
