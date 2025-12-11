@@ -51,9 +51,9 @@ export const WeightChart = () => {
             <CardHeader>
                 <CardTitle className="text-white">גרף משקל</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 pr-4">
+            <CardContent className="p-0">
                 <ResponsiveContainer width="100%" height={220}>
-                    <LineChart data={chartData} margin={{ left: 50, right: -10, top: 10, bottom: 5 }}>
+                    <LineChart data={chartData} margin={{ left: 60, right: 0, top: 10, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                         <XAxis 
                             dataKey="date" 
@@ -66,6 +66,7 @@ export const WeightChart = () => {
                             domain={[yAxisMin, yAxisMax]}
                             tickFormatter={(value) => `${value}`}
                             orientation="left"
+                            tick={{ dx: -5 }}
                         />
                         <Tooltip 
                             contentStyle={{ 
