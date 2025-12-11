@@ -22,7 +22,7 @@ export const WeightChart = () => {
         weight: log.weight,
         sortDate: new Date(log.date).getTime(),
     }))
-    .sort((a, b) => b.sortDate - a.sortDate)
+    .sort((a, b) => a.sortDate - b.sortDate)
     .map(({ date, weight }) => ({ date, weight })) || [];
 
     if (chartData.length === 0) {
@@ -51,21 +51,22 @@ export const WeightChart = () => {
             <CardHeader>
                 <CardTitle className="text-white">גרף משקל</CardTitle>
             </CardHeader>
-            <CardContent className="pl-0">
+            <CardContent className="pr-0">
                 <ResponsiveContainer width="100%" height={220}>
-                    <LineChart data={chartData} margin={{ left: 10, right: 50, top: 10, bottom: 5 }}>
+                    <LineChart data={chartData} margin={{ left: 50, right: 10, top: 10, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                         <XAxis 
                             dataKey="date" 
                             stroke="#999"
                             style={{ fontSize: '12px' }}
+                            reversed={true}
                         />
                         <YAxis 
                             stroke="#999"
                             style={{ fontSize: '12px' }}
                             domain={[yAxisMin, yAxisMax]}
                             tickFormatter={(value) => `${value}`}
-                            orientation="right"
+                            orientation="left"
                         />
                         <Tooltip 
                             contentStyle={{ 
