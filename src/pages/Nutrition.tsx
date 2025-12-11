@@ -7,7 +7,7 @@ import { MealItem } from '@/components/MealItem';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { RefreshCw, AlertCircle, CheckSquare, X, Bell, BellOff, Info } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckSquare, X, Bell, BellOff, Info, AlertTriangle, Flame } from 'lucide-react';
 import { BreadIcon } from '@/components/icons/BreadIcon';
 import { ChickenIcon } from '@/components/icons/ChickenIcon';
 import { VegetablesIcon } from '@/components/icons/VegetablesIcon';
@@ -522,6 +522,40 @@ const Nutrition = () => {
                         </p>
                     </CardContent>
                 </Card>
+
+                {/* Shabbat Important Notes */}
+                {isShabbatMenu && (
+                    <div className="mb-4 space-y-3">
+                        {/* Yellow Warning - Meal Replacement */}
+                        <Card className="bg-oxygym-yellow/20 border-2 border-oxygym-yellow">
+                            <CardContent className="p-3 sm:p-4">
+                                <div className="flex items-start gap-3">
+                                    <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-oxygym-yellow flex-shrink-0 mt-0.5" />
+                                    <p className="text-sm sm:text-base text-white font-semibold">
+                                        ארוחה כזאת מחליפה ארוחה אחת ביום
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Red Motivation - Stay Strong */}
+                        <Card className="bg-red-500/20 border-2 border-red-500">
+                            <CardContent className="p-3 sm:p-4">
+                                <div className="flex items-start gap-3">
+                                    <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 flex-shrink-0 mt-0.5" />
+                                    <div className="flex-1">
+                                        <p className="text-sm sm:text-base text-white font-bold leading-relaxed">
+                                            בקינוחים, בפיצוחים ובפירות - אומרים "לא"!
+                                        </p>
+                                        <p className="text-xs sm:text-sm text-red-200 mt-1 leading-relaxed">
+                                            נמצאים בגירעון גם בשבת, וממשיכים לעבר משקל היעד!
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
                 {/* Weekday Meals */}
                 {!isShabbatMenu && (
