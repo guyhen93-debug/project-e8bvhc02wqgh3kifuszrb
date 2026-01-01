@@ -565,7 +565,7 @@ const Nutrition = () => {
                         <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-lg sm:text-xl text-white">ארוחה 1 - בוקר (10:00)</CardTitle>
+                                    <CardTitle className="text-lg sm:text-xl text-white">🌅 ארוחה 1 - בוקר (10:00)</CardTitle>
                                     <div className="flex gap-2">
                                         {!isAllSelected(1, WEEKDAY_MEAL_1_DEFINITIONS) ? (
                                             <Button
@@ -619,7 +619,7 @@ const Nutrition = () => {
                         <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-lg sm:text-xl text-white">ארוחה 2 (12:30)</CardTitle>
+                                    <CardTitle className="text-lg sm:text-xl text-white">🥤 ארוחה 2 (12:30)</CardTitle>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
                                     {currentMeals[2].data.calories.toFixed(0)} קלוריות | {currentMeals[2].data.protein.toFixed(0)}ג׳ חלבון
@@ -649,7 +649,7 @@ const Nutrition = () => {
                         <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-lg sm:text-xl text-white">ארוחה 3 (15:30)</CardTitle>
+                                    <CardTitle className="text-lg sm:text-xl text-white">⚡ ארוחה 3 (15:30)</CardTitle>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
                                     {currentMeals[3].data.calories.toFixed(0)} קלוריות | {currentMeals[3].data.protein.toFixed(0)}ג׳ חלבון
@@ -679,7 +679,7 @@ const Nutrition = () => {
                         <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-6">
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="text-lg sm:text-xl text-white">ארוחה 4 - ערב (22:00)</CardTitle>
+                                    <CardTitle className="text-lg sm:text-xl text-white">🌙 ארוחה 4 - ערב (22:00)</CardTitle>
                                     <div className="flex gap-2">
                                         {!isAllSelected(4, WEEKDAY_MEAL_4_DEFINITIONS) ? (
                                             <Button
