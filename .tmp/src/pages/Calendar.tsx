@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale, Calendar as CalendarIcon, Droplet, Moon, Heart } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { WorkoutLog, NutritionLog, WeightLog } from '@/entities';
+import { WorkoutLog, NutritionLog, WeightLog, WaterLog, SleepLog } from '@/entities';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -67,6 +67,38 @@ const Calendar = () => {
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     });
 
+    const { data: waterLogs } = useQuery({
+        queryKey: ['water-logs-calendar'],
+        queryFn: async () => {
+            try {
+                return await WaterLog.list('-date', 100);
+            } catch (error) {
+                console.error('Error fetching water logs:', error);
+                return [];
+            }
+        },
+        staleTime: 30000,
+        refetchOnWindowFocus: false,
+        retry: 2,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    });
+
+    const { data: sleepLogs } = useQuery({
+        queryKey: ['sleep-logs-calendar'],
+        queryFn: async () => {
+            try {
+                return await SleepLog.list('-date', 100);
+            } catch (error) {
+                console.error('Error fetching sleep logs:', error);
+                return [];
+            }
+        },
+        staleTime: 30000,
+        refetchOnWindowFocus: false,
+        retry: 2,
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    });
+
     const getDaysInMonth = (date: Date) => {
         const year = date.getFullYear();
         const month = date.getMonth();
@@ -99,8 +131,11 @@ const Calendar = () => {
         const meals = nutritionLogs?.filter(log => log.date === dateStr) || [];
         const weight = weightLogs?.find(log => log.date === dateStr);
         
-        const waterGlasses = parseInt(localStorage.getItem(`water-${dateStr}`) || '0');
-        const sleepHours = parseFloat(localStorage.getItem(`sleep-${dateStr}`) || '0');
+        const waterLog = waterLogs?.find(log => log.date === dateStr);
+        const sleepLog = sleepLogs?.find(log => log.date === dateStr);
+        
+        const waterGlasses = waterLog?.glasses ?? 0;
+        const sleepHours = sleepLog?.hours ?? 0;
         
         const totalCardioMinutes = workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0);
         
