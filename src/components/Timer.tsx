@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { Clock } from 'lucide-react';
 
+// Silent audio hack for background performance on iOS
+const SILENT_AUDIO_SRC = "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA";
+
 interface TimerProps {
     isActive: boolean;
     onComplete?: () => void;
@@ -11,6 +14,17 @@ export const Timer = ({ isActive, onComplete }: TimerProps) => {
     const targetTimeRef = useRef<number | null>(null);
     const notificationTimeoutRef = useRef<number | null>(null);
     const hasFiredRef = useRef(false);
+    const silentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+    const ensureSilentAudio = () => {
+        if (!silentAudioRef.current) {
+            const audio = new Audio(SILENT_AUDIO_SRC);
+            audio.loop = true;
+            audio.volume = 0.01;
+            silentAudioRef.current = audio;
+        }
+        return silentAudioRef.current;
+    };
 
     const playSound = () => {
         try {
@@ -52,6 +66,16 @@ export const Timer = ({ isActive, onComplete }: TimerProps) => {
     useEffect(() => {
         if (isActive) {
             requestNotificationPermission();
+            
+            // Start silent audio to keep the app alive in background on iOS
+            const audio = ensureSilentAudio();
+            audio.play().catch(err => console.error('Failed to play silent audio', err));
+        } else {
+            // Stop silent audio when timer is not active
+            if (silentAudioRef.current) {
+                silentAudioRef.current.pause();
+                silentAudioRef.current.currentTime = 0;
+            }
         }
     }, [isActive]);
 
@@ -97,6 +121,12 @@ export const Timer = ({ isActive, onComplete }: TimerProps) => {
                 setRemainingSeconds(0);
                 clearInterval(interval);
                 
+                // Stop silent audio when timer finishes
+                if (silentAudioRef.current) {
+                    silentAudioRef.current.pause();
+                    silentAudioRef.current.currentTime = 0;
+                }
+                
                 if (!hasFiredRef.current) {
                     hasFiredRef.current = true;
                     playSound();
@@ -111,6 +141,11 @@ export const Timer = ({ isActive, onComplete }: TimerProps) => {
             clearInterval(interval);
             if (notificationTimeoutRef.current) {
                 window.clearTimeout(notificationTimeoutRef.current);
+            }
+            // Cleanup: stop silent audio if component unmounts while timer is running
+            if (silentAudioRef.current) {
+                silentAudioRef.current.pause();
+                silentAudioRef.current.currentTime = 0;
             }
         };
     }, [isActive, onComplete]);
