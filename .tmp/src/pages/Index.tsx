@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Dumbbell, Utensils, Flame, Egg } from 'lucide-react';
+import { Dumbbell, Utensils, Flame, Egg, Info } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { StatsCard } from '@/components/StatsCard';
 import { WeightChart } from '@/components/WeightChart';
 import { CalorieChart } from '@/components/CalorieChart';
@@ -8,11 +11,36 @@ import { SleepTracker } from '@/components/SleepTracker';
 import { WaterTracker } from '@/components/WaterTracker';
 import { WeighInReminder } from '@/components/WeighInReminder';
 import { DateSelector } from '@/components/DateSelector';
-import { WorkoutLog, NutritionLog } from '@/entities';
+import { WorkoutLog, NutritionLog, WaterLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
+
+const DAILY_CALORIE_TARGET = 2410;
+const DAILY_PROTEIN_TARGET = 145;
+const DAILY_WATER_TARGET_GLASSES = 12;
 
 const Index = () => {
     const { selectedDate, isToday } = useDate();
+    const [showOnboarding, setShowOnboarding] = useState(false);
+
+    useEffect(() => {
+        try {
+            const seen = localStorage.getItem('oxygym_onboarding_seen');
+            if (!seen) {
+                setShowOnboarding(true);
+            }
+        } catch (error) {
+            console.error('Error reading from localStorage:', error);
+        }
+    }, []);
+
+    const handleDismissOnboarding = () => {
+        try {
+            localStorage.setItem('oxygym_onboarding_seen', 'true');
+            setShowOnboarding(false);
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+        }
+    };
 
     const getStartOfWeek = () => {
         const now = new Date();
@@ -56,6 +84,19 @@ const Index = () => {
         },
     });
 
+    const { data: waterLogSummary } = useQuery({
+        queryKey: ['water-log-summary', selectedDate],
+        queryFn: async () => {
+            try {
+                const logs = await WaterLog.filter({ date: selectedDate });
+                return logs[0] || null;
+            } catch (error) {
+                console.error('Error fetching water log summary:', error);
+                return null;
+            }
+        },
+    });
+
     const totalCalories = selectedDateNutrition?.reduce((sum, log) => sum + (log.total_calories || 0), 0) || 0;
     const totalProtein = selectedDateNutrition?.reduce((sum, log) => sum + (log.protein || 0), 0) || 0;
     const totalCarbs = selectedDateNutrition?.reduce((sum, log) => sum + (log.carbs || 0), 0) || 0;
@@ -63,6 +104,10 @@ const Index = () => {
 
     const completedWorkouts = weekWorkouts?.filter(w => w.completed).length || 0;
     const mealsToday = selectedDateNutrition?.length || 0;
+    const waterGlasses = waterLogSummary?.glasses || 0;
+
+    const caloriePercent = Math.round((totalCalories / DAILY_CALORIE_TARGET) * 100);
+    const proteinPercent = Math.round((totalProtein / DAILY_PROTEIN_TARGET) * 100);
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-20">
@@ -81,6 +126,41 @@ const Index = () => {
                     <DateSelector />
                 </div>
 
+                {showOnboarding && (
+                    <Card className="bg-oxygym-darkGrey border-oxygym-yellow/30 mb-4 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                        <CardContent className="p-4">
+                            <div className="flex items-center gap-2 mb-3 text-oxygym-yellow">
+                                <Info className="w-5 h-5" />
+                                <h3 className="font-bold">איך להתחיל?</h3>
+                            </div>
+                            <ul className="space-y-2 text-sm text-white mb-4">
+                                <li className="flex items-center gap-2">
+                                    <span className="w-5 h-5 flex items-center justify-center bg-oxygym-yellow text-black rounded-full text-xs font-bold">1</span>
+                                    <span>מלא פרטי פרופיל ומשקל ראשוני</span>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <span className="w-5 h-5 flex items-center justify-center bg-oxygym-yellow text-black rounded-full text-xs font-bold">2</span>
+                                    <span>התחל לסמן ארוחות בתפריט התזונה</span>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <span className="w-5 h-5 flex items-center justify-center bg-oxygym-yellow text-black rounded-full text-xs font-bold">3</span>
+                                    <span>בצע אימון אחד ותעד אותו</span>
+                                </li>
+                            </ul>
+                            <div className="flex justify-end">
+                                <Button 
+                                    onClick={handleDismissOnboarding}
+                                    variant="outline" 
+                                    size="sm"
+                                    className="border-oxygym-yellow text-oxygym-yellow hover:bg-oxygym-yellow hover:text-black"
+                                >
+                                    הבנתי
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {!isToday && (
                     <div className="mb-4 p-3 bg-oxygym-yellow/10 border border-oxygym-yellow rounded-lg">
                         <p className="text-center text-sm text-white">
@@ -88,6 +168,18 @@ const Index = () => {
                         </p>
                     </div>
                 )}
+
+                <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
+                    <CardContent className="p-3 text-center">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                            <span className="text-white font-medium">{isToday ? 'היום' : 'סיכום יום'}:</span>{' '}
+                            <span className="text-oxygym-yellow">{mealsToday}/4</span> ארוחות ·{' '}
+                            <span className="text-oxygym-yellow">{caloriePercent}%</span> קלוריות ·{' '}
+                            <span className="text-oxygym-yellow">{proteinPercent}%</span> חלבון ·{' '}
+                            <span className="text-oxygym-yellow">{waterGlasses}/{DAILY_WATER_TARGET_GLASSES}</span> כוסות מים
+                        </p>
+                    </CardContent>
+                </Card>
                 
                 <div className="mb-6">
                     <WeightDialog />

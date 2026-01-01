@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale, Calendar as CalendarIcon, Droplet, Moon, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale, Calendar as CalendarIcon, Droplet, Moon, Heart, ExternalLink } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { WorkoutLog, NutritionLog, WeightLog, WaterLog, SleepLog } from '@/entities';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { useDate } from '@/contexts/DateContext';
 
 // יעדים יומיים
 const DAILY_CALORIE_TARGET = 2410;
@@ -16,6 +18,8 @@ const SLEEP_TARGET_MIN = 7;
 const SLEEP_TARGET_MAX = 9;
 
 const Calendar = () => {
+    const navigate = useNavigate();
+    const { setSelectedDate: setGlobalDate } = useDate();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -155,6 +159,9 @@ const Calendar = () => {
     const handleDayClick = (day: number) => {
         const date = new Date(year, month, day);
         setSelectedDate(date);
+        
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        setGlobalDate(dateStr);
     };
 
     const days = [];
@@ -375,6 +382,27 @@ const Calendar = () => {
                                         )}
                                     </div>
                                 )}
+
+                                <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                                    <Button 
+                                        variant="outline" 
+                                        className="w-full flex items-center justify-center gap-2 border-oxygym-yellow/30 text-white hover:bg-oxygym-yellow hover:text-black"
+                                        onClick={() => navigate('/nutrition')}
+                                    >
+                                        <Utensils className="w-4 h-4" />
+                                        פתח תזונה ליום זה
+                                        <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
+                                    </Button>
+                                    <Button 
+                                        variant="outline" 
+                                        className="w-full flex items-center justify-center gap-2 border-oxygym-yellow/30 text-white hover:bg-oxygym-yellow hover:text-black"
+                                        onClick={() => navigate('/workouts')}
+                                    >
+                                        <Dumbbell className="w-4 h-4" />
+                                        פתח אימונים ליום זה
+                                        <ExternalLink className="w-3 h-3 ml-auto opacity-50" />
+                                    </Button>
+                                </div>
 
                                 {selectedDayData.workouts.length === 0 && 
                                  selectedDayData.meals.length === 0 && 
