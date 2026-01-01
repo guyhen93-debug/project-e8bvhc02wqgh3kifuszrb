@@ -113,8 +113,8 @@ const Nutrition = () => {
     const userMadeChangeRef = useRef(false);
 
     // Notification hook
-    const { isSupported, permission, settings, toggleNotifications } = useNotifications();
-    const [notificationsEnabled, setNotificationsEnabled] = useState(settings.enabled);
+    const { isSupported, settings, toggleMealNotifications } = useNotifications();
+    const [notificationsEnabled, setNotificationsEnabled] = useState(settings.mealReminders);
 
     // Simplified state - one object per menu type
     const [weekdayMeals, setWeekdayMeals] = useState<Record<number, MealState>>({
@@ -137,8 +137,8 @@ const Nutrition = () => {
 
     // Update notifications enabled state from settings
     useEffect(() => {
-        setNotificationsEnabled(settings.enabled);
-    }, [settings.enabled]);
+        setNotificationsEnabled(settings.mealReminders);
+    }, [settings.mealReminders]);
 
     const { data: allDateMeals, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['nutrition-logs', selectedDate],
@@ -403,8 +403,10 @@ const Nutrition = () => {
     };
 
     const handleNotificationToggle = async (checked: boolean) => {
-        const success = await toggleNotifications(checked);
-        if (!success && checked) {
+        const success = await toggleMealNotifications(checked);
+        if (success) {
+            setNotificationsEnabled(checked);
+        } else if (checked) {
             setNotificationsEnabled(false);
         }
     };
