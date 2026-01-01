@@ -195,7 +195,9 @@ export const WorkoutTemplate = ({
     }, [exerciseData, cardioMinutes, autoSave]);
 
     const handleExerciseDataChange = useCallback((data: any) => {
-        userMadeChangeRef.current = true;
+        if (!isInitialLoadRef.current) {
+            userMadeChangeRef.current = true;
+        }
         setExerciseData(prev => ({ ...prev, [data.name]: data }));
     }, []);
 
