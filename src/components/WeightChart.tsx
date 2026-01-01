@@ -2,8 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { WeightLog } from '@/entities';
+import { useNavigate } from 'react-router-dom';
 
 export const WeightChart = () => {
+    const navigate = useNavigate();
     const { data: weightLogs } = useQuery({
         queryKey: ['weight-logs'],
         queryFn: async () => {
@@ -167,9 +169,17 @@ export const WeightChart = () => {
                     </ResponsiveContainer>
                 </div>
 
-                <p className="text-[10px] text-muted-foreground text-center mt-4 px-4 opacity-60">
-                    הגרף מציג את המגמה השבועי ב-10 השבועות האחרונים
-                </p>
+                <div className="mt-4 px-4 flex flex-col items-center">
+                    <p className="text-[10px] text-muted-foreground text-center opacity-60">
+                        הגרף מציג את המגמה השבועי ב-10 השבועות האחרונים
+                    </p>
+                    <button 
+                        onClick={() => navigate('/weight-history')} 
+                        className="mt-3 text-[11px] text-oxygym-yellow underline-offset-2 hover:underline font-medium"
+                    >
+                        הצג היסטוריה מלאה ←
+                    </button>
+                </div>
             </CardContent>
         </Card>
     );
