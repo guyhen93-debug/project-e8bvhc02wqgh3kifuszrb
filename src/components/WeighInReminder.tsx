@@ -19,8 +19,8 @@ export const WeighInReminder = () => {
             <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-emerald-500/10 rounded-lg">
-                            <Scale className="w-5 h-5 text-emerald-400" />
+                        <div className="p-2 bg-rose-500/10 rounded-lg">
+                            <Scale className="w-5 h-5 text-rose-400" />
                         </div>
                         <div>
                             <h3 className="text-white font-medium">תזכורת שקילה שבועית</h3>
