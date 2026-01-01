@@ -490,7 +490,6 @@ const Nutrition = () => {
                                 id="notifications"
                                 checked={notificationsEnabled}
                                 onCheckedChange={handleNotificationToggle}
-                                disabled={!isSupported}
                             />
                         </div>
                         {isIOS && isSupported && (

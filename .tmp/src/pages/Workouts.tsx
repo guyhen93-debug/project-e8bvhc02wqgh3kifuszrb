@@ -35,6 +35,8 @@ const Workouts = () => {
 
     const completedWorkouts = weekWorkouts?.filter(w => w.completed).length || 0;
     const completedTypes = new Set(weekWorkouts?.filter(w => w.completed).map(w => w.workout_type));
+    const totalCardioMinutes = weekWorkouts?.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) || 0;
+    const weeklyCardioTarget = 60;
     const weeklyTarget = 3;
 
     const workouts = [
@@ -75,9 +77,19 @@ const Workouts = () => {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <p className="text-xl font-bold text-white mb-3">
+                        <p className="text-xl font-bold text-white mb-1">
                             הושלמו {completedWorkouts} מתוך {weeklyTarget} אימונים
                         </p>
+                        <div className="flex items-center gap-2 mb-3">
+                            <p className="text-sm text-muted-foreground">
+                                אירובי: {totalCardioMinutes} מתוך {weeklyCardioTarget} דקות
+                            </p>
+                            {totalCardioMinutes >= weeklyCardioTarget && (
+                                <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30 font-bold">
+                                    ✓ יעד הושג
+                                </span>
+                            )}
+                        </div>
                         <div className="flex gap-2">
                             {['A', 'B', 'C'].map((type) => {
                                 const isCompleted = completedTypes.has(type);
