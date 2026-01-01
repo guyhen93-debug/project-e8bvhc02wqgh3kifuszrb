@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { MealItem } from '@/components/MealItem';
-import { CalorieChart } from '@/components/CalorieChart';
-import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
 import { RefreshCw, AlertCircle, CheckSquare, X, Bell, BellOff, Info, AlertTriangle, Flame } from 'lucide-react';
 import { BreadIcon } from '@/components/icons/BreadIcon';
@@ -952,43 +950,6 @@ const Nutrition = () => {
                         </Card>
                     </>
                 )}
-
-                {/* Summary and Charts */}
-                <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4 sm:mb-6">
-                    <CardHeader>
-                        <CardTitle className="text-lg sm:text-xl text-white">סיכום יומי</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                            <div className="bg-oxygym-dark p-3 sm:p-4 rounded-lg">
-                                <p className="text-xs sm:text-sm text-muted-foreground mb-1">קלוריות</p>
-                                <p className="text-xl sm:text-2xl font-bold text-oxygym-yellow">{totals.calories.toFixed(0)}</p>
-                            </div>
-                            <div className="bg-oxygym-dark p-3 sm:p-4 rounded-lg">
-                                <p className="text-xs sm:text-sm text-muted-foreground mb-1">חלבון</p>
-                                <p className="text-xl sm:text-2xl font-bold text-green-400">{totals.protein.toFixed(0)}ג׳</p>
-                            </div>
-                            <div className="bg-oxygym-dark p-3 sm:p-4 rounded-lg">
-                                <p className="text-xs sm:text-sm text-muted-foreground mb-1">פחמימות</p>
-                                <p className="text-xl sm:text-2xl font-bold text-blue-400">{totals.carbs.toFixed(0)}ג׳</p>
-                            </div>
-                            <div className="bg-oxygym-dark p-3 sm:p-4 rounded-lg">
-                                <p className="text-xs sm:text-sm text-muted-foreground mb-1">שומן</p>
-                                <p className="text-xl sm:text-2xl font-bold text-orange-400">{totals.fat.toFixed(0)}ג׳</p>
-                            </div>
-                        </div>
-
-                        <CalorieChart
-                            protein={totals.protein}
-                            carbs={totals.carbs}
-                            fat={totals.fat}
-                            totalCalories={totals.calories}
-                            targetCalories={2410}
-                        />
-                    </CardContent>
-                </Card>
-
-                <WaterTracker date={selectedDate} />
             </div>
         </div>
     );

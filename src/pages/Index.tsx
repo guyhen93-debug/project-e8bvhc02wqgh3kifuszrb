@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Dumbbell, Utensils } from 'lucide-react';
+import { Dumbbell, Utensils, Flame, Egg } from 'lucide-react';
 import { StatsCard } from '@/components/StatsCard';
 import { WeightChart } from '@/components/WeightChart';
 import { CalorieChart } from '@/components/CalorieChart';
@@ -120,18 +120,18 @@ const Index = () => {
                         color="text-green-400"
                     />
                     <StatsCard
-                        icon={Utensils}
+                        icon={Flame}
                         title={isToday ? "קלוריות היום" : "קלוריות"}
                         value={`${Math.round(totalCalories)}`}
                         subtitle="מתוך 2,410"
                         color="text-oxygym-yellow"
                     />
                     <StatsCard
-                        icon={Dumbbell}
+                        icon={Egg}
                         title={isToday ? "חלבון היום" : "חלבון"}
                         value={`${Math.round(totalProtein)}g`}
                         subtitle="מתוך 145g"
-                        color="text-blue-400"
+                        color="text-purple-400"
                     />
                 </div>
 
