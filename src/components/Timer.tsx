@@ -7,9 +7,10 @@ const SILENT_AUDIO_SRC = "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGlu
 interface TimerProps {
     isActive: boolean;
     onComplete?: () => void;
+    restartToken?: number;
 }
 
-export const Timer = ({ isActive, onComplete }: TimerProps) => {
+export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
     const [remainingSeconds, setRemainingSeconds] = useState(90);
     const targetTimeRef = useRef<number | null>(null);
     const notificationTimeoutRef = useRef<number | null>(null);
@@ -91,24 +92,29 @@ export const Timer = ({ isActive, onComplete }: TimerProps) => {
             return;
         }
 
-        // Initialize target time if not set
-        if (targetTimeRef.current === null) {
-            targetTimeRef.current = Date.now() + 90000;
-            
-            // Schedule notification
-            if ("Notification" in window && Notification.permission === "granted") {
-                notificationTimeoutRef.current = window.setTimeout(() => {
-                    if (isActive && !hasFiredRef.current) {
-                        try {
-                            new Notification("הזמן עבר! 🔔", { 
-                                body: "זמן להתחיל את הסט הבא.",
-                            });
-                        } catch (e) {
-                            console.error("Failed to show notification", e);
-                        }
+        // Reset state when isActive or restartToken changes
+        setRemainingSeconds(90);
+        targetTimeRef.current = Date.now() + 90000;
+        hasFiredRef.current = false;
+        
+        if (notificationTimeoutRef.current) {
+            window.clearTimeout(notificationTimeoutRef.current);
+            notificationTimeoutRef.current = null;
+        }
+
+        // Schedule notification
+        if ("Notification" in window && Notification.permission === "granted") {
+            notificationTimeoutRef.current = window.setTimeout(() => {
+                if (isActive && !hasFiredRef.current) {
+                    try {
+                        new Notification("הזמן עבר! 🔔", { 
+                            body: "זמן להתחיל את הסט הבא.",
+                        });
+                    } catch (e) {
+                        console.error("Failed to show notification", e);
                     }
-                }, 90000);
-            }
+                }
+            }, 90000);
         }
 
         const interval = setInterval(() => {
@@ -148,7 +154,7 @@ export const Timer = ({ isActive, onComplete }: TimerProps) => {
                 silentAudioRef.current.currentTime = 0;
             }
         };
-    }, [isActive, onComplete]);
+    }, [isActive, restartToken, onComplete]);
 
     if (!isActive) return null;
 

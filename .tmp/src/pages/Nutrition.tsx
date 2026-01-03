@@ -259,7 +259,7 @@ const Nutrition = () => {
         return { calories, protein, carbs, fat };
     }, [weekdayMeals, shabbatMeals]);
 
-    const autoSave = async () => {
+    const autoSave = useCallback(async () => {
         if (isInitialLoadRef.current || !userMadeChangeRef.current) {
             return;
         }
@@ -297,7 +297,7 @@ const Nutrition = () => {
         } finally {
             setSaving(false);
         }
-    };
+    }, [selectedDate, currentMenuType, currentMeals]);
 
     useEffect(() => {
         if (saveTimeoutRef.current) {
@@ -313,7 +313,27 @@ const Nutrition = () => {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [weekdayMeals, shabbatMeals, currentMenuType]);
+    }, [autoSave]);
+
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                autoSave();
+            }
+        };
+
+        const handlePageHide = () => {
+            autoSave();
+        };
+
+        window.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('pagehide', handlePageHide);
+
+        return () => {
+            window.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('pagehide', handlePageHide);
+        };
+    }, [autoSave]);
 
     const updateMeal = (mealNum: number, updates: Partial<MealState>) => {
         userMadeChangeRef.current = true;

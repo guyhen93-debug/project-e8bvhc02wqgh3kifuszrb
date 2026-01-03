@@ -194,6 +194,26 @@ export const WorkoutTemplate = ({
         };
     }, [exerciseData, cardioMinutes, autoSave]);
 
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                autoSave();
+            }
+        };
+
+        const handlePageHide = () => {
+            autoSave();
+        };
+
+        window.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('pagehide', handlePageHide);
+
+        return () => {
+            window.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('pagehide', handlePageHide);
+        };
+    }, [autoSave]);
+
     const handleExerciseDataChange = useCallback((data: any) => {
         if (!isInitialLoadRef.current) {
             userMadeChangeRef.current = true;
