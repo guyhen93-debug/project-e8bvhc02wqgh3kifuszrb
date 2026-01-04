@@ -1,3 +1,5 @@
+import Head from 'next/head';
+import { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,8 +23,54 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => (useEffect(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/OneSignalSDKWorker.js')
+      .then(registration => {
+        console.log('Service Worker registered');
+      })
+      .catch(error => {
+        console.log('Service Worker registration failed:', error);
+      });
+  }
+}, []);
+}, []);
+  return (
+  <>
+    <Head>
+      <link rel="manifest" href="/manifest.json" />
+      <meta name="theme-color" content="#ffffff" />
+      <link rel="apple-touch-icon" href="/icon-192x192.png" />
+    </Head>
+
     <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <DateProvider>
+          <TimerProvider>
+            <Toaster />
+            <Sonner />
+            <ProfileForm />
+            <OneSignalInitializer />
+            <BrowserRouter>
+              <BottomNav />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/workouts" element={<Workouts />} />
+                <Route path="/workout-a" element={<WorkoutA />} />
+                <Route path="/workout-b" element={<WorkoutB />} />
+                <Route path="/workout-c" element={<WorkoutC />} />
+                <Route path="/nutrition" element={<Nutrition />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/weight-history" element={<WeightHistory />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TimerProvider>
+        </DateProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </>
+);  <QueryClientProvider client={queryClient}>
         <TooltipProvider>
             <DateProvider>
                 <TimerProvider>
