@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { SetRow } from './SetRow';
 import { useTimer } from '@/contexts/TimerContext';
 import { Input } from '@/components/ui/input';
+import { sendRestNotification } from '@/functions';
 
 interface ExerciseRowProps {
     name: string;
@@ -47,6 +48,16 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
         setWeight(newWeight);
     };
 
+    const getPlayerId = () => {
+        if (typeof window === 'undefined') return null;
+        try {
+            return localStorage.getItem('onesignal_player_id');
+        } catch (err) {
+            console.error('Failed to read OneSignal player id from localStorage', err);
+            return null;
+        }
+    };
+
     const handleCompletedChange = (index: number, completed: boolean) => {
         const newSetData = [...setData];
         newSetData[index].completed = completed;
@@ -54,6 +65,14 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
 
         if (completed) {
             startTimer();
+
+            const playerId = getPlayerId();
+            if (playerId) {
+                // Fire-and-forget notification scheduling
+                sendRestNotification({ playerId, delaySeconds: 90 }).catch((err: unknown) => {
+                    console.error('Failed to schedule rest notification', err);
+                });
+            }
         }
     };
 
