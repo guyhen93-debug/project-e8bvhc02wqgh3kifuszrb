@@ -23,24 +23,10 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (useEffect(() => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/OneSignalSDKWorker.js')
-      .then(registration => {
-        console.log('Service Worker registered');
-      })
-      .catch(error => {
-        console.log('Service Worker registration failed:', error);
-      });
-  }
-}, []);
+const App = () => (
   return (
   <>
-    <Head>
-      <link rel="manifest" href="/manifest.json" />
-      <meta name="theme-color" content="#ffffff" />
-      <link rel="apple-touch-icon" href="/icon-192x192.png" />
-    </Head>
+   
 
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
