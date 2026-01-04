@@ -74,25 +74,33 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
     };
 
     useEffect(() => {
-        if (isActive) {
+        if (isActive && isAudioSupportedRef.current) {
             requestNotificationPermission();
             
             // Start silent audio to keep the app alive in background on iOS
+            // Some browsers/devices may block this background trick; we handle it gracefully.
             const audio = ensureSilentAudio();
             if (audio && typeof audio.play === 'function') {
                 audio.play().catch(err => {
-                    // If the browser doesn't support this specific audio format or method, skip quietly
-                    if (err?.name === 'NotSupportedError') {
-                        return;
+                    // NotSupportedError means the device doesn't like our base64 trick
+                    // NotAllowedError means the user needs to interact first (common on mobile)
+                    if (err?.name === 'NotSupportedError' || err?.name === 'NotAllowedError') {
+                        console.warn('Background audio trick is not supported/allowed on this device, skipping:', err.name);
+                        isAudioSupportedRef.current = false;
+                    } else {
+                        console.error('Failed to play silent audio', err);
                     }
-                    console.error('Failed to play silent audio', err);
                 });
             }
         } else {
             // Stop silent audio when timer is not active
             if (silentAudioRef.current) {
-                silentAudioRef.current.pause();
-                silentAudioRef.current.currentTime = 0;
+                try {
+                    silentAudioRef.current.pause();
+                    silentAudioRef.current.currentTime = 0;
+                } catch (e) {
+                    // Ignore errors during cleanup
+                }
             }
         }
     }, [isActive]);
@@ -146,8 +154,12 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
                 
                 // Stop silent audio when timer finishes
                 if (silentAudioRef.current) {
-                    silentAudioRef.current.pause();
-                    silentAudioRef.current.currentTime = 0;
+                    try {
+                        silentAudioRef.current.pause();
+                        silentAudioRef.current.currentTime = 0;
+                    } catch (e) {
+                        // Ignore cleanup errors
+                    }
                 }
                 
                 if (!hasFiredRef.current) {
@@ -167,8 +179,12 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
             }
             // Cleanup: stop silent audio if component unmounts while timer is running
             if (silentAudioRef.current) {
-                silentAudioRef.current.pause();
-                silentAudioRef.current.currentTime = 0;
+                try {
+                    silentAudioRef.current.pause();
+                    silentAudioRef.current.currentTime = 0;
+                } catch (e) {
+                    // Ignore cleanup errors
+                }
             }
         };
     }, [isActive, restartToken, onComplete]);
