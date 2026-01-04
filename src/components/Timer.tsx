@@ -18,12 +18,18 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
     const silentAudioRef = useRef<HTMLAudioElement | null>(null);
     const isAudioSupportedRef = useRef(true);
 
+    const isIOS = () => {
+        if (typeof window === 'undefined' || !navigator) return false;
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+               (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+    };
+
     const ensureSilentAudio = () => {
+        if (typeof window === 'undefined') return null;
         if (!isAudioSupportedRef.current) return null;
 
         if (!silentAudioRef.current) {
             try {
-                // Defensive check for environments where Audio might not be defined
                 if (typeof Audio === 'undefined') {
                     isAudioSupportedRef.current = false;
                     return null;
@@ -33,7 +39,7 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
                 audio.volume = 0.01;
                 silentAudioRef.current = audio;
             } catch (err) {
-                // Silently disable if initialization fails
+                console.debug('Silent audio initialization failed:', err);
                 isAudioSupportedRef.current = false;
                 return null;
             }
@@ -43,7 +49,8 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
 
     const playSound = () => {
         try {
-            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            if (typeof window === 'undefined') return;
+            const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
             if (!AudioContextClass) return;
 
             const audioContext = new AudioContextClass();
@@ -67,41 +74,36 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.5);
         } catch (error) {
-            // Log as warning instead of error for user awareness without being "scary"
-            console.warn('Completion sound could not be played:', error);
+            console.debug('Error playing sound:', error);
         }
     };
 
     const requestNotificationPermission = async () => {
-        if ("Notification" in window && Notification.permission === "default") {
+        if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "default") {
             try {
                 await Notification.requestPermission();
             } catch (error) {
-                // Ignore permission errors silently
+                console.debug('Error requesting notification permission:', error);
             }
         }
     };
 
     useEffect(() => {
-        if (isActive && isAudioSupportedRef.current) {
+        if (isActive) {
             requestNotificationPermission();
             
-            // Some browsers/devices may block this background trick; we handle it gracefully.
-            const audio = ensureSilentAudio();
-            if (audio && typeof audio.play === 'function') {
-                audio.play().catch(err => {
-                    // NotSupportedError: The browser definitely doesn't support this
-                    if (err?.name === 'NotSupportedError') {
-                        isAudioSupportedRef.current = false;
-                        return;
-                    }
-                    // NotAllowedError: Autoplay blocked, very common, handle quietly
-                    if (err?.name === 'NotAllowedError') {
-                        return;
-                    }
-                    // For other errors, use a subtle warning
-                    console.warn('Background audio trick skipped:', err?.message || 'Playback issue');
-                });
+            // Start silent audio to keep the app alive in background ONLY on iOS
+            if (isIOS()) {
+                const audio = ensureSilentAudio();
+                if (audio && typeof audio.play === 'function') {
+                    audio.play().catch(err => {
+                        // Suppress specific errors that are expected when no user interaction has occurred
+                        if (err?.name === 'NotSupportedError' || err?.name === 'NotAllowedError') {
+                            return;
+                        }
+                        console.debug('Failed to play silent audio', err);
+                    });
+                }
             }
         } else {
             // Stop silent audio when timer is not active
@@ -139,7 +141,7 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
         }
 
         // Schedule notification
-        if ("Notification" in window && Notification.permission === "granted") {
+        if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "granted") {
             notificationTimeoutRef.current = window.setTimeout(() => {
                 if (isActive && !hasFiredRef.current) {
                     try {
@@ -147,7 +149,7 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
                             body: "זמן להתחיל את הסט הבא.",
                         });
                     } catch (e) {
-                        // Silent catch for notification display issues
+                        console.debug("Failed to show notification", e);
                     }
                 }
             }, 90000);
