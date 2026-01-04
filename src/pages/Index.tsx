@@ -13,6 +13,8 @@ import { WeighInReminder } from '@/components/WeighInReminder';
 import { DateSelector } from '@/components/DateSelector';
 import { WorkoutLog, NutritionLog, WaterLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
+import { useMemo } from 'react';
+import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
 
 const DAILY_CALORIE_TARGET = 2410;
 const DAILY_PROTEIN_TARGET = 145;
@@ -84,6 +86,8 @@ const Index = () => {
         },
     });
 
+    const normalizedNutrition = useMemo(() => normalizeNutritionLogs(selectedDateNutrition || []), [selectedDateNutrition]);
+
     const { data: waterLogSummary } = useQuery({
         queryKey: ['water-log-summary', selectedDate],
         queryFn: async () => {
@@ -97,13 +101,13 @@ const Index = () => {
         },
     });
 
-    const totalCalories = selectedDateNutrition?.reduce((sum, log) => sum + (log.total_calories || 0), 0) || 0;
-    const totalProtein = selectedDateNutrition?.reduce((sum, log) => sum + (log.protein || 0), 0) || 0;
-    const totalCarbs = selectedDateNutrition?.reduce((sum, log) => sum + (log.carbs || 0), 0) || 0;
-    const totalFat = selectedDateNutrition?.reduce((sum, log) => sum + (log.fat || 0), 0) || 0;
+    const totalCalories = normalizedNutrition?.reduce((sum, log) => sum + (log.total_calories || 0), 0) || 0;
+    const totalProtein = normalizedNutrition?.reduce((sum, log) => sum + (log.protein || 0), 0) || 0;
+    const totalCarbs = normalizedNutrition?.reduce((sum, log) => sum + (log.carbs || 0), 0) || 0;
+    const totalFat = normalizedNutrition?.reduce((sum, log) => sum + (log.fat || 0), 0) || 0;
 
     const completedWorkouts = weekWorkouts?.filter(w => w.completed).length || 0;
-    const mealsToday = selectedDateNutrition?.length || 0;
+    const mealsToday = normalizedNutrition?.length || 0;
     const waterGlasses = waterLogSummary?.glasses || 0;
 
     const caloriePercent = Math.round((totalCalories / DAILY_CALORIE_TARGET) * 100);

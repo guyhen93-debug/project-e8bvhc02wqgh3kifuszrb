@@ -124,19 +124,16 @@ export const WorkoutTemplate = ({
             return;
         }
 
-        const hasAnyCompletedSet = Object.values(exerciseData).some((data: any) => 
-            data.sets && data.sets.some((set: any) => set.completed)
-        );
-
-        if (!hasAnyCompletedSet && cardioMinutes === 0) {
-            console.log('Skipping auto-save - no completed sets and no cardio');
+        const hasExercises = Object.values(exerciseData).length > 0;
+        
+        if (!hasExercises && cardioMinutes === 0) {
+            console.log('Skipping auto-save - no data to save');
             return;
         }
         
         try {
             setSaving(true);
 
-            const hasExercises = Object.values(exerciseData).length > 0;
             const completed = hasExercises && Object.values(exerciseData).every((data: any) => 
                 data.sets && data.sets.every((set: any) => set.completed)
             );

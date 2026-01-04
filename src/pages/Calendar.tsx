@@ -8,6 +8,7 @@ import { WorkoutLog, NutritionLog, WeightLog, WaterLog, SleepLog } from '@/entit
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useDate } from '@/contexts/DateContext';
+import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
 
 // יעדים יומיים
 const DAILY_CALORIE_TARGET = 2410;
@@ -132,7 +133,8 @@ const Calendar = () => {
     const getDayData = (day: number) => {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const workouts = workoutLogs?.filter(log => log.date === dateStr) || [];
-        const meals = nutritionLogs?.filter(log => log.date === dateStr) || [];
+        const rawMeals = nutritionLogs?.filter(log => log.date === dateStr) || [];
+        const meals = normalizeNutritionLogs(rawMeals);
         const weight = weightLogs?.find(log => log.date === dateStr);
         
         const waterLog = waterLogs?.find(log => log.date === dateStr);

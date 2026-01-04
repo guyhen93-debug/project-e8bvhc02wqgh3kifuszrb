@@ -5,6 +5,8 @@ import { WeightChart } from '@/components/WeightChart';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WeightDialog } from '@/components/WeightDialog';
 import { WorkoutLog, NutritionLog } from '@/entities';
+import { useMemo } from 'react';
+import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
 
 const Home = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -35,13 +37,15 @@ const Home = () => {
         },
     });
 
-    const totalCalories = todayNutrition?.reduce((sum, log) => sum + (log.total_calories || 0), 0) || 0;
-    const totalProtein = todayNutrition?.reduce((sum, log) => sum + (log.protein || 0), 0) || 0;
-    const totalCarbs = todayNutrition?.reduce((sum, log) => sum + (log.carbs || 0), 0) || 0;
-    const totalFat = todayNutrition?.reduce((sum, log) => sum + (log.fat || 0), 0) || 0;
+    const normalizedTodayNutrition = useMemo(() => normalizeNutritionLogs(todayNutrition || []), [todayNutrition]);
+
+    const totalCalories = normalizedTodayNutrition?.reduce((sum, log) => sum + (log.total_calories || 0), 0) || 0;
+    const totalProtein = normalizedTodayNutrition?.reduce((sum, log) => sum + (log.protein || 0), 0) || 0;
+    const totalCarbs = normalizedTodayNutrition?.reduce((sum, log) => sum + (log.carbs || 0), 0) || 0;
+    const totalFat = normalizedTodayNutrition?.reduce((sum, log) => sum + (log.fat || 0), 0) || 0;
 
     const workoutsThisWeek = todayWorkouts?.filter(w => w.completed).length || 0;
-    const mealsToday = todayNutrition?.length || 0;
+    const mealsToday = normalizedTodayNutrition?.length || 0;
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-20">
