@@ -8,6 +8,7 @@ import { GlobalTimer } from "@/components/GlobalTimer";
 import { ProfileForm } from "@/components/ProfileForm";
 import { TimerProvider } from "@/contexts/TimerContext";
 import { DateProvider } from "@/contexts/DateContext";
+import { OneSignalInitializer } from "@/components/OneSignalInitializer";
 import Index from "./pages/Index";
 import Workouts from "./pages/Workouts";
 import WorkoutA from "./pages/WorkoutA";
@@ -28,6 +29,7 @@ const App = () => (
                     <Toaster />
                     <Sonner />
                     <ProfileForm />
+                    <OneSignalInitializer />
                     <BrowserRouter>
                         <Routes>
                             <Route path="/" element={<Index />} />
