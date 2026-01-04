@@ -153,6 +153,11 @@ const Nutrition = () => {
         staleTime: 5 * 60 * 1000,
     });
 
+    // Reset change flag when date changes so we can load fresh data for the new date
+    useEffect(() => {
+        userMadeChangeRef.current = false;
+    }, [selectedDate]);
+
     // Load data when date changes or data is fetched
     useEffect(() => {
         if (!allDateMeals) return;
@@ -302,8 +307,6 @@ const Nutrition = () => {
             // Update React Query cache immediately with fresh data
             const freshLogs = await NutritionLog.filter({ date: selectedDate });
             queryClient.setQueryData(['nutrition-logs', selectedDate], freshLogs || []);
-            
-            userMadeChangeRef.current = false;
         } catch (error) {
             console.error('Error auto-saving nutrition:', error);
         } finally {
