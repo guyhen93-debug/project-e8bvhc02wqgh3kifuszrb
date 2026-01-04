@@ -34,7 +34,6 @@ const App = () => (useEffect(() => {
       });
   }
 }, []);
-}, []);
   return (
   <>
     <Head>
