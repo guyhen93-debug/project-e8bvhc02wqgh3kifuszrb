@@ -148,14 +148,19 @@ const Nutrition = () => {
         },
         retry: 3,
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-        refetchOnWindowFocus: true,
-        refetchOnReconnect: true,
-        staleTime: 30000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        staleTime: 5 * 60 * 1000,
     });
 
     // Load data when date changes or data is fetched
     useEffect(() => {
         if (!allDateMeals) return;
+        
+        if (userMadeChangeRef.current) {
+            console.log('Skipping data load as user has pending changes');
+            return;
+        }
 
         console.log('Loading data for date:', selectedDate);
         isInitialLoadRef.current = true;

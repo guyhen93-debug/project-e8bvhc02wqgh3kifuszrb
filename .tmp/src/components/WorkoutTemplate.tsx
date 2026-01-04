@@ -44,6 +44,8 @@ export const WorkoutTemplate = ({
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
 
+    const initializedDateRef = useRef<string | null>(null);
+
     const { data: workoutData, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['workout-log', selectedDate, workoutType],
         queryFn: async () => {
@@ -56,9 +58,9 @@ export const WorkoutTemplate = ({
         },
         retry: 3,
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-        refetchOnWindowFocus: true,
-        refetchOnReconnect: true,
-        staleTime: 30000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        staleTime: 5 * 60 * 1000,
     });
 
     const { data: lastWorkoutData } = useQuery({
@@ -74,6 +76,12 @@ export const WorkoutTemplate = ({
     });
 
     useEffect(() => {
+        if (initializedDateRef.current === selectedDate && !isLoading) {
+            return;
+        }
+
+        if (isLoading) return;
+
         console.log('Date changed to:', selectedDate);
         isInitialLoadRef.current = true;
         userMadeChangeRef.current = false;
@@ -93,6 +101,7 @@ export const WorkoutTemplate = ({
             }
             setExerciseData(loadedData);
             setCardioMinutes(workoutData.duration_minutes || 0);
+            initializedDateRef.current = selectedDate;
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
@@ -109,15 +118,17 @@ export const WorkoutTemplate = ({
             }
             setExerciseData(loadedData);
             console.log('Loaded weights from last workout:', loadedData);
+            initializedDateRef.current = selectedDate;
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
         } else {
+            initializedDateRef.current = selectedDate;
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
         }
-    }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType]);
+    }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType, isLoading]);
 
     const autoSave = useCallback(async () => {
         if (isInitialLoadRef.current || !userMadeChangeRef.current) {
