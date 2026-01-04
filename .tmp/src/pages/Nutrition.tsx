@@ -311,6 +311,7 @@ const Nutrition = () => {
         return () => {
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
+                autoSave(); // Call autoSave on unmount/dependency change to flush changes
             }
         };
     }, [autoSave]);

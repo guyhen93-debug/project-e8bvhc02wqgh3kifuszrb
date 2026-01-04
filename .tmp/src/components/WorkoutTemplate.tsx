@@ -190,6 +190,7 @@ export const WorkoutTemplate = ({
         return () => {
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
+                autoSave(); // Call autoSave on unmount/dependency change to flush changes
             }
         };
     }, [exerciseData, cardioMinutes, autoSave]);
