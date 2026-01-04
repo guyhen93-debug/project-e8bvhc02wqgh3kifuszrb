@@ -16,13 +16,22 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
     const notificationTimeoutRef = useRef<number | null>(null);
     const hasFiredRef = useRef(false);
     const silentAudioRef = useRef<HTMLAudioElement | null>(null);
+    const isAudioSupportedRef = useRef(true);
 
     const ensureSilentAudio = () => {
+        if (!isAudioSupportedRef.current) return null;
+
         if (!silentAudioRef.current) {
-            const audio = new Audio(SILENT_AUDIO_SRC);
-            audio.loop = true;
-            audio.volume = 0.01;
-            silentAudioRef.current = audio;
+            try {
+                const audio = new Audio(SILENT_AUDIO_SRC);
+                audio.loop = true;
+                audio.volume = 0.01;
+                silentAudioRef.current = audio;
+            } catch (err) {
+                console.warn('Silent audio initialization failed, skipping background trick:', err);
+                isAudioSupportedRef.current = false;
+                return null;
+            }
         }
         return silentAudioRef.current;
     };
@@ -70,7 +79,15 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
             
             // Start silent audio to keep the app alive in background on iOS
             const audio = ensureSilentAudio();
-            audio.play().catch(err => console.error('Failed to play silent audio', err));
+            if (audio && typeof audio.play === 'function') {
+                audio.play().catch(err => {
+                    // If the browser doesn't support this specific audio format or method, skip quietly
+                    if (err?.name === 'NotSupportedError') {
+                        return;
+                    }
+                    console.error('Failed to play silent audio', err);
+                });
+            }
         } else {
             // Stop silent audio when timer is not active
             if (silentAudioRef.current) {
