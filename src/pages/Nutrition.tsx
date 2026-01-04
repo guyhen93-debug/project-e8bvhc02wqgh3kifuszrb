@@ -26,7 +26,7 @@ import { SirloinSteakIcon } from '@/components/icons/SirloinSteakIcon';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NutritionLog } from '@/entities';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDate } from '@/contexts/DateContext';
 
 interface MealData {
@@ -103,6 +103,7 @@ const emptyMealState: MealState = {
 
 const Nutrition = () => {
     const { toast } = useToast();
+    const queryClient = useQueryClient();
     const { selectedDate, isToday } = useDate();
     const [isShabbatMenu, setIsShabbatMenu] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -292,6 +293,12 @@ const Nutrition = () => {
                     });
                 }
             }
+
+            // Update React Query cache immediately with fresh data
+            const freshLogs = await NutritionLog.filter({ date: selectedDate });
+            queryClient.setQueryData(['nutrition-logs', selectedDate], freshLogs || []);
+            
+            userMadeChangeRef.current = false;
         } catch (error) {
             console.error('Error auto-saving nutrition:', error);
         } finally {

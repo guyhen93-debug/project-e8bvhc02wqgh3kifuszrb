@@ -10,7 +10,7 @@ import { ArrowRight, Heart, RefreshCw, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WorkoutLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface Exercise {
     name: string;
@@ -35,6 +35,7 @@ export const WorkoutTemplate = ({
 }: WorkoutTemplateProps) => {
     const navigate = useNavigate();
     const { toast } = useToast();
+    const queryClient = useQueryClient();
     const { selectedDate, isToday } = useDate();
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
     const [cardioMinutes, setCardioMinutes] = useState(0);
@@ -143,30 +144,40 @@ export const WorkoutTemplate = ({
                 workout_type: workoutType 
             });
 
+            const exercises_completed = Object.entries(exerciseData).map(([name, data]: any) => ({
+                name,
+                sets: data.sets,
+                weight: data.weight,
+            }));
+
+            let savedLog;
             if (existingLogs.length > 0) {
-                await WorkoutLog.update(existingLogs[0].id, {
-                    exercises_completed: Object.entries(exerciseData).map(([name, data]: any) => ({
-                        name,
-                        sets: data.sets,
-                        weight: data.weight,
-                    })),
+                const updatedLog = await WorkoutLog.update(existingLogs[0].id, {
+                    exercises_completed,
                     completed: completed,
                     duration_minutes: cardioMinutes,
                 });
+                savedLog = updatedLog ?? { 
+                    ...existingLogs[0], 
+                    exercises_completed, 
+                    completed, 
+                    duration_minutes: cardioMinutes 
+                };
             } else {
-                await WorkoutLog.create({
+                savedLog = await WorkoutLog.create({
                     date: selectedDate,
                     workout_type: workoutType,
-                    exercises_completed: Object.entries(exerciseData).map(([name, data]: any) => ({
-                        name,
-                        sets: data.sets,
-                        weight: data.weight,
-                    })),
+                    exercises_completed,
                     completed: completed,
                     duration_minutes: cardioMinutes,
                 });
             }
 
+            // Update React Query cache immediately
+            queryClient.setQueryData(['workout-log', selectedDate, workoutType], savedLog);
+            queryClient.setQueryData(['last-workout-log', workoutType], savedLog);
+            
+            userMadeChangeRef.current = false;
             console.log(`Auto-saved workout ${workoutType}`);
         } catch (error) {
             console.error('Error auto-saving workout:', error);
