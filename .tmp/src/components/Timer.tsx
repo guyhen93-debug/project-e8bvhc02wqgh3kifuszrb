@@ -23,12 +23,17 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
 
         if (!silentAudioRef.current) {
             try {
+                // Defensive check for environments where Audio might not be defined
+                if (typeof Audio === 'undefined') {
+                    isAudioSupportedRef.current = false;
+                    return null;
+                }
                 const audio = new Audio(SILENT_AUDIO_SRC);
                 audio.loop = true;
                 audio.volume = 0.01;
                 silentAudioRef.current = audio;
             } catch (err) {
-                console.warn('Silent audio initialization failed, skipping background trick:', err);
+                // Silently disable if initialization fails
                 isAudioSupportedRef.current = false;
                 return null;
             }
@@ -38,7 +43,10 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
 
     const playSound = () => {
         try {
-            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContextClass) return;
+
+            const audioContext = new AudioContextClass();
             
             if (audioContext.state === 'suspended') {
                 audioContext.resume();
@@ -59,7 +67,8 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.5);
         } catch (error) {
-            console.error('Error playing sound:', error);
+            // Log as warning instead of error for user awareness without being "scary"
+            console.warn('Completion sound could not be played:', error);
         }
     };
 
@@ -68,7 +77,7 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
             try {
                 await Notification.requestPermission();
             } catch (error) {
-                console.error('Error requesting notification permission:', error);
+                // Ignore permission errors silently
             }
         }
     };
@@ -77,19 +86,21 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
         if (isActive && isAudioSupportedRef.current) {
             requestNotificationPermission();
             
-            // Start silent audio to keep the app alive in background on iOS
             // Some browsers/devices may block this background trick; we handle it gracefully.
             const audio = ensureSilentAudio();
             if (audio && typeof audio.play === 'function') {
                 audio.play().catch(err => {
-                    // NotSupportedError means the device doesn't like our base64 trick
-                    // NotAllowedError means the user needs to interact first (common on mobile)
-                    if (err?.name === 'NotSupportedError' || err?.name === 'NotAllowedError') {
-                        console.warn('Background audio trick is not supported/allowed on this device, skipping:', err.name);
+                    // NotSupportedError: The browser definitely doesn't support this
+                    if (err?.name === 'NotSupportedError') {
                         isAudioSupportedRef.current = false;
-                    } else {
-                        console.error('Failed to play silent audio', err);
+                        return;
                     }
+                    // NotAllowedError: Autoplay blocked, very common, handle quietly
+                    if (err?.name === 'NotAllowedError') {
+                        return;
+                    }
+                    // For other errors, use a subtle warning
+                    console.warn('Background audio trick skipped:', err?.message || 'Playback issue');
                 });
             }
         } else {
@@ -99,7 +110,7 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
                     silentAudioRef.current.pause();
                     silentAudioRef.current.currentTime = 0;
                 } catch (e) {
-                    // Ignore errors during cleanup
+                    // Ignore errors during stop
                 }
             }
         }
@@ -136,7 +147,7 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
                             body: "זמן להתחיל את הסט הבא.",
                         });
                     } catch (e) {
-                        console.error("Failed to show notification", e);
+                        // Silent catch for notification display issues
                     }
                 }
             }, 90000);
@@ -158,7 +169,7 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
                         silentAudioRef.current.pause();
                         silentAudioRef.current.currentTime = 0;
                     } catch (e) {
-                        // Ignore cleanup errors
+                        // Ignore
                     }
                 }
                 
@@ -183,7 +194,7 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
                     silentAudioRef.current.pause();
                     silentAudioRef.current.currentTime = 0;
                 } catch (e) {
-                    // Ignore cleanup errors
+                    // Ignore
                 }
             }
         };
