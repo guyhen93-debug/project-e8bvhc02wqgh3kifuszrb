@@ -17,39 +17,40 @@ import WorkoutC from "./pages/WorkoutC";
 import Nutrition from "./pages/Nutrition";
 import Calendar from "./pages/Calendar";
 import WeightHistory from "./pages/WeightHistory";
+import Status from "./pages/Status";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <DateProvider>
-        <TimerProvider>
-          <Toaster />
-          <Sonner />
-          <ProfileForm />
-          <OneSignalInitializer />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/workouts" element={<Workouts />} />
-              <Route path="/workout-a" element={<WorkoutA />} />
-              <Route path="/workout-b" element={<WorkoutB />} />
-              <Route path="/workout-c" element={<WorkoutC />} />
-              <Route path="/nutrition" element={<Nutrition />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/weight-history" element={<WeightHistory />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <GlobalTimer />
-            <BottomNav />
-          </BrowserRouter>
-        </TimerProvider>
-      </DateProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+            <DateProvider>
+                <TimerProvider>
+                    <Toaster />
+                    <Sonner />
+                    <ProfileForm />
+                    <OneSignalInitializer />
+                    <BrowserRouter>
+                        <Routes>
+                            <Route path="/" element={<Index />} />
+                            <Route path="/workouts" element={<Workouts />} />
+                            <Route path="/workout-a" element={<WorkoutA />} />
+                            <Route path="/workout-b" element={<WorkoutB />} />
+                            <Route path="/workout-c" element={<WorkoutC />} />
+                            <Route path="/nutrition" element={<Nutrition />} />
+                            <Route path="/calendar" element={<Calendar />} />
+                            <Route path="/weight-history" element={<WeightHistory />} />
+                            <Route path="/status" element={<Status />} />
+                            <Route path="*" element={<NotFound />} />
+                        </Routes>
+                        <GlobalTimer />
+                        <BottomNav />
+                    </BrowserRouter>
+                </TimerProvider>
+            </DateProvider>
+        </TooltipProvider>
+    </QueryClientProvider>
 );
 
 export default App;
-
