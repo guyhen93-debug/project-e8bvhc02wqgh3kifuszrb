@@ -18,6 +18,7 @@ import Nutrition from "./pages/Nutrition";
 import Calendar from "./pages/Calendar";
 import WeightHistory from "./pages/WeightHistory";
 import Status from "./pages/Status";
+import TelegramSettings from "./pages/TelegramSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
                             <Route path="/calendar" element={<Calendar />} />
                             <Route path="/weight-history" element={<WeightHistory />} />
                             <Route path="/status" element={<Status />} />
+                            <Route path="/telegram-settings" element={<TelegramSettings />} />
                             <Route path="*" element={<NotFound />} />
                         </Routes>
                         <GlobalTimer />
