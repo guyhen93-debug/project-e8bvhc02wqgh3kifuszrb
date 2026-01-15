@@ -10,10 +10,13 @@ export const GlobalTimer = () => {
     const handleComplete = () => {
         console.log('Timer ended - sending Telegram message');
         
-        if (telegramSettings.chatId) {
-            console.log('Timer ended - attempting to send Telegram message to chatId:', telegramSettings.chatId);
+        const token = localStorage.getItem('telegram_token');
+        const chatId = localStorage.getItem('telegram_chat_id');
+        
+        if (token && chatId) {
+            console.log('Timer ended - attempting to send Telegram message to chatId:', chatId);
             telegramSendMessage({ 
-                chatId: telegramSettings.chatId, 
+                chatId: chatId, 
                 text: "🔥 המנוחה הסתיימה!\n💪 בוא נמשיך - סט הבא מחכה!" 
             })
             .then(() => console.log('Timer ended - Telegram message sent successfully'))
@@ -22,7 +25,7 @@ export const GlobalTimer = () => {
                 stopTimer();
             });
         } else {
-            console.log('Timer ended - no Telegram chatId configured, skipping Telegram message');
+            console.log('Timer ended - missing telegram_token or telegram_chat_id in localStorage, skipping Telegram message');
             stopTimer();
         }
     };

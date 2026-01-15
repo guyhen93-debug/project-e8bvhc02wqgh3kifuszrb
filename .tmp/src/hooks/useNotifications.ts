@@ -377,7 +377,10 @@ export const useNotifications = () => {
 
     // Telegram notification polling
     useEffect(() => {
-        if (!telegramSettings.chatId || (!settings.mealReminders && !settings.weighInReminder)) {
+        const token = localStorage.getItem('telegram_token');
+        const chatId = localStorage.getItem('telegram_chat_id');
+
+        if (!token || !chatId || (!settings.mealReminders && !settings.weighInReminder)) {
             return;
         }
 
@@ -395,10 +398,10 @@ export const useNotifications = () => {
                         const key = `${TELEGRAM_MEAL_KEY_PREFIX}${meal.id}`;
                         const lastDate = localStorage.getItem(key);
                         if (lastDate !== todayStr) {
-                            console.log('[Telegram] Sending meal reminder', meal.id, 'for date', todayStr, 'to chatId', telegramSettings.chatId);
+                            console.log('[Telegram] Sending meal reminder', meal.id, 'for date', todayStr, 'to chatId', chatId);
                             localStorage.setItem(key, todayStr);
                             telegramSendMessage({ 
-                                chatId: telegramSettings.chatId, 
+                                chatId: chatId, 
                                 text: getMealMessage(meal.id) 
                             }).catch(err => console.error('Failed to send Telegram meal reminder:', err));
                         }
@@ -411,10 +414,10 @@ export const useNotifications = () => {
                 if (now.getDay() === WEIGH_IN_TIME.day && currentMinutes === (WEIGH_IN_TIME.hour * 60 + WEIGH_IN_TIME.minute)) {
                     const lastDate = localStorage.getItem(TELEGRAM_WEIGHIN_KEY);
                     if (lastDate !== todayStr) {
-                        console.log('[Telegram] Sending weigh-in reminder for date', todayStr, 'to chatId', telegramSettings.chatId);
+                        console.log('[Telegram] Sending weigh-in reminder for date', todayStr, 'to chatId', chatId);
                         localStorage.setItem(TELEGRAM_WEIGHIN_KEY, todayStr);
                         telegramSendMessage({ 
-                            chatId: telegramSettings.chatId, 
+                            chatId: chatId, 
                             text: WEIGH_IN_MESSAGE 
                         }).catch(err => console.error('Failed to send Telegram weigh-in reminder:', err));
                     }
