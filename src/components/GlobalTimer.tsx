@@ -8,13 +8,23 @@ export const GlobalTimer = () => {
     const { settings: telegramSettings } = useTelegramSettings();
     
     const handleComplete = () => {
+        console.log('Timer ended - attempting to send Telegram message');
+        
         if (telegramSettings.chatId) {
+            console.log('Timer ended - attempting to send Telegram message to chatId:', telegramSettings.chatId);
             telegramSendMessage({ 
                 chatId: telegramSettings.chatId, 
                 text: "🔥 המנוחה הסתיימה!\n💪 בוא נמשיך - סט הבא מחכה!" 
-            }).catch(err => console.error("Failed to send Telegram rest end:", err));
+            })
+            .then(() => console.log('Timer ended - Telegram message sent successfully'))
+            .catch(err => console.error("Timer ended - Telegram error:", err))
+            .finally(() => {
+                stopTimer();
+            });
+        } else {
+            console.log('Timer ended - no Telegram chatId configured, skipping Telegram message');
+            stopTimer();
         }
-        stopTimer();
     };
 
     // We wrap the improved Timer component which handles the accurate countdown 
