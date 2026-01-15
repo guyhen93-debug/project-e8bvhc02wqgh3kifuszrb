@@ -28,19 +28,19 @@ const TELEGRAM_WEIGHIN_KEY = 'oxygym-telegram-weighin-last-date';
 const getMealMessage = (id: number): string => {
     switch (id) {
         case 1:
-            return "🍳 זמן ארוחה 1!\n\n- 4 פרוסות לחם כוסמין\n- 100גר' גבינה לבנה סימפוניה (עד 5%)\n- 2 ביצים\n- 200גר' ירקות\n\n💧 זכור לשתות מים!";
+            return "🍳 זמן ארוחה 1!\n\n• 4 פרוסות לחם כוסמין\n• 100גר' גבינה לבנה סימפוניה (עד 5%)\n• 2 ביצים\n• 200גר' ירקות\n\n💧 זכור לשתות מים!";
         case 2:
-            return "💪 זמן ארוחה 2!\n\n- 2 כפות גיינר עם מים";
+            return "💪 זמן ארוחה 2!\n\n• 2 כפות גיינר עם מים";
         case 3:
-            return "💪 זמן ארוחה 3!\n\n- 2 כפות גיינר עם מים";
+            return "💪 זמן ארוחה 3!\n\n• 2 כפות גיינר עם מים";
         case 4:
-            return "🍗 זמן ארוחה 4!\n\n- 150גר' חזה עוף\n- 80גר' אורז (שקילה לפני בישול)\n- 200גר' ירקות";
+            return "🍗 זמן ארוחה 4!\n\n• 150גר' חזה עוף\n• 80גר' אורז (שקילה לפני בישול)\n• 200גר' ירקות";
         default:
             return "🍽️ זמן ארוחה!";
     }
 };
 
-const WEIGH_IN_MESSAGE = "⏰ זמן שקילה שבועית!\n\nזכור:\n- לפני אוכל\n- אחרי שירותים\n- בלי בגדים\n\nשלח לי את המשקל החדש!";
+const WEIGH_IN_MESSAGE = "⏰ זמן שקילה שבועית!\n\nזכור:\n• לפני אוכל\n• אחרי שירותים\n• בלי בגדים\n\nשלח לי את המשקל החדש!";
 
 export const useNotifications = () => {
     const { toast } = useToast();
@@ -382,6 +382,7 @@ export const useNotifications = () => {
         }
 
         const intervalId = setInterval(() => {
+            console.log('[Telegram] Interval tick - checking reminders');
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -394,6 +395,7 @@ export const useNotifications = () => {
                         const key = `${TELEGRAM_MEAL_KEY_PREFIX}${meal.id}`;
                         const lastDate = localStorage.getItem(key);
                         if (lastDate !== todayStr) {
+                            console.log('[Telegram] Sending meal reminder', meal.id, 'for date', todayStr, 'to chatId', telegramSettings.chatId);
                             localStorage.setItem(key, todayStr);
                             telegramSendMessage({ 
                                 chatId: telegramSettings.chatId, 
@@ -409,6 +411,7 @@ export const useNotifications = () => {
                 if (now.getDay() === WEIGH_IN_TIME.day && currentMinutes === (WEIGH_IN_TIME.hour * 60 + WEIGH_IN_TIME.minute)) {
                     const lastDate = localStorage.getItem(TELEGRAM_WEIGHIN_KEY);
                     if (lastDate !== todayStr) {
+                        console.log('[Telegram] Sending weigh-in reminder for date', todayStr, 'to chatId', telegramSettings.chatId);
                         localStorage.setItem(TELEGRAM_WEIGHIN_KEY, todayStr);
                         telegramSendMessage({ 
                             chatId: telegramSettings.chatId, 

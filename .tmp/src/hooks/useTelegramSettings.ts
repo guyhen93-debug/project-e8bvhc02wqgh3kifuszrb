@@ -34,6 +34,8 @@ export const useTelegramSettings = () => {
         setSettings(prev => {
             const next = { ...prev, ...partial };
             localStorage.setItem(TELEGRAM_SETTINGS_KEY, JSON.stringify(next));
+            localStorage.setItem('telegram_chat_id', next.chatId || '');
+            localStorage.setItem('telegram_token', next.token || '');
             return next;
         });
     }, []);

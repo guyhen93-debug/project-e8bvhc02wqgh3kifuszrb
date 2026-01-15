@@ -8,7 +8,7 @@ export const GlobalTimer = () => {
     const { settings: telegramSettings } = useTelegramSettings();
     
     const handleComplete = () => {
-        console.log('Timer ended - attempting to send Telegram message');
+        console.log('Timer ended - sending Telegram message');
         
         if (telegramSettings.chatId) {
             console.log('Timer ended - attempting to send Telegram message to chatId:', telegramSettings.chatId);

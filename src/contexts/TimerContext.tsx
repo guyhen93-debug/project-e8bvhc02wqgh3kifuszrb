@@ -50,6 +50,7 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
 
         // Send Telegram notification for rest start
         if (telegramSettings.chatId) {
+            console.log('Timer started - sending Telegram message');
             console.log('Timer started - attempting to send Telegram message to chatId:', telegramSettings.chatId);
             telegramSendMessage({ 
                 chatId: telegramSettings.chatId, 
