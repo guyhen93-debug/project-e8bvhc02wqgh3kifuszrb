@@ -56,8 +56,16 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
         if (completed) {
             startTimer();
             notifyRestEnd({})
-                .then(() => console.log('ntfy rest-end notification scheduled'))
-                .catch((err) => console.error('Failed to schedule ntfy rest-end notification:', err));
+                .then((res: any) => {
+                    if (res?.success) {
+                        console.log('Notification sent successfully');
+                    } else {
+                        console.error('Notification failed:', res?.error ?? res);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Notification failed:', err);
+                });
         }
     };
 

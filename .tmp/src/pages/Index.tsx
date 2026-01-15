@@ -52,22 +52,37 @@ const Index = () => {
                 reminders.push({ hours: 6, minutes: 30, title: "שקילה שבועית! ⚖️", message: "לפני אוכל וקפה, אחרי שירותים, בלי בגדים" });
             }
 
-            const promises = reminders
+            const syncTasks = reminders
                 .map(r => {
                     const delaySeconds = getDelaySecondsForToday(r.hours, r.minutes);
                     if (delaySeconds !== null) {
-                        return scheduleNtfyReminder({ title: r.title, message: r.message, delaySeconds });
+                        return { title: r.title, promise: scheduleNtfyReminder({ title: r.title, message: r.message, delaySeconds }) };
                     }
                     return null;
                 })
-                .filter(p => p !== null);
+                .filter(item => item !== null);
 
-            if (promises.length === 0) {
+            if (syncTasks.length === 0) {
                 toast.info("כל התזכורות להיום כבר עברו");
                 return;
             }
 
-            const results = await Promise.allSettled(promises);
+            const results = await Promise.allSettled(syncTasks.map(t => t.promise));
+            
+            results.forEach((result, index) => {
+                const title = syncTasks[index]?.title;
+                if (result.status === 'fulfilled') {
+                    const value = result.value as any;
+                    if (value?.success) {
+                        console.log(`Notification sent successfully: ${title}`);
+                    } else {
+                        console.error(`Notification failed: ${title}`, value?.error ?? value);
+                    }
+                } else {
+                    console.error(`Notification failed: ${title}`, result.reason);
+                }
+            });
+
             const successful = results.filter(r => r.status === 'fulfilled' && (r.value as any).success).length;
             
             if (successful > 0) {
@@ -76,7 +91,7 @@ const Index = () => {
                 toast.error("נכשלה סנכרון התזכורות");
             }
             
-            console.log('Sync day results:', results);
+            console.log('Sync day notification results:', results);
         } catch (error) {
             console.error('Error syncing day:', error);
             toast.error("אירעה שגיאה בסנכרון היום");

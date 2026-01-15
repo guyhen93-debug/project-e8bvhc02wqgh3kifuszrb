@@ -18,20 +18,26 @@ Deno.serve(async (req) => {
 
     const coercedDelay = Math.max(0, Math.floor(delaySeconds));
 
-    console.log(`Scheduling ntfy reminder: "${title}" in ${coercedDelay}s`);
+    console.log(`Scheduling ntfy reminder with query params: "${title}" in ${coercedDelay}s`);
 
-    const response = await fetch("https://ntfy.sh/guy_oxygym_alerts_99", {
+    const url = new URL("https://ntfy.sh/guy_oxygym_alerts_99");
+    url.searchParams.set("title", title);
+    url.searchParams.set("delay", `${coercedDelay}s`);
+    url.searchParams.set("priority", "high");
+    url.searchParams.set("tags", "stopwatch");
+
+    const response = await fetch(url.toString(), {
       method: "POST",
+      mode: "no-cors",
       headers: {
-        "Title": title,
-        "Priority": "high",
-        "Delay": `${coercedDelay}s`,
         "Content-Type": "text/plain; charset=utf-8",
       },
       body: message,
     });
 
-    if (!response.ok) {
+    // Note: With mode: 'no-cors', the response might be opaque if it were a browser,
+    // but in Deno backend it should still be a normal response.
+    if (!response.ok && response.type !== 'opaque') {
       const errorText = await response.text();
       throw new Error(`ntfy error: ${response.status} ${errorText}`);
     }
