@@ -5,3 +5,4 @@ export const calculateMetrics = superdevClient.functions.calculateMetrics;
 export const generateWeeklyReport = superdevClient.functions.generateWeeklyReport;
 export const sendReminder = superdevClient.functions.sendReminder;
 export const telegramSendMessage = superdevClient.functions.telegramSendMessage;
+export const notifyRestEnd = superdevClient.functions.notifyRestEnd;

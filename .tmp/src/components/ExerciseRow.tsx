@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { SetRow } from './SetRow';
 import { useTimer } from '@/contexts/TimerContext';
 import { Input } from '@/components/ui/input';
+import { notifyRestEnd } from '@/functions';
 
 interface ExerciseRowProps {
     name: string;
@@ -54,6 +55,9 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
 
         if (completed) {
             startTimer();
+            notifyRestEnd({})
+                .then(() => console.log('ntfy rest-end notification scheduled'))
+                .catch((err) => console.error('Failed to schedule ntfy rest-end notification:', err));
         }
     };
 
