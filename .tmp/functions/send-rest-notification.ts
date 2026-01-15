@@ -1,70 +1,31 @@
 Deno.serve(async (req) => {
-  const apiKey = Deno.env.get("ONESIGNAL_REST_API_KEY");
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'Missing ONESIGNAL_REST_API_KEY' }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
   try {
-    const { playerId, delaySeconds = 90 } = await req.json();
-
-    if (!playerId) {
-      return new Response(JSON.stringify({ error: "playerId is required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    // Attempt to read body if it exists, but don't fail if it's empty
+    let delaySeconds = 90;
+    try {
+      const body = await req.json();
+      if (body && body.delaySeconds) {
+        delaySeconds = body.delaySeconds;
+      }
+    } catch (_e) {
+      // Body might be empty or not JSON, that's fine for this stub
     }
 
-    // Schedule notification for X seconds from now
-    const sendAfterDate = new Date(Date.now() + delaySeconds * 1000);
-    const sendAfter = sendAfterDate.toISOString();
-
-    const body = {
-      app_id: '765b6111-8550-4b51-8db8-c64cd97396f0',
-      include_player_ids: [playerId],
-      headings: {
-        en: 'Rest finished',
-        he: 'המנוחה הסתיימה',
-      },
-      contents: {
-        en: 'Rest is over! Start your next set.',
-        he: 'מנוחה הסתיימה! התחל סט הבא',
-      },
-      send_after: sendAfter,
-    };
-
-    console.log(`Scheduling notification for ${playerId} at ${sendAfter}`);
-
-    const onesignalResp = await fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Basic ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await onesignalResp.json();
-
-    if (!onesignalResp.ok) {
-      console.error('OneSignal API error:', data);
-      return new Response(JSON.stringify({ error: 'OneSignal error', details: data }), {
-        status: 502,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    console.log("Rest notification endpoint called, but push notifications are disabled.");
 
     return new Response(
-      JSON.stringify({ id: data.id, scheduled_at: sendAfter }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Rest notifications via push are disabled in this app.',
+        delaySeconds
+      }),
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
       },
     );
   } catch (err) {
-    console.error('Unexpected error in send-rest-notification:', err);
+    console.error('Unexpected error in send-rest-notification stub:', err);
     return new Response(JSON.stringify({ 
       error: err instanceof Error ? err.message : "Unknown error" 
     }), {

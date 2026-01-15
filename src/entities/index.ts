@@ -6,5 +6,4 @@ export const UserProfile = superdevClient.entity("UserProfile");
 export const WaterLog = superdevClient.entity("WaterLog");
 export const WeightLog = superdevClient.entity("WeightLog");
 export const WorkoutLog = superdevClient.entity("WorkoutLog");
-export const PushSubscription = superdevClient.entity("PushSubscription");
 export const User = superdevClient.auth;
