@@ -15,6 +15,8 @@ import { WorkoutLog, NutritionLog, WaterLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
 import { useMemo } from 'react';
 import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
+import { scheduleNtfyReminder } from '@/functions';
+import { toast } from 'sonner';
 
 const DAILY_CALORIE_TARGET = 2410;
 const DAILY_PROTEIN_TARGET = 145;
@@ -23,6 +25,65 @@ const DAILY_WATER_TARGET_GLASSES = 12;
 const Index = () => {
     const { selectedDate, isToday } = useDate();
     const [showOnboarding, setShowOnboarding] = useState(false);
+    const [isSyncingDay, setIsSyncingDay] = useState(false);
+
+    const getDelaySecondsForToday = (hours: number, minutes: number) => {
+        const now = new Date();
+        const target = new Date();
+        target.setHours(hours, minutes, 0, 0);
+        const diffMs = target.getTime() - now.getTime();
+        if (diffMs <= 0) return null; // skip past times
+        return Math.round(diffMs / 1000);
+    };
+
+    const handleSyncDay = async () => {
+        setIsSyncingDay(true);
+        try {
+            const reminders = [
+                { hours: 10, minutes: 0, title: "ארוחה 1 🍳", message: "זמן לארוחת בוקר. לא לשכוח לסמן ביומן" },
+                { hours: 12, minutes: 30, title: "ארוחה 2 🥛", message: "זמן לגיינר. סמן ביומן כשסיימת" },
+                { hours: 15, minutes: 30, title: "ארוחה 3 🥛", message: "זמן לגיינר השני. נא לסמן ביומן" },
+                { hours: 21, minutes: 0, title: "ארוחה 4 🍗", message: "זמן לארוחת ערב. אל תשכח לסמן ביומן" },
+            ];
+
+            const now = new Date();
+            const isThursday = now.getDay() === 4;
+            if (isThursday) {
+                reminders.push({ hours: 6, minutes: 30, title: "שקילה שבועית! ⚖️", message: "לפני אוכל וקפה, אחרי שירותים, בלי בגדים" });
+            }
+
+            const promises = reminders
+                .map(r => {
+                    const delaySeconds = getDelaySecondsForToday(r.hours, r.minutes);
+                    if (delaySeconds !== null) {
+                        return scheduleNtfyReminder({ title: r.title, message: r.message, delaySeconds });
+                    }
+                    return null;
+                })
+                .filter(p => p !== null);
+
+            if (promises.length === 0) {
+                toast.info("כל התזכורות להיום כבר עברו");
+                return;
+            }
+
+            const results = await Promise.allSettled(promises);
+            const successful = results.filter(r => r.status === 'fulfilled' && (r.value as any).success).length;
+            
+            if (successful > 0) {
+                toast.success(`סונכרנו ${successful} תזכורות להמשך היום`);
+            } else {
+                toast.error("נכשלה סנכרון התזכורות");
+            }
+            
+            console.log('Sync day results:', results);
+        } catch (error) {
+            console.error('Error syncing day:', error);
+            toast.error("אירעה שגיאה בסנכרון היום");
+        } finally {
+            setIsSyncingDay(false);
+        }
+    };
 
     useEffect(() => {
         try {
@@ -214,6 +275,16 @@ const Index = () => {
                             </Button>
                         </CardContent>
                     </Card>
+                </div>
+
+                <div className="mb-6">
+                    <Button
+                        onClick={handleSyncDay}
+                        disabled={isSyncingDay}
+                        className="w-full bg-oxygym-yellow text-black hover:bg-oxygym-yellow/90 font-bold h-12 text-lg shadow-lg shadow-oxygym-yellow/20"
+                    >
+                        {isSyncingDay ? 'מסנכרן תזכורות...' : 'סנכרון יום'}
+                    </Button>
                 </div>
 
                 <div className="mb-6">

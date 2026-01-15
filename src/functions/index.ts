@@ -6,3 +6,4 @@ export const generateWeeklyReport = superdevClient.functions.generateWeeklyRepor
 export const sendReminder = superdevClient.functions.sendReminder;
 export const telegramSendMessage = superdevClient.functions.telegramSendMessage;
 export const notifyRestEnd = superdevClient.functions.notifyRestEnd;
+export const scheduleNtfyReminder = superdevClient.functions.scheduleNtfyReminder;
