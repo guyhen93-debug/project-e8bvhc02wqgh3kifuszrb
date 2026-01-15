@@ -1,14 +1,25 @@
 import { useTimer } from '@/contexts/TimerContext';
 import { Timer } from './Timer';
-import { useTelegramSettings } from '@/hooks/useTelegramSettings';
 import { telegramSendMessage } from '@/functions';
 
 export const GlobalTimer = () => {
     const { isActive, stopTimer, restartToken } = useTimer();
-    const { settings: telegramSettings } = useTelegramSettings();
     
     const handleComplete = () => {
-        console.log('Timer ended - sending Telegram message');
+        console.log('Timer ended - cleaning up and sending Telegram message');
+        
+        // Cleanup background audio
+        if (typeof window !== 'undefined') {
+            const w = window as any;
+            if (w.timerAudio) {
+                w.timerAudio.pause();
+                w.timerAudio.currentTime = 0;
+                w.timerAudio = null;
+            }
+        }
+
+        // Clear fallback marker
+        localStorage.removeItem('timer_end_time');
         
         const token = localStorage.getItem('telegram_token');
         const chatId = localStorage.getItem('telegram_chat_id');
@@ -30,9 +41,6 @@ export const GlobalTimer = () => {
         }
     };
 
-    // We wrap the improved Timer component which handles the accurate countdown 
-    // and notifications while connecting it to the global timer state.
-    // We pass restartToken to ensure the timer resets on every set completion.
     return (
         <Timer 
             isActive={isActive} 

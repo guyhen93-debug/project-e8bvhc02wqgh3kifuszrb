@@ -21,7 +21,18 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
     const { settings: telegramSettings } = useTelegramSettings();
 
     const startTimer = () => {
-        console.log('Starting timer and unlocking audio for Safari...');
+        console.log('Starting timer and unlocking audio...');
+
+        // Background audio for keeping app alive
+        const audio = new Audio();
+        audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        audio.loop = true;
+        audio.volume = 0.01;
+        audio.play().catch(err => console.log('Audio play failed:', err));
+
+        if (typeof window !== 'undefined') {
+            (window as any).timerAudio = audio;
+        }
         
         // Create AudioContext if it doesn't exist
         if (!audioContextRef.current) {
@@ -54,16 +65,18 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
 
         if (token && chatId) {
             console.log('Timer started - sending Telegram message');
-            console.log('Timer started - attempting to send Telegram message to chatId:', chatId);
             telegramSendMessage({ 
                 chatId: chatId, 
                 text: "⏱️ מנוחה של 90 שניות התחילה\n💧 זמן מצוין לשתות מים!" 
             })
             .then(() => console.log('Timer started - Telegram message sent successfully'))
             .catch(error => console.error("Timer started - Telegram error:", error));
-        } else {
-            console.log('Timer started - missing telegram_token or telegram_chat_id in localStorage, skipping Telegram message');
         }
+
+        // Store planned end time for fallback check
+        const endTime = Date.now() + 90000;
+        localStorage.setItem('timer_end_time', endTime.toString());
+        console.log('Timer scheduled to end at:', new Date(endTime).toLocaleTimeString());
 
         setIsActive(true);
         setSeconds(90);

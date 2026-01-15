@@ -51,19 +51,13 @@ export const useNotifications = () => {
         lastScheduled: null,
         weighInLastScheduled: null,
     });
-    const [permission, setPermission] = useState<NotificationPermission>('default');
-    const [isSupported, setIsSupported] = useState(false);
+    
+    // Constant values since we only use Telegram now
+    const isSupported = true;
+    const permission: 'default' | 'granted' | 'denied' = 'granted';
 
-    // Check if notifications are supported
+    // Load settings from localStorage
     useEffect(() => {
-        const supported = typeof window !== 'undefined' && 'Notification' in window;
-        setIsSupported(supported);
-        
-        if (supported) {
-            setPermission(Notification.permission);
-        }
-
-        // Load settings from localStorage
         const savedSettings = localStorage.getItem(STORAGE_KEY);
         if (savedSettings) {
             try {
@@ -85,306 +79,87 @@ export const useNotifications = () => {
         }
     }, []);
 
-    // Sync notification status on window load
-    useEffect(() => {
-        const handleLoad = () => {
-            if ('Notification' in window) {
-                setIsSupported(true);
-                setPermission(Notification.permission);
-            } else {
-                setIsSupported(false);
-                setPermission('default');
-            }
-        };
-
-        if (document.readyState === 'complete') {
-            handleLoad();
-        } else {
-            window.addEventListener('load', handleLoad);
-            return () => window.removeEventListener('load', handleLoad);
-        }
-    }, []);
-
     // Save settings to localStorage
     const saveSettings = useCallback((newSettings: NotificationSettings) => {
         setSettings(newSettings);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
     }, []);
 
-    // Calculate next Thursday at 06:30
-    const calculateNextThursday = useCallback(() => {
-        const now = new Date();
-        const thursdayTime = new Date();
-        
-        // Set to Thursday 06:30
-        thursdayTime.setHours(WEIGH_IN_TIME.hour, WEIGH_IN_TIME.minute, 0, 0);
-        
-        const currentDay = now.getDay();
-        const daysUntilThursday = (WEIGH_IN_TIME.day - currentDay + 7) % 7;
-        
-        // If today is Thursday but time hasn't passed yet
-        if (currentDay === WEIGH_IN_TIME.day && now < thursdayTime) {
-            // Use today
-            return thursdayTime;
-        }
-        
-        // If today is Thursday and time has passed, or it's another day
-        if (daysUntilThursday === 0) {
-            // Next Thursday (7 days from now)
-            thursdayTime.setDate(thursdayTime.getDate() + 7);
-        } else {
-            // Add days until next Thursday
-            thursdayTime.setDate(thursdayTime.getDate() + daysUntilThursday);
-        }
-        
-        return thursdayTime;
-    }, []);
-
-    // Schedule weekly weigh-in notification
-    const scheduleWeighInNotification = useCallback(() => {
-        if (!isSupported || permission !== 'granted') {
-            return;
-        }
-
-        const now = new Date();
-        const nextThursday = calculateNextThursday();
-        const timeUntilNotification = nextThursday.getTime() - now.getTime();
-
-        console.log(`Scheduling weigh-in notification for ${nextThursday.toLocaleString('he-IL')}`);
-        console.log(`Time until notification: ${Math.round(timeUntilNotification / 1000 / 60 / 60)} hours`);
-
-        // Schedule the notification
-        setTimeout(() => {
-            if (Notification.permission === 'granted') {
-                const notification = new Notification('יום שקילה! ⚖️', {
-                    body: 'לפני אוכל/קפה, אחרי שירותים, בלי בגדים. לא לשכוח לעדכן!',
-                    icon: 'https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/project-favicons/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb-8d04fe90-f5f4-47bc-bc85-6678dc2d65b4.png',
-                    badge: 'https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/project-favicons/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb-8d04fe90-f5f4-47bc-bc85-6678dc2d65b4.png',
-                    tag: 'weekly-weigh-in',
-                    requireInteraction: true,
-                    vibrate: [300, 200, 300],
-                });
-
-                notification.onclick = () => {
-                    window.focus();
-                    notification.close();
-                    window.location.href = '/';
-                };
-
-                // Re-schedule for next week
-                scheduleWeighInNotification();
-            }
-        }, timeUntilNotification);
-
-        saveSettings({
-            ...settings,
-            weighInLastScheduled: now.toISOString(),
-        });
-    }, [isSupported, permission, calculateNextThursday, saveSettings, settings]);
-
-    // Schedule daily meal notifications
-    const scheduleMealNotifications = useCallback(async () => {
-        if (!isSupported || permission !== 'granted') {
-            return;
-        }
-
-        const now = new Date();
-        const today = now.toDateString();
-
-        // Schedule notifications for today and tomorrow
-        for (const mealTime of MEAL_TIMES) {
-            const notificationTime = new Date();
-            notificationTime.setHours(mealTime.hour, mealTime.minute, 0, 0);
-
-            // If time has passed today, schedule for tomorrow
-            if (notificationTime <= now) {
-                notificationTime.setDate(notificationTime.getDate() + 1);
-            }
-
-            const timeUntilNotification = notificationTime.getTime() - now.getTime();
-
-            // Schedule the notification
-            setTimeout(() => {
-                if (Notification.permission === 'granted') {
-                    const notification = new Notification('תזכורת תזונה - OXYGYM', {
-                        body: `זמן למלא ${mealTime.meal}! 🍽️`,
-                        icon: 'https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/project-favicons/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb-8d04fe90-f5f4-47bc-bc85-6678dc2d65b4.png',
-                        badge: 'https://ellprnxjjzatijdxcogk.supabase.co/storage/v1/object/public/project-favicons/9d9da483-282b-4e6c-8640-d115b3edcbaf/e8bvhc02wqgh3kifuszrb-8d04fe90-f5f4-47bc-bc85-6678dc2d65b4.png',
-                        tag: `meal-reminder-${mealTime.meal}`,
-                        requireInteraction: false,
-                        vibrate: [200, 100, 200],
-                    });
-
-                    notification.onclick = () => {
-                        window.focus();
-                        notification.close();
-                        window.location.href = '/nutrition';
-                    };
-
-                    // Re-schedule for next day
-                    scheduleMealNotifications();
-                }
-            }, timeUntilNotification);
-
-            console.log(`Scheduled ${mealTime.meal} notification in ${Math.round(timeUntilNotification / 1000 / 60)} minutes`);
-        }
-
-        saveSettings({
-            ...settings,
-            lastScheduled: today,
-        });
-    }, [isSupported, permission, saveSettings, settings]);
-
-    // Request notification permission
+    // Request permission (no-op now)
     const requestPermission = useCallback(async () => {
-        if (!isSupported) {
-            toast({
-                title: '❌ לא נתמך',
-                description: 'הדפדפן שלך לא תומך בהתראות',
-                variant: 'destructive',
-            });
-            return false;
-        }
-
-        try {
-            // Request permission
-            const result = await Notification.requestPermission();
-            setPermission(result);
-
-            if (result === 'granted') {
-                toast({
-                    title: '✅ ההתראות הופעלו',
-                    description: 'תקבל התראות בהתאם להגדרות',
-                });
-                
-                // Schedule based on current settings
-                if (settings.mealReminders) {
-                    await scheduleMealNotifications();
-                }
-                if (settings.weighInReminder) {
-                    scheduleWeighInNotification();
-                }
-                
-                return true;
-            } else if (result === 'denied') {
-                toast({
-                    title: '❌ ההרשאה נדחתה',
-                    description: 'לא ניתן לשלוח התראות. שנה בהגדרות הדפדפן.',
-                    variant: 'destructive',
-                });
-                saveSettings({ 
-                    mealReminders: false, 
-                    weighInReminder: false,
-                    lastScheduled: null,
-                    weighInLastScheduled: null,
-                });
-                return false;
-            }
-        } catch (error) {
-            console.error('Failed to request permission:', error);
-            toast({
-                title: '❌ שגיאה',
-                description: 'לא הצלחנו להפעיל התראות',
-                variant: 'destructive',
-            });
-            return false;
-        }
-        return false;
-    }, [isSupported, scheduleMealNotifications, scheduleWeighInNotification, saveSettings, toast, settings]);
+        toast({
+            title: '✅ תזכורות טלגרם',
+            description: 'התזכורות יעבדו דרך טלגרם בלבד',
+        });
+        return true;
+    }, [toast]);
 
     // Toggle meal notifications
     const toggleMealNotifications = useCallback(async (enabled: boolean) => {
+        saveSettings({ ...settings, mealReminders: enabled });
         if (enabled) {
-            if (permission === 'granted') {
-                await scheduleMealNotifications();
-                saveSettings({ ...settings, mealReminders: true });
-                toast({
-                    title: '✅ תזכורות ארוחות הופעלו',
-                    description: 'תקבל תזכורות לארוחות בשעות הקבועות',
-                });
-                return true;
-            } else {
-                const granted = await requestPermission();
-                if (granted) {
-                    saveSettings({ ...settings, mealReminders: true });
-                }
-                return granted;
-            }
+            toast({
+                title: '✅ תזכורות ארוחות הופעלו',
+                description: 'תקבל תזכורות לארוחות בטלגרם בשעות הקבועות',
+            });
         } else {
-            saveSettings({ ...settings, mealReminders: false });
             toast({
                 title: '🔕 תזכורות ארוחות כובו',
-                description: 'לא תקבל עוד תזכורות לארוחות',
+                description: 'לא תקבל עוד תזכורות לארוחות בטלגרם',
             });
-            return true;
         }
-    }, [permission, scheduleMealNotifications, requestPermission, saveSettings, settings, toast]);
+        return true;
+    }, [saveSettings, settings, toast]);
 
     // Toggle weigh-in notification
     const toggleWeighInNotification = useCallback(async (enabled: boolean) => {
+        saveSettings({ ...settings, weighInReminder: enabled });
         if (enabled) {
-            if (permission === 'granted') {
-                scheduleWeighInNotification();
-                saveSettings({ ...settings, weighInReminder: true });
-                toast({
-                    title: '✅ תזכורת שקילה הופעלה',
-                    description: 'תקבל תזכורת כל יום חמישי ב-06:30',
-                });
-                return true;
-            } else {
-                const granted = await requestPermission();
-                if (granted) {
-                    saveSettings({ ...settings, weighInReminder: true });
-                }
-                return granted;
-            }
+            toast({
+                title: '✅ תזכורת שקילה הופעלה',
+                description: 'תקבל תזכורת בטלגרם כל יום חמישי ב-06:30',
+            });
         } else {
-            saveSettings({ ...settings, weighInReminder: false });
             toast({
                 title: '🔕 תזכורת שקילה כובתה',
-                description: 'לא תקבל עוד תזכורות שקילה',
+                description: 'לא תקבל עוד תזכורות שקילה בטלגרם',
             });
-            return true;
         }
-    }, [permission, scheduleWeighInNotification, requestPermission, saveSettings, settings, toast]);
-
-    // Check if we need to reschedule (e.g., after app restart)
-    useEffect(() => {
-        if (permission === 'granted') {
-            // Reschedule meal notifications if enabled
-            if (settings.mealReminders) {
-                const now = new Date();
-                const lastScheduled = settings.lastScheduled ? new Date(settings.lastScheduled) : null;
-                
-                if (!lastScheduled || lastScheduled.toDateString() !== now.toDateString()) {
-                    scheduleMealNotifications();
-                }
-            }
-
-            // Reschedule weigh-in notification if enabled
-            if (settings.weighInReminder) {
-                const now = new Date();
-                const lastScheduled = settings.weighInLastScheduled ? new Date(settings.weighInLastScheduled) : null;
-                const nextThursday = calculateNextThursday();
-                
-                // If last scheduled was more than a week ago, or never scheduled
-                if (!lastScheduled || (now.getTime() - lastScheduled.getTime()) > 7 * 24 * 60 * 60 * 1000) {
-                    scheduleWeighInNotification();
-                }
-            }
-        }
-    }, [settings.mealReminders, settings.weighInReminder, settings.lastScheduled, settings.weighInLastScheduled, permission, scheduleMealNotifications, scheduleWeighInNotification, calculateNextThursday]);
+        return true;
+    }, [saveSettings, settings, toast]);
 
     // Telegram notification polling
     useEffect(() => {
         const token = localStorage.getItem('telegram_token');
         const chatId = localStorage.getItem('telegram_chat_id');
 
-        if (!token || !chatId || (!settings.mealReminders && !settings.weighInReminder)) {
-            return;
-        }
-
         const intervalId = setInterval(() => {
+            // Timer check
+            const timerEndTime = localStorage.getItem('timer_end_time');
+            if (timerEndTime) {
+                const endTime = parseInt(timerEndTime);
+                const nowMs = Date.now();
+
+                if (nowMs >= endTime) {
+                    console.log('[Telegram] Timer ended via scheduled check');
+                    if (token && chatId) {
+                        fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                chat_id: chatId,
+                                text: "🔥 המנוחה הסתיימה!\n💪 בוא נמשיך - סט הבא מחכה!"
+                            })
+                        }).catch(err => console.error('Timer end message failed:', err));
+                    }
+                    localStorage.removeItem('timer_end_time');
+                }
+            }
+
+            if (!token || !chatId || (!settings.mealReminders && !settings.weighInReminder)) {
+                return;
+            }
+
             console.log('[Telegram] Interval tick - checking reminders');
             const now = new Date();
             const todayStr = now.toISOString().split('T')[0];

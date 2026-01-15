@@ -112,7 +112,7 @@ const Nutrition = () => {
     const userMadeChangeRef = useRef(false);
 
     // Notification hook
-    const { isSupported, settings, toggleMealNotifications } = useNotifications();
+    const { settings, toggleMealNotifications } = useNotifications();
     const [notificationsEnabled, setNotificationsEnabled] = useState(settings.mealReminders);
 
     // Simplified state - one object per menu type
@@ -445,8 +445,6 @@ const Nutrition = () => {
         }
     };
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
     if (isLoading) {
         return (
             <div className="min-h-screen bg-oxygym-dark flex items-center justify-center pb-20">
@@ -515,7 +513,7 @@ const Nutrition = () => {
                                 )}
                                 <div>
                                     <Label htmlFor="notifications" className="text-white font-bold text-sm sm:text-base cursor-pointer">
-                                        תזכורות ארוחות
+                                        תזכורות ארוחות (בטלגרם)
                                     </Label>
                                     <p className="text-xs text-muted-foreground mt-0.5">
                                         קבל תזכורת למלא כל ארוחה
@@ -528,14 +526,6 @@ const Nutrition = () => {
                                 onCheckedChange={handleNotificationToggle}
                             />
                         </div>
-                        {isIOS && isSupported && (
-                            <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-start gap-2">
-                                <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                                <p className="text-xs text-blue-400">
-                                    <strong>עבור iOS:</strong> הוסף את האתר למסך הבית כדי לקבל התראות גם כשהדפדפן סגור
-                                </p>
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
 
@@ -561,7 +551,6 @@ const Nutrition = () => {
                 {/* Shabbat Important Notes */}
                 {isShabbatMenu && (
                     <div className="mb-4 space-y-3">
-                        {/* Yellow Warning - Meal Replacement */}
                         <Card className="bg-oxygym-yellow/20 border-2 border-oxygym-yellow">
                             <CardContent className="p-3 sm:p-4">
                                 <div className="flex items-start gap-3">
@@ -573,7 +562,6 @@ const Nutrition = () => {
                             </CardContent>
                         </Card>
 
-                        {/* Red Motivation - Stay Strong */}
                         <Card className="bg-red-500/20 border-2 border-red-500">
                             <CardContent className="p-3 sm:p-4">
                                 <div className="flex items-start gap-3">

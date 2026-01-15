@@ -13,7 +13,6 @@ interface TimerProps {
 export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
     const [remainingSeconds, setRemainingSeconds] = useState(90);
     const targetTimeRef = useRef<number | null>(null);
-    const notificationTimeoutRef = useRef<number | null>(null);
     const hasFiredRef = useRef(false);
     const silentAudioRef = useRef<HTMLAudioElement | null>(null);
     const isAudioSupportedRef = useRef(true);
@@ -78,20 +77,8 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
         }
     };
 
-    const requestNotificationPermission = async () => {
-        if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "default") {
-            try {
-                await Notification.requestPermission();
-            } catch (error) {
-                console.debug('Error requesting notification permission:', error);
-            }
-        }
-    };
-
     useEffect(() => {
         if (isActive) {
-            requestNotificationPermission();
-            
             // Start silent audio to keep the app alive in background ONLY on iOS
             if (isIOS()) {
                 const audio = ensureSilentAudio();
@@ -123,10 +110,6 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
             setRemainingSeconds(90);
             targetTimeRef.current = null;
             hasFiredRef.current = false;
-            if (notificationTimeoutRef.current) {
-                window.clearTimeout(notificationTimeoutRef.current);
-                notificationTimeoutRef.current = null;
-            }
             return;
         }
 
@@ -134,26 +117,6 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
         setRemainingSeconds(90);
         targetTimeRef.current = Date.now() + 90000;
         hasFiredRef.current = false;
-        
-        if (notificationTimeoutRef.current) {
-            window.clearTimeout(notificationTimeoutRef.current);
-            notificationTimeoutRef.current = null;
-        }
-
-        // Schedule notification
-        if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "granted") {
-            notificationTimeoutRef.current = window.setTimeout(() => {
-                if (isActive && !hasFiredRef.current) {
-                    try {
-                        new Notification("הזמן עבר! 🔔", { 
-                            body: "זמן להתחיל את הסט הבא.",
-                        });
-                    } catch (e) {
-                        console.debug("Failed to show notification", e);
-                    }
-                }
-            }, 90000);
-        }
 
         const interval = setInterval(() => {
             if (!targetTimeRef.current) return;
@@ -187,9 +150,6 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
 
         return () => {
             clearInterval(interval);
-            if (notificationTimeoutRef.current) {
-                window.clearTimeout(notificationTimeoutRef.current);
-            }
             // Cleanup: stop silent audio if component unmounts while timer is running
             if (silentAudioRef.current) {
                 try {
