@@ -7,8 +7,7 @@ import {
     Loader2, 
     User as UserIcon, 
     Utensils, 
-    Dumbbell, 
-    Cpu,
+    Dumbbell,
     ShieldCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,8 +22,6 @@ interface StatusResult {
 }
 
 const Status = () => {
-    const [swStatus, setSwStatus] = useState<'registered' | 'not-registered' | 'unsupported' | 'checking'>('checking');
-
     const profileCheck = useQuery({
         queryKey: ['status-profile-check'],
         queryFn: async () => {
@@ -64,24 +61,7 @@ const Status = () => {
         },
     });
 
-    useEffect(() => {
-        const checkSW = async () => {
-            if ('serviceWorker' in navigator) {
-                try {
-                    const registration = await navigator.serviceWorker.getRegistration();
-                    setSwStatus(registration ? 'registered' : 'not-registered');
-                } catch (error) {
-                    console.error('Service Worker status check failed:', error);
-                    setSwStatus('not-registered');
-                }
-            } else {
-                setSwStatus('unsupported');
-            }
-        };
-        checkSW();
-    }, []);
-
-    const isAnyLoading = profileCheck.isLoading || nutritionCheck.isLoading || workoutCheck.isLoading || swStatus === 'checking';
+    const isAnyLoading = profileCheck.isLoading || nutritionCheck.isLoading || workoutCheck.isLoading;
 
     const StatusIndicator = ({ result, label, icon: Icon }: { result: StatusResult, label: string, icon: any }) => {
         let statusColor = "bg-red-500/10 text-red-500 border-red-500/20";
@@ -134,13 +114,6 @@ const Status = () => {
         );
     };
 
-    const getSwResult = (): StatusResult => {
-        if (swStatus === 'checking') return { ok: false, loading: true };
-        if (swStatus === 'registered') return { ok: true, count: 1 };
-        if (swStatus === 'not-registered') return { ok: true, count: 0 }; // We treat it as OK but with 0 count (warning)
-        return { ok: false, message: 'דפדפן לא תומך' };
-    };
-
     return (
         <div className="min-h-screen bg-oxygym-dark pb-24 text-white font-sans" dir="rtl">
             <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -191,11 +164,6 @@ const Status = () => {
                             message: workoutCheck.data?.message,
                             loading: workoutCheck.isLoading
                         }}
-                    />
-                    <StatusIndicator 
-                        label="Service Worker" 
-                        icon={Cpu}
-                        result={getSwResult()}
                     />
                 </div>
 
