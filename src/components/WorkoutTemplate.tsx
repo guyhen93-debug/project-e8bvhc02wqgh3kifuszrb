@@ -531,9 +531,11 @@ export const WorkoutTemplate = ({
                             <div className="flex items-center gap-2">
                                 <Input
                                     id="cardio"
-                                    type="number"
+                                    type="tel"
+                                    inputMode="numeric"
                                     value={cardioMinutes || ''}
                                     onChange={(e) => handleCardioChange(e.target.value)}
+                                    onWheel={(e) => e.currentTarget.blur()}
                                     placeholder="0"
                                     className="w-20 h-10 text-center bg-black border-border text-white"
                                 />

@@ -89,9 +89,11 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
                     <div className="flex items-center gap-2 mt-2">
                         <span className="text-sm text-muted-foreground">משקל:</span>
                         <Input
-                            type="number"
+                            type="tel"
+                            inputMode="decimal"
                             value={weight || ''}
                             onChange={(e) => handleWeightChange(Number(e.target.value))}
+                            onWheel={(e) => e.currentTarget.blur()}
                             placeholder="0"
                             className="bg-black border-border text-white w-24 h-9"
                         />
