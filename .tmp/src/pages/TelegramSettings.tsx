@@ -1,3 +1,7 @@
+/**
+ * NOTE: This page is currently disabled as Telegram notifications have been removed.
+ * Keeping the file for reference but it is no longer routed in App.tsx.
+ */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Check, AlertCircle, ArrowRight, MessageSquare, ShieldCheck } from 'lucide-react';

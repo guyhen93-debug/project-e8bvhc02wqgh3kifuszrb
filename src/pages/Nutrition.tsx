@@ -482,34 +482,6 @@ const Nutrition = () => {
                     </div>
                 )}
 
-                {/* Notification Settings */}
-                <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4 sm:mb-6">
-                    <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                {notificationsEnabled ? (
-                                    <Bell className="w-5 h-5 text-oxygym-yellow" />
-                                ) : (
-                                    <BellOff className="w-5 h-5 text-muted-foreground" />
-                                )}
-                                <div>
-                                    <Label htmlFor="notifications" className="text-white font-bold text-sm sm:text-base cursor-pointer">
-                                        תזכורות ארוחות (בטלגרם)
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        קבל תזכורת למלא כל ארוחה
-                                    </p>
-                                </div>
-                            </div>
-                            <Switch
-                                id="notifications"
-                                checked={notificationsEnabled}
-                                onCheckedChange={handleNotificationToggle}
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
                 {/* Menu Type Toggle */}
                 <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4 sm:mb-6">
                     <CardContent className="p-4">
