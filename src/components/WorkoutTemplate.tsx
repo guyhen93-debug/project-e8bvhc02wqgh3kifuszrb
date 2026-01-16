@@ -141,6 +141,11 @@ export const WorkoutTemplate = ({
     }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType, isLoading]);
 
     async function performAutoSave() {
+        // Skip if no changes were made to avoid unnecessary network calls
+        if (!userMadeChangeRef.current) {
+            return;
+        }
+
         const currentExerciseData = exerciseDataRef.current;
         const currentCardioMinutes = cardioMinutesRef.current;
         const hasExercises = exercises.length > 0;
@@ -259,6 +264,23 @@ export const WorkoutTemplate = ({
         cardioMinutesRef.current = minutes;
         scheduleAutoSave(false);
     };
+
+    // Store the latest version of performAutoSave in a ref so the unmount cleanup
+    // always has access to the most recent closure (with current date and props)
+    const performAutoSaveRef = useRef(performAutoSave);
+    useEffect(() => {
+        performAutoSaveRef.current = performAutoSave;
+    });
+
+    // Ensure data is saved when the component unmounts (e.g. user navigates to another screen)
+    useEffect(() => {
+        return () => {
+            if (userMadeChangeRef.current && !isInitialLoadRef.current) {
+                console.log('Workout screen unmounting - triggering final save');
+                performAutoSaveRef.current();
+            }
+        };
+    }, []);
 
     useEffect(() => {
         const handleVisibilityChange = () => {
