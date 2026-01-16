@@ -40,9 +40,10 @@ export const WorkoutTemplate = ({
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
     const [cardioMinutes, setCardioMinutes] = useState(0);
     const [saving, setSaving] = useState(false);
-    const saveTimeoutRef = useRef<NodeJS.Timeout>();
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
+    const exerciseDataRef = useRef<{ [key: string]: any }>({});
+    const cardioMinutesRef = useRef(0);
 
     const initializedDateRef = useRef<string | null>(null);
 
@@ -86,7 +87,9 @@ export const WorkoutTemplate = ({
         isInitialLoadRef.current = true;
         userMadeChangeRef.current = false;
         setExerciseData({});
+        exerciseDataRef.current = {};
         setCardioMinutes(0);
+        cardioMinutesRef.current = 0;
         
         if (workoutData) {
             const loadedData: any = {};
@@ -100,7 +103,9 @@ export const WorkoutTemplate = ({
                 });
             }
             setExerciseData(loadedData);
+            exerciseDataRef.current = loadedData;
             setCardioMinutes(workoutData.duration_minutes || 0);
+            cardioMinutesRef.current = workoutData.duration_minutes || 0;
             initializedDateRef.current = selectedDate;
             setTimeout(() => {
                 isInitialLoadRef.current = false;
@@ -117,6 +122,9 @@ export const WorkoutTemplate = ({
                 });
             }
             setExerciseData(loadedData);
+            exerciseDataRef.current = loadedData;
+            setCardioMinutes(0);
+            cardioMinutesRef.current = 0;
             console.log('Loaded weights from last workout:', loadedData);
             initializedDateRef.current = selectedDate;
             setTimeout(() => {
@@ -136,9 +144,11 @@ export const WorkoutTemplate = ({
             return;
         }
 
+        const currentExerciseData = exerciseDataRef.current;
+        const currentCardioMinutes = cardioMinutesRef.current;
         const hasExercises = exercises.length > 0;
         
-        if (!hasExercises && cardioMinutes === 0) {
+        if (!hasExercises && currentCardioMinutes === 0) {
             console.log('Skipping auto-save - no data to save');
             return;
         }
@@ -146,9 +156,9 @@ export const WorkoutTemplate = ({
         try {
             setSaving(true);
 
-            // Calculate completed status based on the exerciseData we have
-            const completed = hasExercises && Object.values(exerciseData).length === exercises.length && 
-                Object.values(exerciseData).every((data: any) => 
+            // Calculate completed status based on the currentExerciseData we have
+            const completed = hasExercises && Object.values(currentExerciseData).length === exercises.length && 
+                Object.values(currentExerciseData).every((data: any) => 
                     data.sets && data.sets.every((set: any) => set.completed)
                 );
             
@@ -159,7 +169,7 @@ export const WorkoutTemplate = ({
 
             // Build full exercise list from templates to ensure denominator is correct
             const exercises_completed = exercises.map((exercise) => {
-                const existing = exerciseData[exercise.name];
+                const existing = currentExerciseData[exercise.name];
                 const defaultSets = Array(exercise.sets)
                     .fill(null)
                     .map(() => ({ completed: false }));
@@ -178,13 +188,13 @@ export const WorkoutTemplate = ({
                 const updatedLog = await WorkoutLog.update(existingLogs[0].id, {
                     exercises_completed,
                     completed: completed,
-                    duration_minutes: cardioMinutes,
+                    duration_minutes: currentCardioMinutes,
                 });
                 savedLog = updatedLog ?? { 
                     ...existingLogs[0], 
                     exercises_completed, 
                     completed, 
-                    duration_minutes: cardioMinutes 
+                    duration_minutes: currentCardioMinutes 
                 };
             } else {
                 savedLog = await WorkoutLog.create({
@@ -192,7 +202,7 @@ export const WorkoutTemplate = ({
                     workout_type: workoutType,
                     exercises_completed,
                     completed: completed,
-                    duration_minutes: cardioMinutes,
+                    duration_minutes: currentCardioMinutes,
                 });
             }
 
@@ -207,24 +217,28 @@ export const WorkoutTemplate = ({
         } finally {
             setSaving(false);
         }
-    }, [exerciseData, cardioMinutes, selectedDate, workoutType, exercises, queryClient]);
+    }, [selectedDate, workoutType, exercises, queryClient]);
 
-    useEffect(() => {
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
+    const handleExerciseDataChange = useCallback((data: any) => {
+        setExerciseData(prev => {
+            const updated = { ...prev, [data.name]: data };
+            exerciseDataRef.current = updated;
+            return updated;
+        });
 
-        saveTimeoutRef.current = setTimeout(() => {
+        if (!isInitialLoadRef.current) {
+            userMadeChangeRef.current = true;
             autoSave();
-        }, 1000);
+        }
+    }, [autoSave]);
 
-        return () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-                autoSave(); // Call autoSave on unmount/dependency change to flush changes
-            }
-        };
-    }, [exerciseData, cardioMinutes, autoSave]);
+    const handleCardioChange = (value: string) => {
+        const minutes = parseInt(value) || 0;
+        userMadeChangeRef.current = true;
+        setCardioMinutes(minutes);
+        cardioMinutesRef.current = minutes;
+        autoSave();
+    };
 
     useEffect(() => {
         const handleVisibilityChange = () => {
@@ -245,19 +259,6 @@ export const WorkoutTemplate = ({
             window.removeEventListener('pagehide', handlePageHide);
         };
     }, [autoSave]);
-
-    const handleExerciseDataChange = useCallback((data: any) => {
-        if (!isInitialLoadRef.current) {
-            userMadeChangeRef.current = true;
-        }
-        setExerciseData(prev => ({ ...prev, [data.name]: data }));
-    }, []);
-
-    const handleCardioChange = (value: string) => {
-        userMadeChangeRef.current = true;
-        const minutes = parseInt(value) || 0;
-        setCardioMinutes(minutes);
-    };
 
     const cardioPercentage = Math.min((cardioMinutes / 20) * 100, 100);
 
