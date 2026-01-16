@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Dumbbell, Utensils, Flame, Egg, Info } from 'lucide-react';
+import { Dumbbell, Utensils, Flame, Egg, Info, CheckCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatsCard } from '@/components/StatsCard';
@@ -20,11 +20,14 @@ import { toast } from 'sonner';
 const DAILY_CALORIE_TARGET = 2410;
 const DAILY_PROTEIN_TARGET = 145;
 const DAILY_WATER_TARGET_GLASSES = 12;
+const LAST_SYNC_KEY = 'oxygym_last_sync_date';
 
 const Index = () => {
     const { selectedDate, isToday } = useDate();
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [isSyncingDay, setIsSyncingDay] = useState(false);
+    const [lastSyncDate, setLastSyncDate] = useState<string | null>(null);
+    const [isSyncedToday, setIsSyncedToday] = useState(false);
 
     const getDelaySecondsForToday = (hours: number, minutes: number) => {
         const now = new Date();
@@ -85,6 +88,14 @@ const Index = () => {
             const successful = results.filter(r => r.status === 'fulfilled' && (r.value as any).success).length;
             
             if (successful > 0) {
+                const nowIso = new Date().toISOString();
+                setLastSyncDate(nowIso);
+                setIsSyncedToday(true);
+                try {
+                    localStorage.setItem(LAST_SYNC_KEY, nowIso);
+                } catch (e) {
+                    console.error('Error saving sync date:', e);
+                }
                 toast.success(`סונכרנו ${successful} תזכורות להמשך היום`);
             } else {
                 toast.error("נכשלה סנכרון התזכורות");
@@ -105,10 +116,42 @@ const Index = () => {
             if (!seen) {
                 setShowOnboarding(true);
             }
+
+            const stored = localStorage.getItem(LAST_SYNC_KEY);
+            if (stored) {
+                setLastSyncDate(stored);
+                const todayStr = new Date().toISOString().split('T')[0];
+                const storedStr = new Date(stored).toISOString().split('T')[0];
+                setIsSyncedToday(storedStr === todayStr);
+            }
         } catch (error) {
             console.error('Error reading from localStorage:', error);
         }
     }, []);
+
+    useEffect(() => {
+        const recomputeIsSyncedToday = () => {
+            if (!lastSyncDate) {
+                setIsSyncedToday(false);
+                return;
+            }
+            const todayStr = new Date().toISOString().split('T')[0];
+            const storedStr = new Date(lastSyncDate).toISOString().split('T')[0];
+            setIsSyncedToday(storedStr === todayStr);
+        };
+
+        const now = new Date();
+        const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5, 0);
+        const msUntilMidnight = midnight.getTime() - now.getTime();
+
+        if (msUntilMidnight > 0) {
+            const timeout = setTimeout(() => {
+                recomputeIsSyncedToday();
+                console.log('Sync status reset for new day');
+            }, msUntilMidnight);
+            return () => clearTimeout(timeout);
+        }
+    }, [lastSyncDate]);
 
     const handleDismissOnboarding = () => {
         try {
@@ -248,6 +291,14 @@ const Index = () => {
                     </div>
                 )}
 
+                {isToday && !isSyncedToday && (
+                    <div className="mb-4 p-3 bg-red-600/20 border border-red-500 rounded-lg animate-pulse">
+                        <p className="text-center text-sm text-red-200 font-semibold">
+                            ⚠️ שים לב: טרם בוצע סנכרון תזכורות להיום!
+                        </p>
+                    </div>
+                )}
+
                 <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
                     <CardContent className="p-3 text-center">
                         <p className="text-xs sm:text-sm text-muted-foreground">
@@ -273,13 +324,21 @@ const Index = () => {
                 </div>
 
                 <div className="mb-6">
-                    <Button
-                        onClick={handleSyncDay}
-                        disabled={isSyncingDay}
-                        className="w-full bg-oxygym-yellow text-black hover:bg-oxygym-yellow/90 font-bold h-12 text-lg shadow-lg shadow-oxygym-yellow/20"
-                    >
-                        {isSyncingDay ? 'מסנכרן תזכורות...' : 'סנכרון יום'}
-                    </Button>
+                    <div className="flex items-center justify-between gap-3">
+                        <Button
+                            onClick={handleSyncDay}
+                            disabled={isSyncingDay}
+                            className="flex-1 bg-oxygym-yellow text-black hover:bg-oxygym-yellow/90 font-bold h-12 text-lg shadow-lg shadow-oxygym-yellow/20"
+                        >
+                            {isSyncingDay ? 'מסנכרן תזכורות...' : 'סנכרון יום'}
+                        </Button>
+                        {isSyncedToday && isToday && (
+                            <div className="flex items-center gap-1 text-xs text-green-400 whitespace-nowrap bg-green-400/10 px-2 py-1 rounded-full border border-green-400/20">
+                                <CheckCircle className="w-4 h-4" />
+                                <span>מסונכרן להיום</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
