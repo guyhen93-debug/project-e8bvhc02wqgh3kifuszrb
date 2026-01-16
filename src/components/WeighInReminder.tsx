@@ -20,7 +20,7 @@ export const WeighInReminder = () => {
                         </div>
                         <div>
                             <h3 className="text-white font-medium">תזכורת שקילה שבועית</h3>
-                            <p className="text-xs text-muted-foreground">יום חמישי ב-06:30 (בטלגרם)</p>
+                            <p className="text-xs text-muted-foreground">יום חמישי ב-06:30</p>
                         </div>
                     </div>
                     <Switch
