@@ -62,6 +62,7 @@ export const WorkoutTemplate = ({
     const exerciseDataRef = useRef<{ [key: string]: any }>({});
     const cardioMinutesRef = useRef(0);
     const hasLoadedDraftRef = useRef(false);
+    const needsServerSyncRef = useRef(false);
 
     const initializedDateRef = useRef<string | null>(null);
 
@@ -154,6 +155,7 @@ export const WorkoutTemplate = ({
             setCardioMinutes(workoutData.duration_minutes || 0);
             cardioMinutesRef.current = workoutData.duration_minutes || 0;
             initializedDateRef.current = selectedDate;
+            hasLoadedDraftRef.current = true;
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
@@ -174,11 +176,13 @@ export const WorkoutTemplate = ({
             cardioMinutesRef.current = 0;
             console.log('Loaded weights from last workout:', loadedData);
             initializedDateRef.current = selectedDate;
+            hasLoadedDraftRef.current = true;
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
         } else {
             initializedDateRef.current = selectedDate;
+            hasLoadedDraftRef.current = true;
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
@@ -310,7 +314,7 @@ export const WorkoutTemplate = ({
         }
     }
 
-    async function saveWorkout() {
+    function saveWorkoutLocallyWithFeedback() {
         saveWorkoutLocally();
         setLastSavedAt(Date.now());
 
@@ -322,21 +326,40 @@ export const WorkoutTemplate = ({
             });
             lastToastRef.current = Date.now();
         }
+    }
+
+    async function saveWorkout() {
+        if (!needsServerSyncRef.current) return;
 
         try {
             await performAutoSave();
+            needsServerSyncRef.current = false;
         } catch (error) {
             console.error('Error syncing workout to server:', error);
         }
     }
 
-    function scheduleAutoSave() {
+    function scheduleAutoSave(immediate = false) {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
             saveTimeoutRef.current = null;
         }
 
-        saveWorkout();
+        if (!needsServerSyncRef.current) {
+            // No changes waiting for server, nothing to do
+            return;
+        }
+
+        if (immediate) {
+            // Used when leaving the page / app – sync right now
+            saveWorkout();
+        } else {
+            // Calm background sync: wait ~3 seconds after last change
+            saveTimeoutRef.current = setTimeout(() => {
+                saveWorkout();
+                saveTimeoutRef.current = null;
+            }, 3000);
+        }
     }
 
     const handleExerciseDataChange = (data: any) => {
@@ -348,6 +371,8 @@ export const WorkoutTemplate = ({
 
         if (!isInitialLoadRef.current) {
             userMadeChangeRef.current = true;
+            needsServerSyncRef.current = true;
+            saveWorkoutLocallyWithFeedback();
             scheduleAutoSave(false);
         }
     };
@@ -357,6 +382,9 @@ export const WorkoutTemplate = ({
         userMadeChangeRef.current = true;
         setCardioMinutes(minutes);
         cardioMinutesRef.current = minutes;
+        
+        needsServerSyncRef.current = true;
+        saveWorkoutLocallyWithFeedback();
         scheduleAutoSave(false);
     };
 
@@ -527,7 +555,7 @@ export const WorkoutTemplate = ({
                 <div className="space-y-6 mb-6">
                     {exercises.map((exercise, index) => (
                         <ExerciseRow
-                            key={index}
+                            key={`${selectedDate}-${exercise.name}`}
                             name={exercise.name}
                             sets={exercise.sets}
                             reps={exercise.reps}

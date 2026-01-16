@@ -18,6 +18,7 @@ interface SetData {
 }
 
 export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, onDataChange }: ExerciseRowProps) => {
+    const hasLoadedInitialData = useRef(false);
     const [setData, setSetData] = useState<SetData[]>(
         Array(sets).fill(null).map(() => ({ completed: false }))
     );
@@ -28,12 +29,15 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
 
     useEffect(() => {
         if (!initialData) {
+            hasLoadedInitialData.current = false;
             return;
         }
 
+        if (hasLoadedInitialData.current) return;
+
         console.log('Loading initial data for', name, initialData);
         if (initialData.sets) {
-            setSetData(initialData.sets);
+            setSetData(initialData.sets as SetData[]);
         } else {
             setSetData(Array(sets).fill(null).map(() => ({ completed: false })));
         }
@@ -41,6 +45,8 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
         if (!isAbsExercise && typeof initialData.weight === 'number') {
             setWeight(initialData.weight);
         }
+
+        hasLoadedInitialData.current = true;
     }, [initialData, name, isAbsExercise, sets]);
 
     useEffect(() => {
