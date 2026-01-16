@@ -9,7 +9,6 @@ import { CalorieChart } from '@/components/CalorieChart';
 import { WeightDialog } from '@/components/WeightDialog';
 import { SleepTracker } from '@/components/SleepTracker';
 import { WaterTracker } from '@/components/WaterTracker';
-import { WeighInReminder } from '@/components/WeighInReminder';
 import { DateSelector } from '@/components/DateSelector';
 import { WorkoutLog, NutritionLog, WaterLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
@@ -300,10 +299,6 @@ const Index = () => {
                     >
                         {isSyncingDay ? 'מסנכרן תזכורות...' : 'סנכרון יום'}
                     </Button>
-                </div>
-
-                <div className="mb-6">
-                    <WeighInReminder />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">

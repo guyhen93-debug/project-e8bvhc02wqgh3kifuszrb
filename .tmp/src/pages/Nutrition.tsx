@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { MealItem } from '@/components/MealItem';
 import { DateSelector } from '@/components/DateSelector';
-import { RefreshCw, AlertCircle, CheckSquare, X, Bell, BellOff, Info, AlertTriangle, Flame } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckSquare, X, Info, AlertTriangle, Flame } from 'lucide-react';
 import { BreadIcon } from '@/components/icons/BreadIcon';
 import { ChickenIcon } from '@/components/icons/ChickenIcon';
 import { VegetablesIcon } from '@/components/icons/VegetablesIcon';
@@ -24,7 +24,6 @@ import { ChickenDrumstickIcon } from '@/components/icons/ChickenDrumstickIcon';
 import { BulgurSaladIcon } from '@/components/icons/BulgurSaladIcon';
 import { SirloinSteakIcon } from '@/components/icons/SirloinSteakIcon';
 import { useToast } from '@/hooks/use-toast';
-import { useNotifications } from '@/hooks/useNotifications';
 import { NutritionLog } from '@/entities';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDate } from '@/contexts/DateContext';
@@ -111,10 +110,6 @@ const Nutrition = () => {
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
 
-    // Notification hook
-    const { settings, toggleMealNotifications } = useNotifications();
-    const [notificationsEnabled, setNotificationsEnabled] = useState(settings.mealReminders);
-
     // Simplified state - one object per menu type
     const [weekdayMeals, setWeekdayMeals] = useState<Record<number, MealState>>({
         1: { ...emptyMealState },
@@ -133,11 +128,6 @@ const Nutrition = () => {
     const currentMenuType = isShabbatMenu ? 'shabbat' : 'weekday';
     const currentMeals = isShabbatMenu ? shabbatMeals : weekdayMeals;
     const setCurrentMeals = isShabbatMenu ? setShabbatMeals : setWeekdayMeals;
-
-    // Update notifications enabled state from settings
-    useEffect(() => {
-        setNotificationsEnabled(settings.mealReminders);
-    }, [settings.mealReminders]);
 
     const { data: allDateMeals, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['nutrition-logs', selectedDate],
@@ -434,15 +424,6 @@ const Nutrition = () => {
     const isAllSelected = (mealNum: number, mealItems: MealItemDefinition[]) => {
         const meal = currentMeals[mealNum];
         return mealItems.every(item => meal.items[item.name]?.checked === true);
-    };
-
-    const handleNotificationToggle = async (checked: boolean) => {
-        const success = await toggleMealNotifications(checked);
-        if (success) {
-            setNotificationsEnabled(checked);
-        } else if (checked) {
-            setNotificationsEnabled(false);
-        }
     };
 
     if (isLoading) {

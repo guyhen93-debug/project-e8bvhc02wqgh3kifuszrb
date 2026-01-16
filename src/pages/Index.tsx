@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Dumbbell, Utensils, Flame, Egg, Info } from 'lucide-react';
+import { Dumbbell, Utensils, Flame, Egg, Info, Send } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatsCard } from '@/components/StatsCard';
@@ -9,7 +9,6 @@ import { CalorieChart } from '@/components/CalorieChart';
 import { WeightDialog } from '@/components/WeightDialog';
 import { SleepTracker } from '@/components/SleepTracker';
 import { WaterTracker } from '@/components/WaterTracker';
-import { WeighInReminder } from '@/components/WeighInReminder';
 import { DateSelector } from '@/components/DateSelector';
 import { WorkoutLog, NutritionLog, WaterLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
@@ -274,6 +273,25 @@ const Index = () => {
                 </div>
 
                 <div className="mb-6">
+                    <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 overflow-hidden">
+                        <CardContent className="p-4">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="p-2 bg-blue-500/10 rounded-lg">
+                                    <Send className="w-5 h-5 text-blue-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white">התראות בטלגרם</h3>
+                                    <p className="text-xs text-muted-foreground">קבלת עדכונים ותזכורות ישירות לטלגרם שלך</p>
+                                </div>
+                            </div>
+                            <Button asChild className="w-full bg-oxygym-yellow text-black hover:bg-oxygym-yellow/90 font-bold">
+                                <a href="/telegram-settings">הגדרת טלגרם</a>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="mb-6">
                     <Button
                         onClick={handleSyncDay}
                         disabled={isSyncingDay}
@@ -281,10 +299,6 @@ const Index = () => {
                     >
                         {isSyncingDay ? 'מסנכרן תזכורות...' : 'סנכרון יום'}
                     </Button>
-                </div>
-
-                <div className="mb-6">
-                    <WeighInReminder />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
