@@ -191,6 +191,12 @@ export const WorkoutTemplate = ({
             console.log('Skipping auto-save - no data to save');
             return;
         }
+
+        // Skip server save if one is already in progress to avoid overlapping requests
+        if (activeSavesRef.current > 0) {
+            console.log('Skip auto-save: another save is in progress');
+            return;
+        }
         
         try {
             activeSavesRef.current++;
@@ -314,10 +320,18 @@ export const WorkoutTemplate = ({
     function scheduleAutoSave(immediate = false) {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
         }
 
-        // We now perform the save immediately to ensure no data loss on mobile swipe-up
-        saveWorkout();
+        if (immediate) {
+            saveWorkout();
+        } else {
+            // Wait for 1 second of inactivity before saving to avoid excessive requests
+            saveTimeoutRef.current = setTimeout(() => {
+                saveWorkout();
+                saveTimeoutRef.current = null;
+            }, 1000);
+        }
     }
 
     const handleExerciseDataChange = (data: any) => {
