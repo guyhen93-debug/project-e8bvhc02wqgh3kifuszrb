@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SetRow } from './SetRow';
 import { useTimer } from '@/contexts/TimerContext';
 import { Input } from '@/components/ui/input';
@@ -23,19 +23,26 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
     );
     const [weight, setWeight] = useState<number>(0);
     const { startTimer } = useTimer();
+    const hasLoadedInitialData = useRef(false);
 
     const isAbsExercise = name.toLowerCase().includes('בטן');
 
     useEffect(() => {
-        if (initialData) {
-            console.log('Loading initial data for', name, initialData);
-            if (initialData.sets) {
-                setSetData(initialData.sets);
-            }
-            if (!isAbsExercise && initialData.weight) {
-                setWeight(initialData.weight);
-            }
+        if (!initialData) {
+            hasLoadedInitialData.current = false;
+            return;
         }
+
+        if (hasLoadedInitialData.current) return;
+
+        console.log('Loading initial data for', name, initialData);
+        if (initialData.sets) {
+            setSetData(initialData.sets);
+        }
+        if (!isAbsExercise && typeof initialData.weight === 'number') {
+            setWeight(initialData.weight);
+        }
+        hasLoadedInitialData.current = true;
     }, [initialData, name, isAbsExercise]);
 
     useEffect(() => {
