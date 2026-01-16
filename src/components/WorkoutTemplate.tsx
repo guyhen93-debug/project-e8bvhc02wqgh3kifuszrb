@@ -131,12 +131,12 @@ export const WorkoutTemplate = ({
     }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType, isLoading]);
 
     const autoSave = useCallback(async () => {
-        if (isInitialLoadRef.current || !userMadeChangeRef.current) {
-            console.log('Skipping auto-save during initial load or no user changes');
+        if (isInitialLoadRef.current) {
+            console.log('Skipping auto-save during initial load');
             return;
         }
 
-        const hasExercises = Object.values(exerciseData).length > 0;
+        const hasExercises = exercises.length > 0;
         
         if (!hasExercises && cardioMinutes === 0) {
             console.log('Skipping auto-save - no data to save');
@@ -146,20 +146,32 @@ export const WorkoutTemplate = ({
         try {
             setSaving(true);
 
-            const completed = hasExercises && Object.values(exerciseData).every((data: any) => 
-                data.sets && data.sets.every((set: any) => set.completed)
-            );
+            // Calculate completed status based on the exerciseData we have
+            const completed = hasExercises && Object.values(exerciseData).length === exercises.length && 
+                Object.values(exerciseData).every((data: any) => 
+                    data.sets && data.sets.every((set: any) => set.completed)
+                );
             
             const existingLogs = await WorkoutLog.filter({ 
                 date: selectedDate, 
                 workout_type: workoutType 
             });
 
-            const exercises_completed = Object.entries(exerciseData).map(([name, data]: any) => ({
-                name,
-                sets: data.sets,
-                weight: data.weight,
-            }));
+            // Build full exercise list from templates to ensure denominator is correct
+            const exercises_completed = exercises.map((exercise) => {
+                const existing = exerciseData[exercise.name];
+                const defaultSets = Array(exercise.sets)
+                    .fill(null)
+                    .map(() => ({ completed: false }));
+
+                return {
+                    name: exercise.name,
+                    sets: (existing?.sets && existing.sets.length === exercise.sets)
+                        ? existing.sets
+                        : defaultSets,
+                    weight: existing?.weight ?? 0,
+                };
+            });
 
             let savedLog;
             if (existingLogs.length > 0) {
@@ -189,13 +201,13 @@ export const WorkoutTemplate = ({
             queryClient.setQueryData(['last-workout-log', workoutType], savedLog);
             
             userMadeChangeRef.current = false;
-            console.log(`Auto-saved workout ${workoutType}`);
+            console.log(`Auto-saved workout ${workoutType}: ${exercises_completed.length} exercises saved.`);
         } catch (error) {
             console.error('Error auto-saving workout:', error);
         } finally {
             setSaving(false);
         }
-    }, [exerciseData, cardioMinutes, selectedDate, workoutType]);
+    }, [exerciseData, cardioMinutes, selectedDate, workoutType, exercises, queryClient]);
 
     useEffect(() => {
         if (saveTimeoutRef.current) {

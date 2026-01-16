@@ -18,6 +18,13 @@ const DAILY_WATER_TARGET_GLASSES = 12;
 const SLEEP_TARGET_MIN = 7;
 const SLEEP_TARGET_MAX = 9;
 
+// מספר תרגילים מתוכננים לפי סוג אימון
+const WORKOUT_EXERCISE_COUNTS: Record<string, number> = {
+    'A': 9,
+    'B': 9,
+    'C': 9,
+};
+
 const Calendar = () => {
     const navigate = useNavigate();
     const { setSelectedDate: setGlobalDate } = useDate();
@@ -268,10 +275,12 @@ const Calendar = () => {
                                             <h4 className="text-white font-semibold">אימונים</h4>
                                         </div>
                                         {selectedDayData.workouts.map((workout: any, idx: number) => {
-                                            const totalExercises = workout.exercises_completed?.length || 0;
-                                            const completedExercises = workout.exercises_completed?.filter(
+                                            const plannedExercises = WORKOUT_EXERCISE_COUNTS[workout.workout_type] || 0;
+                                            const exerciseList = Array.isArray(workout.exercises_completed) ? workout.exercises_completed : [];
+                                            const completedExercises = exerciseList.filter(
                                                 (ex: any) => ex.sets?.every((s: any) => s.completed)
-                                            ).length || 0;
+                                            ).length;
+                                            const totalExercises = plannedExercises > 0 ? plannedExercises : exerciseList.length;
                                             
                                             return (
                                                 <div key={idx} className="mb-2">
