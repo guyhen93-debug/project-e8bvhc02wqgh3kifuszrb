@@ -139,11 +139,6 @@ export const WorkoutTemplate = ({
     }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType, isLoading]);
 
     const autoSave = useCallback(async () => {
-        if (isInitialLoadRef.current) {
-            console.log('Skipping auto-save during initial load');
-            return;
-        }
-
         const currentExerciseData = exerciseDataRef.current;
         const currentCardioMinutes = cardioMinutesRef.current;
         const hasExercises = exercises.length > 0;
