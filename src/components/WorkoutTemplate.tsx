@@ -141,11 +141,6 @@ export const WorkoutTemplate = ({
     }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType, isLoading]);
 
     async function performAutoSave() {
-        // Skip if no changes were made to avoid unnecessary network calls
-        if (!userMadeChangeRef.current) {
-            return;
-        }
-
         const currentExerciseData = exerciseDataRef.current;
         const currentCardioMinutes = cardioMinutesRef.current;
         const hasExercises = exercises.length > 0;
@@ -235,13 +230,8 @@ export const WorkoutTemplate = ({
             clearTimeout(saveTimeoutRef.current);
         }
 
-        if (immediate) {
-            performAutoSave();
-        } else {
-            saveTimeoutRef.current = setTimeout(() => {
-                performAutoSave();
-            }, 800);
-        }
+        // We now perform the save immediately to ensure no data loss on mobile swipe-up
+        performAutoSave();
     }
 
     const handleExerciseDataChange = (data: any) => {

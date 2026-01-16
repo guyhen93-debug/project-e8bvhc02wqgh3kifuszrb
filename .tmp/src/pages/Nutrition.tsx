@@ -311,7 +311,7 @@ const Nutrition = () => {
 
         saveTimeoutRef.current = setTimeout(() => {
             autoSave();
-        }, 1000);
+        }, 300);
 
         return () => {
             if (saveTimeoutRef.current) {
