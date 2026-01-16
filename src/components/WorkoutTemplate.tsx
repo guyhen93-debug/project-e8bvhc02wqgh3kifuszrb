@@ -40,6 +40,8 @@ export const WorkoutTemplate = ({
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
     const [cardioMinutes, setCardioMinutes] = useState(0);
     const [saving, setSaving] = useState(false);
+    const saveTimeoutRef = useRef<any>(null);
+    const activeSavesRef = useRef(0);
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
     const exerciseDataRef = useRef<{ [key: string]: any }>({});
@@ -138,7 +140,7 @@ export const WorkoutTemplate = ({
         }
     }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType, isLoading]);
 
-    async function autoSave() {
+    async function performAutoSave() {
         const currentExerciseData = exerciseDataRef.current;
         const currentCardioMinutes = cardioMinutesRef.current;
         const hasExercises = exercises.length > 0;
@@ -149,6 +151,7 @@ export const WorkoutTemplate = ({
         }
         
         try {
+            activeSavesRef.current++;
             setSaving(true);
 
             // Calculate completed status based on the currentExerciseData we have
@@ -210,7 +213,29 @@ export const WorkoutTemplate = ({
         } catch (error) {
             console.error('Error auto-saving workout:', error);
         } finally {
-            setSaving(false);
+            activeSavesRef.current = Math.max(0, activeSavesRef.current - 1);
+            if (activeSavesRef.current === 0) {
+                // Smooth the transition out
+                setTimeout(() => {
+                    if (activeSavesRef.current === 0) {
+                        setSaving(false);
+                    }
+                }, 600);
+            }
+        }
+    }
+
+    function scheduleAutoSave(immediate = false) {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        if (immediate) {
+            performAutoSave();
+        } else {
+            saveTimeoutRef.current = setTimeout(() => {
+                performAutoSave();
+            }, 800);
         }
     }
 
@@ -223,7 +248,7 @@ export const WorkoutTemplate = ({
 
         if (!isInitialLoadRef.current) {
             userMadeChangeRef.current = true;
-            autoSave();
+            scheduleAutoSave(false);
         }
     };
 
@@ -232,18 +257,18 @@ export const WorkoutTemplate = ({
         userMadeChangeRef.current = true;
         setCardioMinutes(minutes);
         cardioMinutesRef.current = minutes;
-        autoSave();
+        scheduleAutoSave(false);
     };
 
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden') {
-                autoSave();
+                scheduleAutoSave(true);
             }
         };
 
         const handlePageHide = () => {
-            autoSave();
+            scheduleAutoSave(true);
         };
 
         window.addEventListener('visibilitychange', handleVisibilityChange);
@@ -252,6 +277,9 @@ export const WorkoutTemplate = ({
         return () => {
             window.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('pagehide', handlePageHide);
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
         };
     }, [selectedDate, workoutType, exercises, queryClient]);
 
