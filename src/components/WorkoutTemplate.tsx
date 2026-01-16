@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { WorkoutLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { saveWorkoutDraft, loadWorkoutDraft, clearWorkoutDraft } from '@/lib/workout-storage';
 
 interface Exercise {
     name: string;
@@ -46,6 +47,7 @@ export const WorkoutTemplate = ({
     const userMadeChangeRef = useRef(false);
     const exerciseDataRef = useRef<{ [key: string]: any }>({});
     const cardioMinutesRef = useRef(0);
+    const hasLoadedDraftRef = useRef(false);
 
     const initializedDateRef = useRef<string | null>(null);
 
@@ -79,11 +81,16 @@ export const WorkoutTemplate = ({
     });
 
     useEffect(() => {
-        if (initializedDateRef.current === selectedDate && !isLoading) {
-            return;
+        if (isLoading) return;
+
+        // Reset draft loaded flag if date changes
+        if (initializedDateRef.current !== selectedDate) {
+            hasLoadedDraftRef.current = false;
         }
 
-        if (isLoading) return;
+        if (initializedDateRef.current === selectedDate && hasLoadedDraftRef.current) {
+            return;
+        }
 
         console.log('Date changed to:', selectedDate);
         isInitialLoadRef.current = true;
@@ -92,6 +99,30 @@ export const WorkoutTemplate = ({
         exerciseDataRef.current = {};
         setCardioMinutes(0);
         cardioMinutesRef.current = 0;
+
+        // Try loading from draft first
+        const draft = loadWorkoutDraft(selectedDate, workoutType);
+        if (draft && !hasLoadedDraftRef.current) {
+            console.log('Loading from local draft:', draft);
+            const loadedData: any = {};
+            draft.exercises_completed.forEach((ex: any) => {
+                loadedData[ex.name] = {
+                    sets: ex.sets,
+                    weight: ex.weight,
+                    name: ex.name
+                };
+            });
+            setExerciseData(loadedData);
+            exerciseDataRef.current = loadedData;
+            setCardioMinutes(draft.duration_minutes || 0);
+            cardioMinutesRef.current = draft.duration_minutes || 0;
+            initializedDateRef.current = selectedDate;
+            hasLoadedDraftRef.current = true;
+            setTimeout(() => {
+                isInitialLoadRef.current = false;
+            }, 100);
+            return;
+        }
         
         if (workoutData) {
             const loadedData: any = {};
@@ -225,13 +256,56 @@ export const WorkoutTemplate = ({
         }
     }
 
+    function saveWorkoutLocally() {
+        try {
+            const currentExerciseData = exerciseDataRef.current;
+            const currentCardioMinutes = cardioMinutesRef.current;
+
+            const exercises_completed = exercises.map((exercise) => {
+                const existing = currentExerciseData[exercise.name];
+                const defaultSets = Array(exercise.sets)
+                    .fill(null)
+                    .map(() => ({ completed: false }));
+
+                return {
+                    name: exercise.name,
+                    sets: (existing?.sets && existing.sets.length === exercise.sets)
+                        ? existing.sets
+                        : defaultSets,
+                    weight: existing?.weight ?? 0,
+                };
+            });
+
+            const draft = {
+                date: selectedDate,
+                workout_type: workoutType,
+                exercises_completed,
+                duration_minutes: currentCardioMinutes,
+                last_updated: new Date().toISOString(),
+            };
+
+            saveWorkoutDraft(draft as any);
+        } catch (error) {
+            console.error('Error saving workout locally:', error);
+        }
+    }
+
+    async function saveWorkout() {
+        saveWorkoutLocally();
+        try {
+            await performAutoSave();
+        } catch (error) {
+            console.error('Error syncing workout to server:', error);
+        }
+    }
+
     function scheduleAutoSave(immediate = false) {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
         }
 
         // We now perform the save immediately to ensure no data loss on mobile swipe-up
-        performAutoSave();
+        saveWorkout();
     }
 
     const handleExerciseDataChange = (data: any) => {
@@ -255,11 +329,11 @@ export const WorkoutTemplate = ({
         scheduleAutoSave(false);
     };
 
-    // Store the latest version of performAutoSave in a ref so the unmount cleanup
+    // Store the latest version of saveWorkout in a ref so the unmount cleanup
     // always has access to the most recent closure (with current date and props)
-    const performAutoSaveRef = useRef(performAutoSave);
+    const saveWorkoutRef = useRef(saveWorkout);
     useEffect(() => {
-        performAutoSaveRef.current = performAutoSave;
+        saveWorkoutRef.current = saveWorkout;
     });
 
     // Ensure data is saved when the component unmounts (e.g. user navigates to another screen)
@@ -267,7 +341,7 @@ export const WorkoutTemplate = ({
         return () => {
             if (userMadeChangeRef.current && !isInitialLoadRef.current) {
                 console.log('Workout screen unmounting - triggering final save');
-                performAutoSaveRef.current();
+                saveWorkoutRef.current();
             }
         };
     }, []);
