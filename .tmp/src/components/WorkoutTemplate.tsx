@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseRow } from '@/components/ExerciseRow';
 import { DateSelector } from '@/components/DateSelector';
-import { ArrowRight, Heart, RefreshCw, AlertCircle } from 'lucide-react';
+import { ArrowRight, Heart, RefreshCw, AlertCircle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WorkoutLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
@@ -41,6 +41,17 @@ export const WorkoutTemplate = ({
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
     const [cardioMinutes, setCardioMinutes] = useState(0);
     const [saving, setSaving] = useState(false);
+    const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (lastSavedAt) {
+            const timeout = setTimeout(() => {
+                setLastSavedAt(null);
+            }, 3000);
+            return () => clearTimeout(timeout);
+        }
+    }, [lastSavedAt]);
+
     const saveTimeoutRef = useRef<any>(null);
     const activeSavesRef = useRef(0);
     const isInitialLoadRef = useRef(true);
@@ -240,6 +251,7 @@ export const WorkoutTemplate = ({
             queryClient.setQueryData(['last-workout-log', workoutType], savedLog);
             
             userMadeChangeRef.current = false;
+            setLastSavedAt(Date.now());
             console.log(`Auto-saved workout ${workoutType}: ${exercises_completed.length} exercises saved.`);
         } catch (error) {
             console.error('Error auto-saving workout:', error);
@@ -421,9 +433,14 @@ export const WorkoutTemplate = ({
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-3xl font-bold text-white">{workoutTitle}</h1>
-                        {saving && (
-                            <p className="text-xs text-oxygym-yellow mt-1">שומר אוטומטית...</p>
-                        )}
+                        {saving ? (
+                            <p className="text-xs text-oxygym-yellow mt-1 animate-pulse">שומר אוטומטית...</p>
+                        ) : lastSavedAt ? (
+                            <div className="flex items-center gap-1 text-xs text-green-400 mt-1 animate-in fade-in slide-in-from-top-1">
+                                <Check className="w-3 h-3" />
+                                <span>נשמר אוטומטית</span>
+                            </div>
+                        ) : null}
                     </div>
                     <Button
                         onClick={() => navigate('/workouts')}
