@@ -1,6 +1,4 @@
 import { createContext, useContext, useState, useRef, ReactNode } from 'react';
-import { useTelegramSettings } from '@/hooks/useTelegramSettings';
-import { telegramSendMessage } from '@/functions';
 
 interface TimerContextType {
     isActive: boolean;
@@ -18,7 +16,6 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
     const [seconds, setSeconds] = useState(90);
     const [restartToken, setRestartToken] = useState(0);
     const audioContextRef = useRef<AudioContext | null>(null);
-    const { settings: telegramSettings } = useTelegramSettings();
 
     const startTimer = () => {
         console.log('Starting timer and unlocking audio...');
@@ -57,20 +54,6 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
             console.log('Audio unlocked successfully for Safari');
         } catch (error) {
             console.error('Error unlocking audio:', error);
-        }
-
-        // Send Telegram notification for rest start
-        const token = localStorage.getItem('telegram_token');
-        const chatId = localStorage.getItem('telegram_chat_id');
-
-        if (token && chatId) {
-            console.log('Timer started - sending Telegram message');
-            telegramSendMessage({ 
-                chatId: chatId, 
-                text: "⏱️ מנוחה של 90 שניות התחילה\n💧 זמן מצוין לשתות מים!" 
-            })
-            .then(() => console.log('Timer started - Telegram message sent successfully'))
-            .catch(error => console.error("Timer started - Telegram error:", error));
         }
 
         // Store planned end time for fallback check

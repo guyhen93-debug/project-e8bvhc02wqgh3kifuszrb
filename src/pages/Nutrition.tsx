@@ -513,7 +513,7 @@ const Nutrition = () => {
                                 )}
                                 <div>
                                     <Label htmlFor="notifications" className="text-white font-bold text-sm sm:text-base cursor-pointer">
-                                        תזכורות ארוחות (בטלגרם)
+                                        תזכורות ארוחות
                                     </Label>
                                     <p className="text-xs text-muted-foreground mt-0.5">
                                         קבל תזכורת למלא כל ארוחה
