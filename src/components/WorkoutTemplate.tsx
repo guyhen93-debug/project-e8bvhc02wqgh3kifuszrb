@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,54 +47,6 @@ export const WorkoutTemplate = ({
 
     const initializedDateRef = useRef<string | null>(null);
 
-    // localStorage helpers for instant backup (survives force-close)
-    const getWorkoutStorageKey = useCallback(() => {
-        return `workout_draft_${selectedDate}_${workoutType}`;
-    }, [selectedDate, workoutType]);
-
-    const saveToLocalStorage = useCallback(() => {
-        const storageKey = getWorkoutStorageKey();
-        const backupData = {
-            exerciseData: exerciseDataRef.current,
-            cardioMinutes: cardioMinutesRef.current,
-            timestamp: Date.now(),
-        };
-        try {
-            localStorage.setItem(storageKey, JSON.stringify(backupData));
-            console.log('💾 Saved to localStorage:', storageKey);
-        } catch (error) {
-            console.error('Failed to save to localStorage:', error);
-        }
-    }, [getWorkoutStorageKey]);
-
-    const loadFromLocalStorage = useCallback(() => {
-        const storageKey = getWorkoutStorageKey();
-        try {
-            const saved = localStorage.getItem(storageKey);
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                // Only restore if it's recent (within 24 hours)
-                if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
-                    console.log('♻️ Recovered from localStorage:', storageKey, parsed);
-                    return parsed;
-                }
-            }
-        } catch (error) {
-            console.error('Failed to load from localStorage:', error);
-        }
-        return null;
-    }, [getWorkoutStorageKey]);
-
-    const clearLocalStorage = useCallback(() => {
-        const storageKey = getWorkoutStorageKey();
-        try {
-            localStorage.removeItem(storageKey);
-            console.log('🗑️ Cleared localStorage:', storageKey);
-        } catch (error) {
-            console.error('Failed to clear localStorage:', error);
-        }
-    }, [getWorkoutStorageKey]);
-
     const { data: workoutData, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['workout-log', selectedDate, workoutType],
         queryFn: async () => {
@@ -138,24 +90,7 @@ export const WorkoutTemplate = ({
         exerciseDataRef.current = {};
         setCardioMinutes(0);
         cardioMinutesRef.current = 0;
-
-        // FIRST: Try to recover from localStorage (unsaved changes from force-close)
-        const localBackup = loadFromLocalStorage();
-        if (localBackup && !workoutData) {
-            console.log('📦 Restoring unsaved workout from localStorage');
-            setExerciseData(localBackup.exerciseData);
-            exerciseDataRef.current = localBackup.exerciseData;
-            setCardioMinutes(localBackup.cardioMinutes);
-            cardioMinutesRef.current = localBackup.cardioMinutes;
-            initializedDateRef.current = selectedDate;
-            setTimeout(() => {
-                isInitialLoadRef.current = false;
-                // Trigger auto-save to persist the recovered data to backend
-                autoSave();
-            }, 100);
-            return;
-        }
-
+        
         if (workoutData) {
             const loadedData: any = {};
             if (workoutData.exercises_completed) {
@@ -201,9 +136,9 @@ export const WorkoutTemplate = ({
                 isInitialLoadRef.current = false;
             }, 100);
         }
-    }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType, isLoading, loadFromLocalStorage, autoSave]);
+    }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType, isLoading]);
 
-    const autoSave = useCallback(async () => {
+    async function autoSave() {
         const currentExerciseData = exerciseDataRef.current;
         const currentCardioMinutes = cardioMinutesRef.current;
         const hasExercises = exercises.length > 0;
@@ -269,10 +204,7 @@ export const WorkoutTemplate = ({
             // Update React Query cache immediately
             queryClient.setQueryData(['workout-log', selectedDate, workoutType], savedLog);
             queryClient.setQueryData(['last-workout-log', workoutType], savedLog);
-
-            // Clear localStorage backup after successful save to backend
-            clearLocalStorage();
-
+            
             userMadeChangeRef.current = false;
             console.log(`Auto-saved workout ${workoutType}: ${exercises_completed.length} exercises saved.`);
         } catch (error) {
@@ -280,9 +212,9 @@ export const WorkoutTemplate = ({
         } finally {
             setSaving(false);
         }
-    }, [selectedDate, workoutType, exercises, queryClient, clearLocalStorage]);
+    }
 
-    const handleExerciseDataChange = useCallback((data: any) => {
+    const handleExerciseDataChange = (data: any) => {
         setExerciseData(prev => {
             const updated = { ...prev, [data.name]: data };
             exerciseDataRef.current = updated;
@@ -291,23 +223,17 @@ export const WorkoutTemplate = ({
 
         if (!isInitialLoadRef.current) {
             userMadeChangeRef.current = true;
-            // Save to localStorage IMMEDIATELY (synchronous backup)
-            saveToLocalStorage();
-            // Then attempt async save to backend
             autoSave();
         }
-    }, [autoSave, saveToLocalStorage]);
+    };
 
-    const handleCardioChange = useCallback((value: string) => {
+    const handleCardioChange = (value: string) => {
         const minutes = parseInt(value) || 0;
         userMadeChangeRef.current = true;
         setCardioMinutes(minutes);
         cardioMinutesRef.current = minutes;
-        // Save to localStorage IMMEDIATELY (synchronous backup)
-        saveToLocalStorage();
-        // Then attempt async save to backend
         autoSave();
-    }, [autoSave, saveToLocalStorage]);
+    };
 
     useEffect(() => {
         const handleVisibilityChange = () => {
@@ -327,7 +253,7 @@ export const WorkoutTemplate = ({
             window.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('pagehide', handlePageHide);
         };
-    }, [autoSave]);
+    }, [selectedDate, workoutType, exercises, queryClient]);
 
     const cardioPercentage = Math.min((cardioMinutes / 20) * 100, 100);
 

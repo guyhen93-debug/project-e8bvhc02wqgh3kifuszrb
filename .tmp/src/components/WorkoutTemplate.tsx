@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -138,7 +138,7 @@ export const WorkoutTemplate = ({
         }
     }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType, isLoading]);
 
-    const autoSave = useCallback(async () => {
+    async function autoSave() {
         const currentExerciseData = exerciseDataRef.current;
         const currentCardioMinutes = cardioMinutesRef.current;
         const hasExercises = exercises.length > 0;
@@ -212,9 +212,9 @@ export const WorkoutTemplate = ({
         } finally {
             setSaving(false);
         }
-    }, [selectedDate, workoutType, exercises, queryClient]);
+    }
 
-    const handleExerciseDataChange = useCallback((data: any) => {
+    const handleExerciseDataChange = (data: any) => {
         setExerciseData(prev => {
             const updated = { ...prev, [data.name]: data };
             exerciseDataRef.current = updated;
@@ -225,7 +225,7 @@ export const WorkoutTemplate = ({
             userMadeChangeRef.current = true;
             autoSave();
         }
-    }, [autoSave]);
+    };
 
     const handleCardioChange = (value: string) => {
         const minutes = parseInt(value) || 0;
@@ -253,7 +253,7 @@ export const WorkoutTemplate = ({
             window.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('pagehide', handlePageHide);
         };
-    }, [autoSave]);
+    }, [selectedDate, workoutType, exercises, queryClient]);
 
     const cardioPercentage = Math.min((cardioMinutes / 20) * 100, 100);
 
