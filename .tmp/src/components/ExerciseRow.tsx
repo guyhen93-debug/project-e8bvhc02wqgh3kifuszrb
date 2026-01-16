@@ -23,27 +23,25 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
     );
     const [weight, setWeight] = useState<number>(0);
     const { startTimer } = useTimer();
-    const hasLoadedInitialData = useRef(false);
 
     const isAbsExercise = name.toLowerCase().includes('בטן');
 
     useEffect(() => {
         if (!initialData) {
-            hasLoadedInitialData.current = false;
             return;
         }
-
-        if (hasLoadedInitialData.current) return;
 
         console.log('Loading initial data for', name, initialData);
         if (initialData.sets) {
             setSetData(initialData.sets);
+        } else {
+            setSetData(Array(sets).fill(null).map(() => ({ completed: false })));
         }
+        
         if (!isAbsExercise && typeof initialData.weight === 'number') {
             setWeight(initialData.weight);
         }
-        hasLoadedInitialData.current = true;
-    }, [initialData, name, isAbsExercise]);
+    }, [initialData, name, isAbsExercise, sets]);
 
     useEffect(() => {
         if (onDataChange) {

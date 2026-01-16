@@ -43,6 +43,9 @@ export const WorkoutTemplate = ({
     const [saving, setSaving] = useState(false);
     const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
+    const lastSavedAtRef = useRef<number | null>(null);
+    const lastToastRef = useRef<number | null>(null);
+
     useEffect(() => {
         if (lastSavedAt) {
             const timeout = setTimeout(() => {
@@ -310,6 +313,16 @@ export const WorkoutTemplate = ({
     async function saveWorkout() {
         saveWorkoutLocally();
         setLastSavedAt(Date.now());
+
+        if (!lastToastRef.current || Date.now() - lastToastRef.current > 8000) {
+            toast({
+                title: 'האימון נשמר',
+                description: 'הנתונים נשמרו בהצלחה במכשיר שלך.',
+                duration: 2500,
+            });
+            lastToastRef.current = Date.now();
+        }
+
         try {
             await performAutoSave();
         } catch (error) {
@@ -317,21 +330,13 @@ export const WorkoutTemplate = ({
         }
     }
 
-    function scheduleAutoSave(immediate = false) {
+    function scheduleAutoSave() {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
             saveTimeoutRef.current = null;
         }
 
-        if (immediate) {
-            saveWorkout();
-        } else {
-            // Wait for 1 second of inactivity before saving to avoid excessive requests
-            saveTimeoutRef.current = setTimeout(() => {
-                saveWorkout();
-                saveTimeoutRef.current = null;
-            }, 1000);
-        }
+        saveWorkout();
     }
 
     const handleExerciseDataChange = (data: any) => {
