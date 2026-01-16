@@ -251,7 +251,6 @@ export const WorkoutTemplate = ({
             queryClient.setQueryData(['last-workout-log', workoutType], savedLog);
             
             userMadeChangeRef.current = false;
-            setLastSavedAt(Date.now());
             console.log(`Auto-saved workout ${workoutType}: ${exercises_completed.length} exercises saved.`);
         } catch (error) {
             console.error('Error auto-saving workout:', error);
@@ -304,6 +303,7 @@ export const WorkoutTemplate = ({
 
     async function saveWorkout() {
         saveWorkoutLocally();
+        setLastSavedAt(Date.now());
         try {
             await performAutoSave();
         } catch (error) {
