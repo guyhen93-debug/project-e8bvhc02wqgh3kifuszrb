@@ -24,6 +24,7 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
     );
     const [weight, setWeight] = useState<number>(0);
     const { startTimer } = useTimer();
+    const lastPayloadRef = useRef<string>('');
 
     const isAbsExercise = name.toLowerCase().includes('בטן');
 
@@ -50,10 +51,24 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
     }, [initialData, name, isAbsExercise, sets]);
 
     useEffect(() => {
-        if (onDataChange) {
-            onDataChange({ sets: setData, weight: isAbsExercise ? 0 : weight, name });
+        if (!onDataChange) return;
+
+        const payload = { 
+            sets: setData, 
+            weight: isAbsExercise ? 0 : weight, 
+            name 
+        };
+        
+        // Use JSON stringification for a simple deep equality check
+        const payloadString = JSON.stringify(payload);
+        
+        if (payloadString === lastPayloadRef.current) {
+            return;
         }
-    }, [setData, weight, name, onDataChange, isAbsExercise]);
+
+        lastPayloadRef.current = payloadString;
+        onDataChange(payload);
+    }, [setData, weight, name, isAbsExercise, onDataChange]);
 
     const handleWeightChange = (newWeight: number) => {
         setWeight(newWeight);
