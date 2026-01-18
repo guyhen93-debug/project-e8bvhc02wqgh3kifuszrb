@@ -8,11 +8,14 @@ import {
     User as UserIcon, 
     Utensils, 
     Dumbbell,
-    ShieldCheck
+    ShieldCheck,
+    Bell,
+    Clock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { UserProfile, NutritionLog, WorkoutLog } from '@/entities';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface StatusResult {
     ok: boolean;
@@ -62,6 +65,7 @@ const Status = () => {
     });
 
     const isAnyLoading = profileCheck.isLoading || nutritionCheck.isLoading || workoutCheck.isLoading;
+    const { settings } = useNotifications();
 
     const StatusIndicator = ({ result, label, icon: Icon }: { result: StatusResult, label: string, icon: any }) => {
         let statusColor = "bg-red-500/10 text-red-500 border-red-500/20";

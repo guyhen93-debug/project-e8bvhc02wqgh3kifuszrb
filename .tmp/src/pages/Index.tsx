@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Dumbbell, Utensils, Flame, Egg, Info, CheckCircle, LayoutDashboard } from 'lucide-react';
+import { Dumbbell, Utensils, Flame, Egg, Info, CheckCircle, LayoutDashboard, Bell, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatsCard } from '@/components/StatsCard';
@@ -358,6 +358,28 @@ const Index = () => {
                             </div>
                         )}
                     </div>
+                    
+                    <div className="mt-2">
+                        {(!settings.mealReminders && !settings.weighInReminder) ? (
+                            <div className="flex items-center gap-1 justify-center py-1.5 px-3 bg-red-500/10 text-red-300 rounded-lg text-[10px] sm:text-xs border border-red-500/20">
+                                <AlertCircle className="w-3 h-3" />
+                                <span>אין תזכורות פעילות – סנכרון יום לא ישלח תזכורות</span>
+                            </div>
+                        ) : (
+                            <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 justify-center">
+                                <Bell className="w-3 h-3" />
+                                <span>תזכורות פעילות: </span>
+                                <span className="text-white font-medium">
+                                    {settings.mealReminders && settings.weighInReminder 
+                                        ? "ארוחות + שקילה" 
+                                        : settings.mealReminders 
+                                            ? "ארוחות בלבד" 
+                                            : "שקילה בלבד"}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
                     <div className="mt-2 text-center">
                         <Button 
                             variant="link" 
