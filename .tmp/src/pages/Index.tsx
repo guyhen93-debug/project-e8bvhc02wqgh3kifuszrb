@@ -17,6 +17,8 @@ import { useMemo } from 'react';
 import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
 import { scheduleNtfyReminder } from '@/functions';
 import { toast } from 'sonner';
+import { useNotifications } from '@/hooks/useNotifications';
+import { Settings } from 'lucide-react';
 
 const DAILY_CALORIE_TARGET = 2410;
 const DAILY_PROTEIN_TARGET = 145;
@@ -30,6 +32,7 @@ const Index = () => {
     const [isSyncingDay, setIsSyncingDay] = useState(false);
     const [lastSyncDate, setLastSyncDate] = useState<string | null>(null);
     const [isSyncedToday, setIsSyncedToday] = useState(false);
+    const { settings } = useNotifications();
 
     const getDelaySecondsForToday = (hours: number, minutes: number) => {
         const now = new Date();
@@ -43,16 +46,20 @@ const Index = () => {
     const handleSyncDay = async () => {
         setIsSyncingDay(true);
         try {
-            const reminders = [
-                { hours: 10, minutes: 0, title: "ארוחה 1 🍳", message: "זמן לארוחת בוקר. לא לשכוח לסמן ביומן" },
-                { hours: 12, minutes: 30, title: "ארוחה 2 🥛", message: "זמן לגיינר. סמן ביומן כשסיימת" },
-                { hours: 15, minutes: 30, title: "ארוחה 3 🥛", message: "זמן לגיינר השני. נא לסמן ביומן" },
-                { hours: 21, minutes: 0, title: "ארוחה 4 🍗", message: "זמן לארוחת ערב. אל תשכח לסמן ביומן" },
-            ];
+            const reminders = [];
+            
+            if (settings.mealReminders) {
+                reminders.push(
+                    { hours: 10, minutes: 0, title: "ארוחה 1 🍳", message: "זמן לארוחת בוקר. לא לשכוח לסמן ביומן" },
+                    { hours: 12, minutes: 30, title: "ארוחה 2 🥛", message: "זמן לגיינר. סמן ביומן כשסיימת" },
+                    { hours: 15, minutes: 30, title: "ארוחה 3 🥛", message: "זמן לגיינר השני. נא לסמן ביומן" },
+                    { hours: 21, minutes: 0, title: "ארוחה 4 🍗", message: "זמן לארוחת ערב. אל תשכח לסמן ביומן" }
+                );
+            }
 
             const now = new Date();
             const isThursday = now.getDay() === 4;
-            if (isThursday) {
+            if (isThursday && settings.weighInReminder) {
                 reminders.push({ hours: 6, minutes: 30, title: "שקילה שבועית! ⚖️", message: "לפני אוכל וקפה, אחרי שירותים, בלי בגדים" });
             }
 
@@ -350,6 +357,17 @@ const Index = () => {
                                 <span>מסונכרן להיום</span>
                             </div>
                         )}
+                    </div>
+                    <div className="mt-2 text-center">
+                        <Button 
+                            variant="link" 
+                            size="sm" 
+                            className="text-muted-foreground hover:text-oxygym-yellow text-xs gap-1"
+                            onClick={() => navigate('/notifications')}
+                        >
+                            <Settings className="w-3 h-3" />
+                            הגדרות תזכורות
+                        </Button>
                     </div>
                 </div>
 
