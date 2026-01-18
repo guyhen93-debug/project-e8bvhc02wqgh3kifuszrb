@@ -15,6 +15,8 @@ import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
 import { WeeklySummaryHeader } from '@/components/dashboard/WeeklySummaryHeader';
 import { WeeklyStatCard } from '@/components/dashboard/WeeklyStatCard';
 import { WeeklyProgressCharts } from '@/components/dashboard/WeeklyProgressCharts';
+import { WeeklyReportInsights } from '@/components/dashboard/WeeklyReportInsights';
+import { generateWeeklyReport } from '@/functions';
 
 const DAILY_CALORIE_TARGET = 2410;
 const DAILY_PROTEIN_TARGET = 145;
@@ -128,6 +130,25 @@ const Dashboard = () => {
         };
     }, [logs, startOfWeekStr, todayStr]);
 
+    const { data: report, isLoading: isReportLoading } = useQuery({
+        queryKey: ['weekly-report', startOfWeekStr],
+        queryFn: async () => {
+            if (!logs) return null;
+            try {
+                return await generateWeeklyReport({
+                    workouts: logs.workouts,
+                    nutrition: normalizeNutritionLogs(logs.nutrition),
+                    weights: logs.weights,
+                    targetCalories: DAILY_CALORIE_TARGET
+                });
+            } catch (error) {
+                console.error('Error generating weekly report:', error);
+                return null;
+            }
+        },
+        enabled: !!logs,
+    });
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-oxygym-dark flex items-center justify-center">
@@ -183,6 +204,14 @@ const Dashboard = () => {
                     <h3 className="text-white font-black text-xl mb-4">גרפים ומגמות</h3>
                     <WeeklyProgressCharts days={weeklyStats.days} />
                 </div>
+
+                <WeeklyReportInsights 
+                    summary={report?.summary ?? null}
+                    achievements={report?.achievements ?? []}
+                    recommendations={report?.recommendations ?? []}
+                    isLoading={isReportLoading}
+                    hasData={weeklyStats.totalWorkouts > 0 || weeklyStats.avgCals > 0}
+                />
 
                 <div className="bg-oxygym-darkGrey/50 border border-white/5 rounded-xl p-4 flex items-start gap-3">
                     <Info className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
