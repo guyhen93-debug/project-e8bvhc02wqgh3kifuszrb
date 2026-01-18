@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Dumbbell, Utensils, Flame, Egg, Info, CheckCircle } from 'lucide-react';
+import { Dumbbell, Utensils, Flame, Egg, Info, CheckCircle, LayoutDashboard } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatsCard } from '@/components/StatsCard';
@@ -23,6 +24,7 @@ const DAILY_WATER_TARGET_GLASSES = 12;
 const LAST_SYNC_KEY = 'oxygym_last_sync_date';
 
 const Index = () => {
+    const navigate = useNavigate();
     const { selectedDate, isToday } = useDate();
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [isSyncingDay, setIsSyncingDay] = useState(false);
@@ -243,6 +245,16 @@ const Index = () => {
                 </div>
                 <h1 className="text-4xl font-bold text-center text-white mb-2">OXYGYM Tracker</h1>
                 <p className="text-center text-muted-foreground mb-6">סטטיסטיקות והתקדמות</p>
+
+                <div className="mb-6 flex justify-center">
+                    <Button
+                        onClick={() => navigate('/dashboard')}
+                        className="bg-oxygym-yellow text-black hover:bg-oxygym-yellow/90 font-bold px-6 py-2 h-auto rounded-full shadow-lg shadow-oxygym-yellow/20 group transition-all hover:scale-105"
+                    >
+                        <LayoutDashboard className="w-5 h-5 ml-2 group-hover:rotate-12 transition-transform" />
+                        פתח לוח בקרה חכם
+                    </Button>
+                </div>
                 
                 <div className="mb-6 flex justify-center">
                     <DateSelector />
