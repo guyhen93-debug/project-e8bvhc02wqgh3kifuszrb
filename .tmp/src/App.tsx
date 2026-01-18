@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { GlobalTimer } from "@/components/GlobalTimer";
+import { OrientationHint } from "@/components/OrientationHint";
 import { ProfileForm } from "@/components/ProfileForm";
 import { TimerProvider } from "@/contexts/TimerContext";
 import { DateProvider } from "@/contexts/DateContext";
@@ -44,6 +45,7 @@ const App = () => (
                             <Route path="/dashboard" element={<Dashboard />} />
                             <Route path="*" element={<NotFound />} />
                         </Routes>
+                        <OrientationHint />
                         <GlobalTimer />
                         <BottomNav />
                     </BrowserRouter>

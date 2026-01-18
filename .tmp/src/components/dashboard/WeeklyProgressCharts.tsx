@@ -22,6 +22,7 @@ interface WeeklyProgressChartsProps {
         workouts: number;
         waterGlasses?: number;
         sleepHours?: number;
+        isToday?: boolean;
     }[];
 }
 
@@ -44,14 +45,22 @@ export const WeeklyProgressCharts = ({ days }: WeeklyProgressChartsProps) => {
                             />
                             <YAxis hide />
                             <Tooltip 
-                                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff' }}
+                                cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', color: '#fff', borderRadius: '8px' }}
                                 itemStyle={{ color: '#FFE600' }}
+                                formatter={(value: number, name: string, props: any) => {
+                                    const { payload } = props;
+                                    return [`${value} / ${payload.calorieTarget}`, 'קלוריות'];
+                                }}
                             />
                             <Bar dataKey="calories" radius={[4, 4, 0, 0]}>
                                 {days.map((entry, index) => (
                                     <Cell 
                                         key={`cell-${index}`} 
-                                        fill={entry.calories >= entry.calorieTarget ? '#FFE600' : '#444'} 
+                                        fill={entry.isToday ? '#FFE600' : (entry.calories >= entry.calorieTarget ? '#FFE600' : '#444')}
+                                        stroke={entry.isToday ? '#FFFFFF' : 'none'}
+                                        strokeWidth={entry.isToday ? 2 : 0}
+                                        fillOpacity={entry.isToday ? 1 : 0.8}
                                     />
                                 ))}
                             </Bar>
@@ -101,6 +110,11 @@ export const WeeklyProgressCharts = ({ days }: WeeklyProgressChartsProps) => {
                             />
                         </AreaChart>
                     </ResponsiveContainer>
+                    <div className="px-4 pb-2">
+                        <p className="text-[10px] text-muted-foreground">
+                            הקו הכחול מסמן שעות שינה, הצהוב מסמן כוסות מים בכל יום.
+                        </p>
+                    </div>
                 </CardContent>
             </Card>
         </div>

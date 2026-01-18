@@ -112,6 +112,7 @@ const Dashboard = () => {
             const date = new Date(startOfWeekStr);
             date.setDate(date.getDate() + i);
             const dateStr = date.toISOString().split('T')[0];
+            const isToday = dateStr === todayStr;
             
             if (dateStr > todayStr) continue;
 
@@ -137,7 +138,8 @@ const Dashboard = () => {
                 calorieTarget: DAILY_CALORIE_TARGET,
                 workouts: dayWorkouts,
                 waterGlasses: dayWater,
-                sleepHours: daySleep
+                sleepHours: daySleep,
+                isToday
             });
 
             if (dayCals > 0 || dayWorkouts > 0 || dayWater > 0 || daySleep > 0) {
@@ -250,7 +252,10 @@ const Dashboard = () => {
                 </div>
 
                 <div className="mb-8">
-                    <h3 className="text-white font-black text-xl mb-4">גרפים ומגמות</h3>
+                    <h3 className="text-white font-black text-xl mb-1">גרפים ומגמות</h3>
+                    <p className="text-xs text-muted-foreground mb-4">
+                        העמודה הצהובה המודגשת היא היום הנוכחי. הקו המקווקו מסמן את יעד הקלוריות היומי.
+                    </p>
                     <WeeklyProgressCharts days={weeklyStats.days} />
                 </div>
 
