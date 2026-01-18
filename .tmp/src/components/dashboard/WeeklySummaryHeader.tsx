@@ -6,14 +6,42 @@ interface WeeklySummaryHeaderProps {
     workoutsDone: number;
     workoutTarget: number;
     completionLevel: 'low' | 'medium' | 'high';
+    statusColor?: 'green' | 'yellow' | 'red';
 }
 
 export const WeeklySummaryHeader = ({
     weekLabel,
     workoutsDone,
     workoutTarget,
-    completionLevel
+    completionLevel,
+    statusColor
 }: WeeklySummaryHeaderProps) => {
+    const getStatusInfo = () => {
+        switch (statusColor) {
+            case 'green':
+                return { 
+                    text: 'שבוע ירוק – אתה מאוד קרוב ליעד', 
+                    bg: 'bg-green-500/20', 
+                    dot: 'bg-green-400' 
+                };
+            case 'yellow':
+                return { 
+                    text: 'שבוע צהוב – באמצע, אפשר לשפר מעט', 
+                    bg: 'bg-yellow-500/20', 
+                    dot: 'bg-yellow-400' 
+                };
+            case 'red':
+                return { 
+                    text: 'שבוע אדום – שווה לתת פוש השבוע', 
+                    bg: 'bg-red-500/20', 
+                    dot: 'bg-red-400' 
+                };
+            default:
+                return null;
+        }
+    };
+
+    const statusInfo = getStatusInfo();
     const getMessage = () => {
         switch (completionLevel) {
             case 'high':
@@ -45,6 +73,14 @@ export const WeeklySummaryHeader = ({
                     <div className="flex-1">
                         <p className="text-xs text-muted-foreground mb-1">{weekLabel}</p>
                         <h2 className="text-2xl font-black text-white mb-2 leading-tight">סיכום שבועי</h2>
+                        
+                        {statusInfo && (
+                            <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full ${statusInfo.bg} mb-3`}>
+                                <div className={`w-2 h-2 rounded-full ${statusInfo.dot} animate-pulse`} />
+                                <span className="text-[10px] font-bold text-white/90">{statusInfo.text}</span>
+                            </div>
+                        )}
+
                         <p className="text-sm text-white/90 font-medium">{getMessage()}</p>
                         
                         <div className="mt-4 flex items-center gap-2">

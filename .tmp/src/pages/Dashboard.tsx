@@ -131,6 +131,21 @@ const Dashboard = () => {
             // Sleep
             const daySleep = logs.sleep.find(l => l.date === dateStr)?.hours || 0;
 
+            const diffPercent = Math.abs(dayCals - DAILY_CALORIE_TARGET) / DAILY_CALORIE_TARGET;
+            let dayStatus: 'green' | 'yellow' | 'red' = 'red';
+            
+            if (dayCals > 0) {
+                if (diffPercent <= 0.15) {
+                    dayStatus = 'green';
+                } else if (diffPercent <= 0.30) {
+                    dayStatus = 'yellow';
+                } else {
+                    dayStatus = 'red';
+                }
+            } else if (isToday) {
+                dayStatus = 'yellow';
+            }
+
             days.push({
                 date: dateStr,
                 label: dayLabels[i],
@@ -139,7 +154,8 @@ const Dashboard = () => {
                 workouts: dayWorkouts,
                 waterGlasses: dayWater,
                 sleepHours: daySleep,
-                isToday
+                isToday,
+                status: dayStatus
             });
 
             if (dayCals > 0 || dayWorkouts > 0 || dayWater > 0 || daySleep > 0) {
@@ -166,8 +182,18 @@ const Dashboard = () => {
 
         const completionScore = (totalWorkouts / WORKOUT_TARGET) * 0.5 + (avgCals / DAILY_CALORIE_TARGET) * 0.5;
         let completionLevel: 'low' | 'medium' | 'high' = 'low';
-        if (completionScore > 0.85) completionLevel = 'high';
-        else if (completionScore > 0.5) completionLevel = 'medium';
+        let statusColor: 'green' | 'yellow' | 'red' = 'red';
+
+        if (completionScore > 0.85) {
+            completionLevel = 'high';
+            statusColor = 'green';
+        } else if (completionScore > 0.5) {
+            completionLevel = 'medium';
+            statusColor = 'yellow';
+        } else {
+            completionLevel = 'low';
+            statusColor = 'red';
+        }
 
         return {
             days,
@@ -177,7 +203,8 @@ const Dashboard = () => {
             avgSleep,
             totalWater,
             weightDelta,
-            completionLevel
+            completionLevel,
+            statusColor
         };
     }, [logs, startOfWeekStr, todayStr]);
 
@@ -218,6 +245,7 @@ const Dashboard = () => {
                     workoutsDone={weeklyStats.totalWorkouts}
                     workoutTarget={WORKOUT_TARGET}
                     completionLevel={weeklyStats.completionLevel}
+                    statusColor={weeklyStats.statusColor}
                 />
 
                 <div className="grid grid-cols-2 gap-4 mb-8">
