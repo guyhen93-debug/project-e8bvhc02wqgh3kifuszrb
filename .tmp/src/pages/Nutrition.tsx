@@ -316,6 +316,14 @@ const Nutrition = () => {
         }
     }, [selectedDate, currentMenuType, currentMeals]);
 
+    const handleMenuToggle = async (nextIsShabbat: boolean) => {
+        // Flush pending changes for the current menu type before switching
+        if (userMadeChangeRef.current && !isInitialLoadRef.current) {
+            await autoSave();
+        }
+        setIsShabbatMenu(nextIsShabbat);
+    };
+
     useEffect(() => {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
@@ -509,7 +517,7 @@ const Nutrition = () => {
                             <Switch
                                 id="menu-toggle"
                                 checked={isShabbatMenu}
-                                onCheckedChange={setIsShabbatMenu}
+                                onCheckedChange={handleMenuToggle}
                             />
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
