@@ -26,10 +26,19 @@
 
 | קטגוריה | חומרה | מספר ממצאים |
 |---------|--------|-------------|
+| **בעיית מודל דומיין** | 🔴 קריטית | 1 |
 | ביצועים | 🔴 גבוהה | 4 |
 | כפילויות קוד | 🟡 בינונית | 5 |
 | בעיות UX | 🟠 בינונית-גבוהה | 6 |
 | סיכוני נתונים | 🔴 גבוהה | 2 |
+
+### 🚨 ממצא קריטי ביותר:
+
+**מודל התזונה שגוי מבחינת הדומיין!**
+- הקוד מתייחס לתפריט "שגרה" ו"שבת" כבלעדיים הדדית
+- אבל הם **Presets בלבד** - המשתמש צריך יכולת לערבב ארוחות משניהם
+- יעד הקלוריות היומי (2410) הוא **אחד** - לא לכל תפריט בנפרד
+- ראה סעיף 2 לפירוט מלא
 
 ---
 
@@ -130,25 +139,115 @@ const totals = useMemo(() => {
 
 ---
 
-## 2. ביקורת nutrition-utils.ts
+## 2. ביקורת nutrition-utils.ts - בעיית מודל דומיין
 
 **קובץ:** `src/lib/nutrition-utils.ts`
 
-### 2.1 ניתוח האלגוריתם הנוכחי
+### 2.1 🔴 בעיה קריטית: המודל הנוכחי שגוי מבחינת הדומיין
 
-האלגוריתם מבצע **3 מעברים** על הנתונים:
+#### הבנת המודל העסקי הנכון:
 
-| מעבר | פעולה | סיבוכיות |
-|------|-------|----------|
-| 1 | De-duplication | O(n) |
-| 2 | קיבוץ לפי menu_type | O(n) |
-| 3 | בחירת תפריט פעיל | O(k) |
+```
+┌─────────────────────────────────────────────────────────┐
+│                  יעד יומי: 2410 קלוריות                  │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│              Meal Templates (Presets בלבד)              │
+│  ┌─────────────────┐      ┌─────────────────────────┐  │
+│  │ תפריט שגרה      │      │ תפריט גמיש/שבת          │  │
+│  │ ארוחה 1,2,3,4   │      │ סעודות 1,2,3,4          │  │
+│  └─────────────────┘      └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│        המשתמש בוחר ארוחות מכל Template                  │
+│        (אפשר לערבב בין התפריטים!)                       │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│   Sum(כל הארוחות שנבחרו) ≈ 2410 קלוריות (יעד יומי)     │
+└─────────────────────────────────────────────────────────┘
+```
 
-**סה"כ:** O(n) עם overhead של 3 iterations.
+**המודל הנוכחי בקוד (שגוי):**
+- מתייחס ל-`weekday` ו-`shabbat` כתפריטים **בלעדיים**
+- בוחר רק אחד מהם להצגה (לפי כמות קלוריות)
+- **לא מאפשר** ערבוב ארוחות משני התפריטים
 
-### 2.2 בעיות שזוהו
+---
 
-#### בעיה #8: יצירת אובייקטי Date מיותרת
+### 2.2 ניתוח הקוד הבעייתי
+
+#### בעיה #8: `normalizeNutritionLogs` מסננת נתונים במקום לסכום
+
+**שורות 53-66:**
+```typescript
+// 3. Find active menu_type (the one with the highest calorie sum)
+let activeMenuType = 'weekday';
+let maxCalories = -1;
+
+groups.forEach((data, menuType) => {
+    if (data.totalCalories > maxCalories) {
+        maxCalories = data.totalCalories;
+        activeMenuType = menuType;
+    }
+});
+
+// 4. Return logs from the active menu type ONLY!
+return (groups.get(activeMenuType)?.logs || [])...
+```
+
+**הבעיה:** הפונקציה מחזירה **רק** ארוחות מסוג תפריט אחד, במקום לסכום את כל הארוחות שנאכלו.
+
+**תרחיש בעייתי:**
+```
+יום רגיל:
+├── ארוחת בוקר מתפריט שגרה: 600 קל'
+├── שייקר: 200 קל'
+└── ארוחת ערב מתפריט שבת (סינטה): 500 קל'
+                                    ─────────
+                          סה"כ אמיתי: 1300 קל'
+
+מה הקוד מציג: 600 קל' בלבד (רק תפריט שגרה)
+```
+
+---
+
+#### בעיה #9: `Nutrition.tsx` - ה-totals הנכון קיים אך לא בשימוש!
+
+**שורות 243-261:**
+```typescript
+const totals = useMemo(() => {
+    let calories = 0;
+    // סוכם weekday + shabbat - וזה נכון!
+    Object.values(weekdayMeals).forEach(meal => { calories += meal.data.calories; });
+    Object.values(shabbatMeals).forEach(meal => { calories += meal.data.calories; });
+    return { calories, protein, carbs, fat };
+}, [weekdayMeals, shabbatMeals]);
+// אבל totals לא מוצג בממשק!
+```
+
+**הממצא:** החישוב הנכון כבר קיים בקוד, אבל הוא **קוד מת** - לא מוצג בשום מקום!
+
+---
+
+### 2.3 השוואה: Index.tsx vs Nutrition.tsx
+
+| מיקום | מה מוצג | האם נכון? |
+|-------|---------|-----------|
+| `Index.tsx` (Dashboard) | רק menu_type אחד (via `normalizeNutritionLogs`) | ❌ שגוי |
+| `Nutrition.tsx` (totals) | weekday + shabbat ביחד | ✅ נכון |
+| `Nutrition.tsx` (UI) | totals לא מוצג | ❌ חסר |
+
+---
+
+### 2.4 בעיות נוספות בקוד
+
+#### בעיה #10: יצירת אובייקטי Date מיותרת
 
 **שורות 28-29:**
 ```typescript
@@ -156,28 +255,56 @@ const existingDate = new Date(existing.updated_at || ...).getTime();
 const currentDate = new Date(log.updated_at || ...).getTime();
 ```
 
-לכל log שיש לו duplicate, נוצרים 2 אובייקטי Date. אפשר להשוות ישירות את ה-ISO strings.
+אפשר להשוות ISO strings ישירות (lexicographic comparison עובד לפורמט ISO).
 
 ---
 
-#### בעיה #9: הנחה שגויה לבחירת תפריט פעיל
+### 2.5 הפתרון הנכון - שינוי מודל
 
-הלוגיקה בוחרת את התפריט עם **הכי הרבה קלוריות** כ"פעיל":
+#### אפשרות א': סכימה אוניברסלית (מומלץ)
 
 ```typescript
-// שורות 57-62
-if (data.totalCalories > maxCalories) {
-    activeMenuType = menuType;
-}
+// nutrition-utils.ts - גרסה מתוקנת
+export const normalizeNutritionLogs = (logs: any[]): any[] => {
+    if (!logs?.length) return [];
+
+    // De-duplicate by (menu_type, meal_number) - keep latest
+    const deDuplicatedMap = new Map<string, any>();
+
+    for (const log of logs) {
+        const key = `${log.menu_type || 'weekday'}-${log.meal_number}`;
+        const existing = deDuplicatedMap.get(key);
+
+        if (!existing || (log.updated_at || '') > (existing.updated_at || '')) {
+            deDuplicatedMap.set(key, log);
+        }
+    }
+
+    // Return ALL logs (from both menu types), sorted by meal_number
+    return Array.from(deDuplicatedMap.values())
+        .sort((a, b) => (a.meal_number || 0) - (b.meal_number || 0));
+};
+
+// פונקציה חדשה לסיכום יומי
+export const calculateDailyTotals = (logs: any[]): NutritionTotals => {
+    const normalized = normalizeNutritionLogs(logs);
+
+    return normalized.reduce((acc, log) => ({
+        calories: acc.calories + (log.total_calories || 0),
+        protein: acc.protein + (log.protein || 0),
+        carbs: acc.carbs + (log.carbs || 0),
+        fat: acc.fat + (log.fat || 0),
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+};
 ```
 
-**בעיה:** אם משתמש התחיל למלא תפריט שבת (2 ארוחות = 800 קל') ואז עבר לתפריט יומי (ארוחה אחת = 600 קל'), המערכת תציג את נתוני השבת במקום היומי.
+#### אפשרות ב': הצגת totals קיים ב-Nutrition.tsx
+
+הוספת סיכום יומי בתחתית הדף שמציג את `totals` הקיים.
 
 ---
 
-### 2.3 הצעה לאופטימיזציה
-
-ניתן לבצע את כל הפעולות **במעבר אחד**:
+### 2.6 אופטימיזציה משנית (לאחר תיקון המודל)
 
 ```typescript
 // פסאודו-קוד לאופטימיזציה
@@ -369,6 +496,102 @@ WorkoutTemplate מציג "שומר אוטומטית..." בכל שינוי קטן
 ---
 
 ## 5. תוכנית עבודה - Roadmap
+
+### 🔴 שלב 0: תיקון מודל הדומיין (עדיפות קריטית!)
+
+#### 0.1 שינוי `nutrition-utils.ts` לסכום כל הארוחות
+
+**הבעיה:** הפונקציה הנוכחית מחזירה רק menu_type אחד.
+
+**הפתרון:**
+```typescript
+// src/lib/nutrition-utils.ts
+
+/**
+ * Normalizes NutritionLog records for a specific day.
+ * De-duplicates by (menu_type, meal_number), keeping the latest version.
+ * Returns ALL logs from BOTH menu types (since they're just presets).
+ */
+export const normalizeNutritionLogs = (logs: any[]): any[] => {
+    if (!logs?.length) return [];
+
+    const deDuplicatedMap = new Map<string, any>();
+
+    for (const log of logs) {
+        const key = `${log.menu_type || 'weekday'}-${log.meal_number}`;
+        const existing = deDuplicatedMap.get(key);
+
+        // Compare ISO strings directly (no Date objects needed)
+        if (!existing || (log.updated_at || '') > (existing.updated_at || '')) {
+            deDuplicatedMap.set(key, log);
+        }
+    }
+
+    // Return ALL logs sorted by meal_number
+    return Array.from(deDuplicatedMap.values())
+        .sort((a, b) => (a.meal_number || 0) - (b.meal_number || 0));
+};
+
+/**
+ * Calculate daily nutrition totals from all consumed meals.
+ * One daily target, multiple meal templates, one total sum.
+ */
+export const calculateDailyTotals = (logs: any[]) => {
+    const normalized = normalizeNutritionLogs(logs);
+
+    return normalized.reduce((acc, log) => ({
+        calories: acc.calories + (log.total_calories || 0),
+        protein: acc.protein + (log.protein || 0),
+        carbs: acc.carbs + (log.carbs || 0),
+        fat: acc.fat + (log.fat || 0),
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+};
+```
+
+---
+
+#### 0.2 הוספת סיכום יומי ל-Nutrition.tsx
+
+ה-`totals` useMemo קיים אבל לא מוצג. יש להוסיף Card עם הסיכום היומי:
+
+```tsx
+{/* Daily Summary Card - להוסיף בתחתית הדף */}
+<Card className="bg-oxygym-darkGrey border-oxygym-yellow mb-6">
+    <CardHeader>
+        <CardTitle className="text-white">📊 סיכום יומי</CardTitle>
+    </CardHeader>
+    <CardContent className="grid grid-cols-2 gap-4">
+        <div>
+            <p className="text-muted-foreground text-sm">קלוריות</p>
+            <p className="text-2xl text-white font-bold">
+                {totals.calories.toFixed(0)} / 2410
+            </p>
+        </div>
+        <div>
+            <p className="text-muted-foreground text-sm">חלבון</p>
+            <p className="text-2xl text-white font-bold">
+                {totals.protein.toFixed(0)}ג' / 145ג'
+            </p>
+        </div>
+    </CardContent>
+</Card>
+```
+
+---
+
+#### 0.3 עדכון Index.tsx להשתמש בסכימה הנכונה
+
+```typescript
+// במקום normalizeNutritionLogs שמחזיר menu_type אחד
+import { calculateDailyTotals } from '@/lib/nutrition-utils';
+
+const dailyTotals = useMemo(
+    () => calculateDailyTotals(selectedDateNutrition || []),
+    [selectedDateNutrition]
+);
+```
+
+---
 
 ### שלב 1: תיקוני ביצועים קריטיים (עדיפות גבוהה)
 
@@ -599,6 +822,9 @@ if (userMadeChangeRef.current && significantChange) {
 
 | שלב | תיאור | עדיפות | מורכבות | השפעה |
 |-----|-------|--------|---------|--------|
+| **0.1** | **תיקון מודל תזונה** | 🔴 **קריטית** | בינונית | **קריטית** |
+| **0.2** | **הצגת סיכום יומי** | 🔴 **קריטית** | נמוכה | **גבוהה** |
+| **0.3** | **עדכון Index.tsx** | 🔴 **קריטית** | נמוכה | **גבוהה** |
 | 1.1 | Debounce ל-Workout | 🔴 גבוהה | נמוכה | גבוהה |
 | 1.2 | אופטימיזציה autoSave | 🔴 גבוהה | בינונית | גבוהה |
 | 4.1 | Local Storage backup | 🔴 גבוהה | בינונית | גבוהה |
@@ -608,21 +834,34 @@ if (userMadeChangeRef.current && significantChange) {
 | 5.x | ניקוי TimerContext | 🟢 נמוכה | נמוכה | נמוכה |
 | 6.x | שיפורי UX | 🟢 נמוכה | נמוכה | בינונית |
 
+### ⚡ המודל הנכון לתזונה:
+
+```
+One Daily Target (2410 קל')
+    ↓
+Multiple Meal Templates (presets)
+    ↓
+User selects from ANY template
+    ↓
+Sum(all selected) = Daily Total
+```
+
 ---
 
 ## נספח: קבצים לעדכון
 
 | קובץ | שלבים רלוונטיים |
 |------|-----------------|
+| `src/lib/nutrition-utils.ts` | **0.1 (קריטי!)** |
+| `src/pages/Nutrition.tsx` | **0.2 (קריטי!)** |
+| `src/pages/Index.tsx` | **0.3 (קריטי!)**, 2.1, 2.2 |
 | `src/components/WorkoutTemplate.tsx` | 1.1, 1.2, 4.1 |
 | `src/components/ExerciseRow.tsx` | 1.1 (עקיף) |
 | `src/contexts/DateContext.tsx` | 3.1 |
 | `src/contexts/TimerContext.tsx` | 5.1, 5.2 |
 | `src/components/Timer.tsx` | 5.2 |
-| `src/pages/Index.tsx` | 2.1, 2.2 |
 | `src/pages/Workouts.tsx` | 2.1, 2.2 |
 | `src/lib/date-utils.ts` | 2.1 (חדש) |
-| `src/lib/nutrition-utils.ts` | אופטימיזציה עתידית |
 
 ---
 
