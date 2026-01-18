@@ -9,12 +9,13 @@ import {
     Utensils, 
     Dumbbell,
     ShieldCheck,
+    Scale,
     Bell,
     Clock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserProfile, NutritionLog, WorkoutLog } from '@/entities';
+import { UserProfile, NutritionLog, WorkoutLog, WeightLog } from '@/entities';
 import { useNotifications } from '@/hooks/useNotifications';
 
 interface StatusResult {
@@ -64,7 +65,20 @@ const Status = () => {
         },
     });
 
-    const isAnyLoading = profileCheck.isLoading || nutritionCheck.isLoading || workoutCheck.isLoading;
+    const weightCheck = useQuery({
+        queryKey: ['status-weight-check'],
+        queryFn: async () => {
+            try {
+                const logs = await WeightLog.list();
+                return { ok: true, count: logs.length };
+            } catch (error) {
+                console.error('Status weight check failed:', error);
+                return { ok: false, message: 'שגיאה בגישה לנתוני משקל' };
+            }
+        },
+    });
+
+    const isAnyLoading = profileCheck.isLoading || nutritionCheck.isLoading || workoutCheck.isLoading || weightCheck.isLoading;
     const { settings } = useNotifications();
 
     const StatusIndicator = ({ result, label, icon: Icon }: { result: StatusResult, label: string, icon: any }) => {
@@ -167,6 +181,16 @@ const Status = () => {
                             count: workoutCheck.data?.count,
                             message: workoutCheck.data?.message,
                             loading: workoutCheck.isLoading
+                        }}
+                    />
+                    <StatusIndicator 
+                        label="נתוני משקל" 
+                        icon={Scale}
+                        result={{
+                            ok: !!weightCheck.data?.ok,
+                            count: weightCheck.data?.count,
+                            message: weightCheck.data?.message,
+                            loading: weightCheck.isLoading
                         }}
                     />
                 </div>
