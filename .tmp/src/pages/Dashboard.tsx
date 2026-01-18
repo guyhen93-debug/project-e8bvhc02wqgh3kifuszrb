@@ -9,14 +9,15 @@ import {
     Info,
     Loader2
 } from 'lucide-react';
-import { WorkoutLog, NutritionLog, WaterLog, SleepLog, WeightLog } from '@/entities';
+import { WorkoutLog, NutritionLog, WaterLog, SleepLog, WeightLog, UserProfile } from '@/entities';
 import { getStartOfWeek, formatDateHebrew } from '@/lib/date-utils';
 import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
 import { WeeklySummaryHeader } from '@/components/dashboard/WeeklySummaryHeader';
 import { WeeklyStatCard } from '@/components/dashboard/WeeklyStatCard';
 import { WeeklyProgressCharts } from '@/components/dashboard/WeeklyProgressCharts';
 import { WeeklyReportInsights } from '@/components/dashboard/WeeklyReportInsights';
-import { generateWeeklyReport } from '@/functions';
+import { MonthlyProgressCard } from '@/components/dashboard/MonthlyProgressCard';
+import { generateWeeklyReport, analyzeProgress } from '@/functions';
 
 const DAILY_CALORIE_TARGET = 2410;
 const DAILY_PROTEIN_TARGET = 145;
@@ -28,8 +29,56 @@ const Dashboard = () => {
     endOfWeekDate.setDate(endOfWeekDate.getDate() + 6);
     const endOfWeekStr = endOfWeekDate.toISOString().split('T')[0];
     const todayStr = new Date().toISOString().split('T')[0];
+    const thirtyDaysAgoDate = new Date();
+    thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgoDate.toISOString().split('T')[0];
 
     const weekLabel = `${formatDateHebrew(startOfWeekStr)} - ${formatDateHebrew(endOfWeekStr)}`;
+
+    const { data: monthlyRawData } = useQuery({
+        queryKey: ['monthly-progress-raw', thirtyDaysAgoStr],
+        queryFn: async () => {
+            const [workouts30, nutrition30, weights30, profiles] = await Promise.all([
+                WorkoutLog.query().gte('date', thirtyDaysAgoStr).lte('date', todayStr).exec(),
+                NutritionLog.query().gte('date', thirtyDaysAgoStr).lte('date', todayStr).exec(),
+                WeightLog.query().gte('date', thirtyDaysAgoStr).lte('date', todayStr).exec(),
+                UserProfile.list()
+            ]);
+            return { workouts30, nutrition30, weights30, profile: profiles?.[0] };
+        },
+    });
+
+    const { data: monthlyReport, isLoading: isMonthlyLoading } = useQuery({
+        queryKey: ['monthly-progress-analysis', thirtyDaysAgoStr],
+        queryFn: async () => {
+            if (!monthlyRawData) return null;
+            
+            let userGoal = 'maintain';
+            if (monthlyRawData.profile?.goal === 'חיטוב') userGoal = 'lose';
+            else if (monthlyRawData.profile?.goal === 'מסה') userGoal = 'gain';
+
+            try {
+                return await analyzeProgress({
+                    workoutData: monthlyRawData.workouts30,
+                    nutritionData: normalizeNutritionLogs(monthlyRawData.nutrition30),
+                    weightData: monthlyRawData.weights30,
+                    userGoal,
+                    targetCalories: DAILY_CALORIE_TARGET,
+                });
+            } catch (error) {
+                console.error('Error analyzing 30-day progress:', error);
+                return null;
+            }
+        },
+        enabled: !!monthlyRawData,
+    });
+
+    const hasMonthlyData = useMemo(() => {
+        if (!monthlyRawData) return false;
+        return (monthlyRawData.workouts30?.length || 0) > 0 || 
+               (monthlyRawData.nutrition30?.length || 0) > 0 || 
+               (monthlyRawData.weights30?.length || 0) > 1;
+    }, [monthlyRawData]);
 
     const { data: logs, isLoading } = useQuery({
         queryKey: ['weekly-dashboard-data', startOfWeekStr],
@@ -204,6 +253,18 @@ const Dashboard = () => {
                     <h3 className="text-white font-black text-xl mb-4">גרפים ומגמות</h3>
                     <WeeklyProgressCharts days={weeklyStats.days} />
                 </div>
+
+                <MonthlyProgressCard
+                    overallScore={monthlyReport?.overallScore ?? null}
+                    consistency={monthlyReport?.consistency}
+                    performance={monthlyReport?.performance}
+                    progress={monthlyReport?.progress}
+                    insights={monthlyReport?.insights ?? []}
+                    actionItems={monthlyReport?.actionItems ?? []}
+                    motivationalMessage={monthlyReport?.motivationalMessage ?? null}
+                    isLoading={isMonthlyLoading}
+                    hasData={hasMonthlyData}
+                />
 
                 <WeeklyReportInsights 
                     summary={report?.summary ?? null}
