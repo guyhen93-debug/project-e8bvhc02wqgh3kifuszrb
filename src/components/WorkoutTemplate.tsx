@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExerciseRow } from '@/components/ExerciseRow';
 import { DateSelector } from '@/components/DateSelector';
-import { ArrowRight, Heart, RefreshCw, AlertCircle } from 'lucide-react';
+import { ArrowRight, Heart, RefreshCw, AlertCircle, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WorkoutLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { saveWorkoutDraft, loadWorkoutDraft, clearWorkoutDraft } from '@/lib/workout-storage';
 
 interface Exercise {
     name: string;
@@ -40,12 +41,29 @@ export const WorkoutTemplate = ({
     const [exerciseData, setExerciseData] = useState<{ [key: string]: any }>({});
     const [cardioMinutes, setCardioMinutes] = useState(0);
     const [saving, setSaving] = useState(false);
+    const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+
+    const lastSavedAtRef = useRef<number | null>(null);
+    const lastToastRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        if (lastSavedAt) {
+            const timeout = setTimeout(() => {
+                setLastSavedAt(null);
+            }, 3000);
+            return () => clearTimeout(timeout);
+        }
+    }, [lastSavedAt]);
+
+    const saveTimeoutRef = useRef<any>(null);
+    const activeSavesRef = useRef(0);
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
     const exerciseDataRef = useRef<{ [key: string]: any }>({});
     const cardioMinutesRef = useRef(0);
-    const saveTimeoutRef = useRef<NodeJS.Timeout>();
-    const existingLogIdRef = useRef<string | null>(null);
+    const hasLoadedDraftRef = useRef(false);
+    const needsServerSyncRef = useRef(false);
+    const existingLogIdRef = useRef<string | null>(null); // Cache log ID to avoid filter query on save
 
     const initializedDateRef = useRef<string | null>(null);
 
@@ -79,11 +97,16 @@ export const WorkoutTemplate = ({
     });
 
     useEffect(() => {
-        if (initializedDateRef.current === selectedDate && !isLoading) {
-            return;
+        if (isLoading) return;
+
+        // Reset draft loaded flag if date changes
+        if (initializedDateRef.current !== selectedDate) {
+            hasLoadedDraftRef.current = false;
         }
 
-        if (isLoading) return;
+        if (initializedDateRef.current === selectedDate && hasLoadedDraftRef.current) {
+            return;
+        }
 
         console.log('Date changed to:', selectedDate);
         isInitialLoadRef.current = true;
@@ -93,6 +116,30 @@ export const WorkoutTemplate = ({
         exerciseDataRef.current = {};
         setCardioMinutes(0);
         cardioMinutesRef.current = 0;
+
+        // Try loading from draft first
+        const draft = loadWorkoutDraft(selectedDate, workoutType);
+        if (draft && !hasLoadedDraftRef.current) {
+            console.log('Loading from local draft:', draft);
+            const loadedData: any = {};
+            draft.exercises_completed.forEach((ex: any) => {
+                loadedData[ex.name] = {
+                    sets: ex.sets,
+                    weight: ex.weight,
+                    name: ex.name
+                };
+            });
+            setExerciseData(loadedData);
+            exerciseDataRef.current = loadedData;
+            setCardioMinutes(draft.duration_minutes || 0);
+            cardioMinutesRef.current = draft.duration_minutes || 0;
+            initializedDateRef.current = selectedDate;
+            hasLoadedDraftRef.current = true;
+            setTimeout(() => {
+                isInitialLoadRef.current = false;
+            }, 100);
+            return;
+        }
         
         if (workoutData) {
             // Cache the existing log ID to avoid filter queries on save
@@ -113,6 +160,7 @@ export const WorkoutTemplate = ({
             setCardioMinutes(workoutData.duration_minutes || 0);
             cardioMinutesRef.current = workoutData.duration_minutes || 0;
             initializedDateRef.current = selectedDate;
+            hasLoadedDraftRef.current = true;
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
@@ -133,28 +181,37 @@ export const WorkoutTemplate = ({
             cardioMinutesRef.current = 0;
             console.log('Loaded weights from last workout:', loadedData);
             initializedDateRef.current = selectedDate;
+            hasLoadedDraftRef.current = true;
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
         } else {
             initializedDateRef.current = selectedDate;
+            hasLoadedDraftRef.current = true;
             setTimeout(() => {
                 isInitialLoadRef.current = false;
             }, 100);
         }
     }, [selectedDate, workoutData, lastWorkoutData, exercises, workoutType, isLoading]);
 
-    async function autoSave() {
+    async function performAutoSave() {
         const currentExerciseData = exerciseDataRef.current;
         const currentCardioMinutes = cardioMinutesRef.current;
         const hasExercises = exercises.length > 0;
-
+        
         if (!hasExercises && currentCardioMinutes === 0) {
             console.log('Skipping auto-save - no data to save');
             return;
         }
 
+        // Skip server save if one is already in progress to avoid overlapping requests
+        if (activeSavesRef.current > 0) {
+            console.log('Skip auto-save: another save is in progress');
+            return;
+        }
+        
         try {
+            activeSavesRef.current++;
             setSaving(true);
 
             // Calculate completed status based on the currentExerciseData we have
@@ -233,23 +290,105 @@ export const WorkoutTemplate = ({
             // Update React Query cache immediately
             queryClient.setQueryData(['workout-log', selectedDate, workoutType], savedLog);
             queryClient.setQueryData(['last-workout-log', workoutType], savedLog);
-
+            
             userMadeChangeRef.current = false;
             console.log(`Auto-saved workout ${workoutType}: ${exercises_completed.length} exercises saved.`);
         } catch (error) {
             console.error('Error auto-saving workout:', error);
         } finally {
-            setSaving(false);
+            activeSavesRef.current = Math.max(0, activeSavesRef.current - 1);
+            if (activeSavesRef.current === 0) {
+                // Smooth the transition out
+                setTimeout(() => {
+                    if (activeSavesRef.current === 0) {
+                        setSaving(false);
+                    }
+                }, 600);
+            }
         }
     }
 
-    // Debounced save function - waits 1 second after last change
-    const debouncedSave = () => {
+    function saveWorkoutLocally() {
+        try {
+            const currentExerciseData = exerciseDataRef.current;
+            const currentCardioMinutes = cardioMinutesRef.current;
+
+            const exercises_completed = exercises.map((exercise) => {
+                const existing = currentExerciseData[exercise.name];
+                const defaultSets = Array(exercise.sets)
+                    .fill(null)
+                    .map(() => ({ completed: false }));
+
+                return {
+                    name: exercise.name,
+                    sets: (existing?.sets && existing.sets.length === exercise.sets)
+                        ? existing.sets
+                        : defaultSets,
+                    weight: existing?.weight ?? 0,
+                };
+            });
+
+            const draft = {
+                date: selectedDate,
+                workout_type: workoutType,
+                exercises_completed,
+                duration_minutes: currentCardioMinutes,
+                last_updated: new Date().toISOString(),
+            };
+
+            saveWorkoutDraft(draft as any);
+        } catch (error) {
+            console.error('Error saving workout locally:', error);
+        }
+    }
+
+    function saveWorkoutLocallyWithFeedback() {
+        saveWorkoutLocally();
+        setLastSavedAt(Date.now());
+
+        if (!lastToastRef.current || Date.now() - lastToastRef.current > 8000) {
+            toast({
+                title: 'האימון נשמר',
+                description: 'הנתונים נשמרו בהצלחה במכשיר שלך.',
+                duration: 2500,
+            });
+            lastToastRef.current = Date.now();
+        }
+    }
+
+    async function saveWorkout() {
+        if (!needsServerSyncRef.current) return;
+
+        try {
+            await performAutoSave();
+            needsServerSyncRef.current = false;
+        } catch (error) {
+            console.error('Error syncing workout to server:', error);
+        }
+    }
+
+    function scheduleAutoSave(immediate = false) {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
         }
-        saveTimeoutRef.current = setTimeout(autoSave, 1000);
-    };
+
+        if (!needsServerSyncRef.current) {
+            // No changes waiting for server, nothing to do
+            return;
+        }
+
+        if (immediate) {
+            // Used when leaving the page / app – sync right now
+            saveWorkout();
+        } else {
+            // Calm background sync: wait ~3 seconds after last change
+            saveTimeoutRef.current = setTimeout(() => {
+                saveWorkout();
+                saveTimeoutRef.current = null;
+            }, 3000);
+        }
+    }
 
     const handleExerciseDataChange = (data: any) => {
         setExerciseData(prev => {
@@ -260,7 +399,9 @@ export const WorkoutTemplate = ({
 
         if (!isInitialLoadRef.current) {
             userMadeChangeRef.current = true;
-            debouncedSave(); // Use debounced save instead of immediate save
+            needsServerSyncRef.current = true;
+            saveWorkoutLocallyWithFeedback();
+            scheduleAutoSave(false);
         }
     };
 
@@ -269,26 +410,38 @@ export const WorkoutTemplate = ({
         userMadeChangeRef.current = true;
         setCardioMinutes(minutes);
         cardioMinutesRef.current = minutes;
-        debouncedSave(); // Use debounced save instead of immediate save
+        
+        needsServerSyncRef.current = true;
+        saveWorkoutLocallyWithFeedback();
+        scheduleAutoSave(false);
     };
+
+    // Store the latest version of saveWorkout in a ref so the unmount cleanup
+    // always has access to the most recent closure (with current date and props)
+    const saveWorkoutRef = useRef(saveWorkout);
+    useEffect(() => {
+        saveWorkoutRef.current = saveWorkout;
+    });
+
+    // Ensure data is saved when the component unmounts (e.g. user navigates to another screen)
+    useEffect(() => {
+        return () => {
+            if (userMadeChangeRef.current && !isInitialLoadRef.current) {
+                console.log('Workout screen unmounting - triggering final save');
+                saveWorkoutRef.current();
+            }
+        };
+    }, []);
 
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden') {
-                // Flush any pending debounced save immediately
-                if (saveTimeoutRef.current) {
-                    clearTimeout(saveTimeoutRef.current);
-                }
-                autoSave();
+                scheduleAutoSave(true);
             }
         };
 
         const handlePageHide = () => {
-            // Flush any pending debounced save immediately
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
-            autoSave();
+            scheduleAutoSave(true);
         };
 
         window.addEventListener('visibilitychange', handleVisibilityChange);
@@ -297,10 +450,8 @@ export const WorkoutTemplate = ({
         return () => {
             window.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('pagehide', handlePageHide);
-            // Cleanup: flush pending save on unmount
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
-                autoSave();
             }
         };
     }, [selectedDate, workoutType, exercises, queryClient]);
@@ -357,9 +508,14 @@ export const WorkoutTemplate = ({
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-3xl font-bold text-white">{workoutTitle}</h1>
-                        {saving && (
-                            <p className="text-xs text-oxygym-yellow mt-1">שומר אוטומטית...</p>
-                        )}
+                        {saving ? (
+                            <p className="text-xs text-oxygym-yellow mt-1 animate-pulse">שומר אוטומטית...</p>
+                        ) : lastSavedAt ? (
+                            <div className="flex items-center gap-1 text-xs text-green-400 mt-1 animate-in fade-in slide-in-from-top-1">
+                                <Check className="w-3 h-3" />
+                                <span>נשמר אוטומטית</span>
+                            </div>
+                        ) : null}
                     </div>
                     <Button
                         onClick={() => navigate('/workouts')}
@@ -403,9 +559,11 @@ export const WorkoutTemplate = ({
                             <div className="flex items-center gap-2">
                                 <Input
                                     id="cardio"
-                                    type="number"
+                                    type="tel"
+                                    inputMode="numeric"
                                     value={cardioMinutes || ''}
                                     onChange={(e) => handleCardioChange(e.target.value)}
+                                    onWheel={(e) => e.currentTarget.blur()}
                                     placeholder="0"
                                     className="w-20 h-10 text-center bg-black border-border text-white"
                                 />
@@ -427,7 +585,7 @@ export const WorkoutTemplate = ({
                 <div className="space-y-6 mb-6">
                     {exercises.map((exercise, index) => (
                         <ExerciseRow
-                            key={index}
+                            key={`${selectedDate}-${exercise.name}`}
                             name={exercise.name}
                             sets={exercise.sets}
                             reps={exercise.reps}

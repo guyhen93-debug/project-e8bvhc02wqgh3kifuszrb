@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { MealItem } from '@/components/MealItem';
 import { DateSelector } from '@/components/DateSelector';
-import { RefreshCw, AlertCircle, CheckSquare, X, Info, AlertTriangle, Flame } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckSquare, X, Info, AlertTriangle, Flame, Check } from 'lucide-react';
 import { BreadIcon } from '@/components/icons/BreadIcon';
 import { ChickenIcon } from '@/components/icons/ChickenIcon';
 import { VegetablesIcon } from '@/components/icons/VegetablesIcon';
@@ -106,6 +106,7 @@ const Nutrition = () => {
     const { selectedDate, isToday } = useDate();
     const [isShabbatMenu, setIsShabbatMenu] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout>();
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
@@ -146,7 +147,17 @@ const Nutrition = () => {
     // Reset change flag when date changes so we can load fresh data for the new date
     useEffect(() => {
         userMadeChangeRef.current = false;
+        setLastSavedAt(null);
     }, [selectedDate]);
+
+    useEffect(() => {
+        if (lastSavedAt) {
+            const timeout = setTimeout(() => {
+                setLastSavedAt(null);
+            }, 3000);
+            return () => clearTimeout(timeout);
+        }
+    }, [lastSavedAt]);
 
     // Load data when date changes or data is fetched
     useEffect(() => {
@@ -297,6 +308,7 @@ const Nutrition = () => {
             // Update React Query cache immediately with fresh data
             const freshLogs = await NutritionLog.filter({ date: selectedDate });
             queryClient.setQueryData(['nutrition-logs', selectedDate], freshLogs || []);
+            setLastSavedAt(Date.now());
         } catch (error) {
             console.error('Error auto-saving nutrition:', error);
         } finally {
@@ -311,7 +323,7 @@ const Nutrition = () => {
 
         saveTimeoutRef.current = setTimeout(() => {
             autoSave();
-        }, 1000);
+        }, 300);
 
         return () => {
             if (saveTimeoutRef.current) {
@@ -464,9 +476,14 @@ const Nutrition = () => {
                     <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">תפריט תזונה</h1>
                     <div className="flex items-center justify-between">
                         <p className="text-sm sm:text-base text-muted-foreground">סמן מה אכלת</p>
-                        {saving && (
-                            <p className="text-xs text-oxygym-yellow">שומר אוטומטית...</p>
-                        )}
+                        {saving ? (
+                            <p className="text-xs text-oxygym-yellow animate-pulse">שומר אוטומטית...</p>
+                        ) : lastSavedAt ? (
+                            <div className="flex items-center gap-1 text-xs text-green-400 animate-in fade-in slide-in-from-top-1">
+                                <Check className="w-3 h-3" />
+                                <span>נשמר אוטומטית</span>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SetRow } from './SetRow';
 import { useTimer } from '@/contexts/TimerContext';
 import { Input } from '@/components/ui/input';
@@ -18,31 +18,57 @@ interface SetData {
 }
 
 export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, onDataChange }: ExerciseRowProps) => {
+    const hasLoadedInitialData = useRef(false);
     const [setData, setSetData] = useState<SetData[]>(
         Array(sets).fill(null).map(() => ({ completed: false }))
     );
     const [weight, setWeight] = useState<number>(0);
     const { startTimer } = useTimer();
+    const lastPayloadRef = useRef<string>('');
 
     const isAbsExercise = name.toLowerCase().includes('בטן');
 
     useEffect(() => {
-        if (initialData) {
-            console.log('Loading initial data for', name, initialData);
-            if (initialData.sets) {
-                setSetData(initialData.sets);
-            }
-            if (!isAbsExercise && initialData.weight) {
-                setWeight(initialData.weight);
-            }
+        if (!initialData) {
+            hasLoadedInitialData.current = false;
+            return;
         }
-    }, [initialData, name, isAbsExercise]);
+
+        if (hasLoadedInitialData.current) return;
+
+        console.log('Loading initial data for', name, initialData);
+        if (initialData.sets) {
+            setSetData(initialData.sets as SetData[]);
+        } else {
+            setSetData(Array(sets).fill(null).map(() => ({ completed: false })));
+        }
+        
+        if (!isAbsExercise && typeof initialData.weight === 'number') {
+            setWeight(initialData.weight);
+        }
+
+        hasLoadedInitialData.current = true;
+    }, [initialData, name, isAbsExercise, sets]);
 
     useEffect(() => {
-        if (onDataChange) {
-            onDataChange({ sets: setData, weight: isAbsExercise ? 0 : weight, name });
+        if (!onDataChange) return;
+
+        const payload = { 
+            sets: setData, 
+            weight: isAbsExercise ? 0 : weight, 
+            name 
+        };
+        
+        // Use JSON stringification for a simple deep equality check
+        const payloadString = JSON.stringify(payload);
+        
+        if (payloadString === lastPayloadRef.current) {
+            return;
         }
-    }, [setData, weight, name, onDataChange, isAbsExercise]);
+
+        lastPayloadRef.current = payloadString;
+        onDataChange(payload);
+    }, [setData, weight, name, isAbsExercise, onDataChange]);
 
     const handleWeightChange = (newWeight: number) => {
         setWeight(newWeight);
@@ -78,9 +104,11 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
                     <div className="flex items-center gap-2 mt-2">
                         <span className="text-sm text-muted-foreground">משקל:</span>
                         <Input
-                            type="number"
+                            type="tel"
+                            inputMode="decimal"
                             value={weight || ''}
                             onChange={(e) => handleWeightChange(Number(e.target.value))}
+                            onWheel={(e) => e.currentTarget.blur()}
                             placeholder="0"
                             className="bg-black border-border text-white w-24 h-9"
                         />
