@@ -8,6 +8,7 @@ import { StatsCard } from '@/components/StatsCard';
 import { WeightChart } from '@/components/WeightChart';
 import { CalorieChart } from '@/components/CalorieChart';
 import { WeightDialog } from '@/components/WeightDialog';
+import { WeighInReminder } from '@/components/WeighInReminder';
 import { SleepTracker } from '@/components/SleepTracker';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
@@ -332,6 +333,10 @@ const Index = () => {
                 
                 <div className="mb-6">
                     <WeightDialog />
+                </div>
+
+                <div className="mb-4">
+                    <WeighInReminder />
                 </div>
 
                 <div className="mb-6">
