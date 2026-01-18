@@ -3,23 +3,16 @@ import { WorkoutCard } from '@/components/WorkoutCard';
 import { WorkoutLog } from '@/entities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2 } from 'lucide-react';
+import { getStartOfWeek, getTodayString } from '@/lib/date-utils';
 
 const Workouts = () => {
-    const getStartOfWeek = () => {
-        const now = new Date();
-        const dayOfWeek = now.getDay();
-        const diff = dayOfWeek === 0 ? 0 : dayOfWeek;
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - diff);
-        startOfWeek.setHours(0, 0, 0, 0);
-        return startOfWeek.toISOString().split('T')[0];
-    };
-
+    // Use shared date utilities (same as Index.tsx for cache sharing)
     const startOfWeek = getStartOfWeek();
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
 
+    // Use same query key as Index.tsx to share cache
     const { data: weekWorkouts } = useQuery({
-        queryKey: ['workouts-week-summary', startOfWeek],
+        queryKey: ['week-workouts', startOfWeek],
         queryFn: async () => {
             try {
                 return await WorkoutLog.query()
