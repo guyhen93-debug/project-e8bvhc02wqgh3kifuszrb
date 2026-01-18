@@ -13,8 +13,7 @@ import { DateSelector } from '@/components/DateSelector';
 import { WorkoutLog, NutritionLog, WaterLog } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
 import { useMemo } from 'react';
-import { normalizeNutritionLogs, calculateDailyTotals } from '@/lib/nutrition-utils';
-import { getStartOfWeek, getTodayString } from '@/lib/date-utils';
+import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
 import { scheduleNtfyReminder } from '@/functions';
 import { toast } from 'sonner';
 
@@ -163,9 +162,18 @@ const Index = () => {
         }
     };
 
-    // Use shared date utilities
+    const getStartOfWeek = () => {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const diff = dayOfWeek === 0 ? 0 : dayOfWeek;
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - diff);
+        startOfWeek.setHours(0, 0, 0, 0);
+        return startOfWeek.toISOString().split('T')[0];
+    };
+
     const startOfWeek = getStartOfWeek();
-    const today = getTodayString();
+    const today = new Date().toISOString().split('T')[0];
 
     const { data: weekWorkouts } = useQuery({
         queryKey: ['week-workouts', startOfWeek],
@@ -196,11 +204,7 @@ const Index = () => {
         },
     });
 
-    // Get all normalized nutrition logs (from ALL menu types - weekday + shabbat)
     const normalizedNutrition = useMemo(() => normalizeNutritionLogs(selectedDateNutrition || []), [selectedDateNutrition]);
-
-    // Calculate daily totals - sums ALL meals regardless of which template they came from
-    const dailyTotals = useMemo(() => calculateDailyTotals(selectedDateNutrition || []), [selectedDateNutrition]);
 
     const { data: waterLogSummary } = useQuery({
         queryKey: ['water-log-summary', selectedDate],
@@ -215,11 +219,10 @@ const Index = () => {
         },
     });
 
-    // Use calculated daily totals (includes ALL meals from both templates)
-    const totalCalories = dailyTotals.calories;
-    const totalProtein = dailyTotals.protein;
-    const totalCarbs = dailyTotals.carbs;
-    const totalFat = dailyTotals.fat;
+    const totalCalories = normalizedNutrition?.reduce((sum, log) => sum + (log.total_calories || 0), 0) || 0;
+    const totalProtein = normalizedNutrition?.reduce((sum, log) => sum + (log.protein || 0), 0) || 0;
+    const totalCarbs = normalizedNutrition?.reduce((sum, log) => sum + (log.carbs || 0), 0) || 0;
+    const totalFat = normalizedNutrition?.reduce((sum, log) => sum + (log.fat || 0), 0) || 0;
 
     const completedWorkouts = weekWorkouts?.filter(w => w.completed).length || 0;
     const mealsToday = normalizedNutrition?.length || 0;

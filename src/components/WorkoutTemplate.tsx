@@ -63,7 +63,6 @@ export const WorkoutTemplate = ({
     const cardioMinutesRef = useRef(0);
     const hasLoadedDraftRef = useRef(false);
     const needsServerSyncRef = useRef(false);
-    const existingLogIdRef = useRef<string | null>(null); // Cache log ID to avoid filter query on save
 
     const initializedDateRef = useRef<string | null>(null);
 
@@ -111,7 +110,6 @@ export const WorkoutTemplate = ({
         console.log('Date changed to:', selectedDate);
         isInitialLoadRef.current = true;
         userMadeChangeRef.current = false;
-        existingLogIdRef.current = null; // Reset cached log ID for new date
         setExerciseData({});
         exerciseDataRef.current = {};
         setCardioMinutes(0);
@@ -142,9 +140,6 @@ export const WorkoutTemplate = ({
         }
         
         if (workoutData) {
-            // Cache the existing log ID to avoid filter queries on save
-            existingLogIdRef.current = workoutData.id;
-
             const loadedData: any = {};
             if (workoutData.exercises_completed) {
                 workoutData.exercises_completed.forEach((ex: any) => {
@@ -215,10 +210,15 @@ export const WorkoutTemplate = ({
             setSaving(true);
 
             // Calculate completed status based on the currentExerciseData we have
-            const completed = hasExercises && Object.values(currentExerciseData).length === exercises.length &&
-                Object.values(currentExerciseData).every((data: any) =>
+            const completed = hasExercises && Object.values(currentExerciseData).length === exercises.length && 
+                Object.values(currentExerciseData).every((data: any) => 
                     data.sets && data.sets.every((set: any) => set.completed)
                 );
+            
+            const existingLogs = await WorkoutLog.filter({ 
+                date: selectedDate, 
+                workout_type: workoutType 
+            });
 
             // Build full exercise list from templates to ensure denominator is correct
             const exercises_completed = exercises.map((exercise) => {
@@ -237,54 +237,26 @@ export const WorkoutTemplate = ({
             });
 
             let savedLog;
-
-            // Use cached log ID to avoid filter query (optimization)
-            if (existingLogIdRef.current) {
-                // Direct update without querying first
-                const updatedLog = await WorkoutLog.update(existingLogIdRef.current, {
+            if (existingLogs.length > 0) {
+                const updatedLog = await WorkoutLog.update(existingLogs[0].id, {
                     exercises_completed,
                     completed: completed,
                     duration_minutes: currentCardioMinutes,
                 });
-                savedLog = updatedLog ?? {
-                    id: existingLogIdRef.current,
+                savedLog = updatedLog ?? { 
+                    ...existingLogs[0], 
+                    exercises_completed, 
+                    completed, 
+                    duration_minutes: currentCardioMinutes 
+                };
+            } else {
+                savedLog = await WorkoutLog.create({
                     date: selectedDate,
                     workout_type: workoutType,
                     exercises_completed,
-                    completed,
-                    duration_minutes: currentCardioMinutes
-                };
-            } else {
-                // First save for this date - need to check if record exists
-                const existingLogs = await WorkoutLog.filter({
-                    date: selectedDate,
-                    workout_type: workoutType
+                    completed: completed,
+                    duration_minutes: currentCardioMinutes,
                 });
-
-                if (existingLogs.length > 0) {
-                    existingLogIdRef.current = existingLogs[0].id;
-                    const updatedLog = await WorkoutLog.update(existingLogs[0].id, {
-                        exercises_completed,
-                        completed: completed,
-                        duration_minutes: currentCardioMinutes,
-                    });
-                    savedLog = updatedLog ?? {
-                        ...existingLogs[0],
-                        exercises_completed,
-                        completed,
-                        duration_minutes: currentCardioMinutes
-                    };
-                } else {
-                    savedLog = await WorkoutLog.create({
-                        date: selectedDate,
-                        workout_type: workoutType,
-                        exercises_completed,
-                        completed: completed,
-                        duration_minutes: currentCardioMinutes,
-                    });
-                    // Cache the new log ID for future saves
-                    existingLogIdRef.current = savedLog.id;
-                }
             }
 
             // Update React Query cache immediately

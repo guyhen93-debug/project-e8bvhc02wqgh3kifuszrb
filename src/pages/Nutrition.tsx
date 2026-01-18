@@ -943,57 +943,6 @@ const Nutrition = () => {
                         </Card>
                     </>
                 )}
-
-                {/* Daily Summary Card - shows totals from ALL meals (both templates) */}
-                <Card className="bg-gradient-to-r from-oxygym-darkGrey to-oxygym-darkGrey/80 border-2 border-oxygym-yellow mb-6">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-lg sm:text-xl text-white flex items-center gap-2">
-                            <Flame className="w-5 h-5 text-oxygym-yellow" />
-                            סיכום יומי
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-2">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="text-center p-3 bg-black/20 rounded-lg">
-                                <p className="text-muted-foreground text-xs mb-1">קלוריות</p>
-                                <p className="text-2xl sm:text-3xl text-white font-bold">
-                                    {totals.calories.toFixed(0)}
-                                </p>
-                                <p className="text-xs text-muted-foreground">/ 2410</p>
-                                <div className="mt-2 h-2 bg-gray-700 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-oxygym-yellow transition-all duration-300"
-                                        style={{ width: `${Math.min((totals.calories / 2410) * 100, 100)}%` }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="text-center p-3 bg-black/20 rounded-lg">
-                                <p className="text-muted-foreground text-xs mb-1">חלבון</p>
-                                <p className="text-2xl sm:text-3xl text-white font-bold">
-                                    {totals.protein.toFixed(0)}
-                                    <span className="text-sm">ג׳</span>
-                                </p>
-                                <p className="text-xs text-muted-foreground">/ 145ג׳</p>
-                                <div className="mt-2 h-2 bg-gray-700 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-green-500 transition-all duration-300"
-                                        style={{ width: `${Math.min((totals.protein / 145) * 100, 100)}%` }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 mt-3">
-                            <div className="text-center p-2 bg-black/10 rounded">
-                                <p className="text-xs text-muted-foreground">פחמימות</p>
-                                <p className="text-lg text-white font-semibold">{totals.carbs.toFixed(0)}ג׳</p>
-                            </div>
-                            <div className="text-center p-2 bg-black/10 rounded">
-                                <p className="text-xs text-muted-foreground">שומן</p>
-                                <p className="text-lg text-white font-semibold">{totals.fat.toFixed(0)}ג׳</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
             </div>
         </div>
     );
