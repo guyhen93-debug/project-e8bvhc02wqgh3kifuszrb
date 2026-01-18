@@ -152,6 +152,24 @@ const Calendar = () => {
         
         const totalCardioMinutes = workouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0);
         
+        const totalCalories = meals.reduce((sum, m) => sum + (m.total_calories || 0), 0);
+        const totalProtein = meals.reduce((sum, m) => sum + (m.protein || 0), 0);
+        const hasWorkoutCompleted = workouts.some(w => w.completed);
+        
+        const nutritionCaloriesRatio = DAILY_CALORIE_TARGET > 0 ? totalCalories / DAILY_CALORIE_TARGET : 0;
+        const nutritionGood = totalCalories > 0 && nutritionCaloriesRatio >= 0.85 && nutritionCaloriesRatio <= 1.15 && totalProtein >= DAILY_PROTEIN_TARGET * 0.8;
+        const cardioGood = totalCardioMinutes >= DAILY_CARDIO_TARGET_MIN;
+        const workoutGood = hasWorkoutCompleted || cardioGood;
+        const waterGood = waterGlasses >= DAILY_WATER_TARGET_GLASSES;
+        const sleepGood = sleepHours >= SLEEP_TARGET_MIN && sleepHours <= SLEEP_TARGET_MAX;
+        
+        const goodFactors = [workoutGood, nutritionGood, waterGood, sleepGood].filter(Boolean).length;
+        
+        let dayQuality: 'none' | 'ok' | 'good' | 'great' = 'none';
+        if (goodFactors >= 3) dayQuality = 'great';
+        else if (goodFactors === 2) dayQuality = 'good';
+        else if (goodFactors === 1) dayQuality = 'ok';
+        
         return {
             workouts,
             meals,
@@ -162,6 +180,14 @@ const Calendar = () => {
             waterGlasses,
             sleepHours,
             cardioMinutes: totalCardioMinutes,
+            totalCalories,
+            totalProtein,
+            hasWorkoutCompleted,
+            nutritionGood,
+            waterGood,
+            sleepGood,
+            cardioGood,
+            dayQuality,
         };
     };
 
@@ -186,21 +212,41 @@ const Calendar = () => {
                           selectedDate?.getMonth() === month && 
                           selectedDate?.getFullYear() === year;
 
+        const dayData = getDayData(day);
+        const dayQuality = dayData.dayQuality;
+        const hasWorkout = dayData.hasWorkout;
+        const hasMeals = dayData.mealsCount > 0;
+        const hasWater = dayData.waterGlasses > 0;
+        const hasSleep = dayData.sleepHours > 0;
+
+        let qualityClasses = 'border-border';
+        if (!isSelected && !isToday) {
+            if (dayQuality === 'great') qualityClasses = 'border-green-400 bg-green-500/10';
+            else if (dayQuality === 'good') qualityClasses = 'border-oxygym-yellow bg-oxygym-yellow/5';
+            else if (dayQuality === 'ok') qualityClasses = 'border-blue-400/70';
+        }
+
         days.push(
             <Card 
                 key={day} 
                 className={`aspect-square cursor-pointer hover:border-oxygym-yellow transition-all ${
                     isSelected ? 'border-oxygym-yellow border-2 bg-oxygym-yellow/10' : 
-                    isToday ? 'border-oxygym-yellow border-2' : 'border-border'
-                } bg-oxygym-darkGrey`}
+                    isToday ? 'border-oxygym-yellow border-2' : qualityClasses
+                } bg-oxygym-darkGrey overflow-hidden`}
                 onClick={() => handleDayClick(day)}
             >
-                <CardContent className="p-2 h-full flex items-center justify-center">
+                <CardContent className="p-1 h-full flex flex-col items-center justify-center relative">
                     <span className={`text-lg font-semibold ${
                         isSelected || isToday ? 'text-oxygym-yellow' : 'text-white'
                     }`}>
                         {day}
                     </span>
+                    <div className="absolute bottom-1 inset-x-0 flex justify-center gap-0.5">
+                        {hasWorkout && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-green-400" />}
+                        {hasMeals && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-oxygym-yellow" />}
+                        {hasWater && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-blue-400" />}
+                        {hasSleep && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-purple-400" />}
+                    </div>
                 </CardContent>
             </Card>
         );
@@ -210,8 +256,8 @@ const Calendar = () => {
         ? getDayData(selectedDate.getDate())
         : null;
 
-    const totalCalories = selectedDayData?.meals.reduce((sum, m) => sum + (m.total_calories || 0), 0) || 0;
-    const totalProtein = selectedDayData?.meals.reduce((sum, m) => sum + (m.protein || 0), 0) || 0;
+    const totalCalories = selectedDayData?.totalCalories || 0;
+    const totalProtein = selectedDayData?.totalProtein || 0;
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-20">
@@ -253,6 +299,30 @@ const Calendar = () => {
 
                         <div className="grid grid-cols-7 gap-1">
                             {days}
+                        </div>
+
+                        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] sm:text-xs text-muted-foreground border-t border-border/30 pt-4">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-green-400" />
+                                <span>אימון</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-oxygym-yellow" />
+                                <span>תזונה</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-blue-400" />
+                                <span>מים</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-purple-400" />
+                                <span>שינה</span>
+                            </div>
+                            <div className="w-full h-0 sm:hidden" /> {/* Divider for mobile */}
+                            <div className="flex items-center gap-2 mr-auto sm:mr-0">
+                                <div className="px-1.5 py-0.5 rounded border border-green-400 bg-green-500/10 text-green-400 scale-90">מעולה</div>
+                                <div className="px-1.5 py-0.5 rounded border border-oxygym-yellow bg-oxygym-yellow/5 text-oxygym-yellow scale-90">טוב</div>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
