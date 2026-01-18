@@ -1,67 +1,84 @@
+/**
+ * Nutrition utility functions for OXYGYM Tracker.
+ *
+ * Domain Model:
+ * - One daily calorie target (e.g., 2410 calories)
+ * - Multiple meal templates (weekday, shabbat) - these are PRESETS only
+ * - User can mix meals from ANY template
+ * - Daily total = sum of ALL selected meals regardless of template
+ */
+
+export interface NutritionTotals {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+}
 
 /**
  * Normalizes NutritionLog records for a specific day.
- * 
+ *
  * 1. De-duplicates logs by (menu_type, meal_number), keeping only the latest version.
- * 2. Groups logs by menu_type (defaulting to 'weekday').
- * 3. Chooses the menu_type with the highest total calorie sum as the "active" menu for that day.
- * 4. Returns only the logs from that active menu type, sorted by meal_number.
- * 
- * This is used for aggregations and UI display to prevent inflated totals from duplicate or stale records.
+ * 2. Returns ALL logs from ALL menu types (since they're just presets, not exclusive).
+ *
+ * This allows users to mix meals from different templates while preventing
+ * duplicate entries for the same meal slot.
  */
 export const normalizeNutritionLogs = (logs: any[]): any[] => {
-    if (!logs || logs.length === 0) return [];
+    if (!logs?.length) return [];
 
-    // 1. De-duplicate: Keep latest updated_at for each (menu_type, meal_number)
     const deDuplicatedMap = new Map<string, any>();
 
-    logs.forEach(log => {
+    for (const log of logs) {
         const menuType = log.menu_type || 'weekday';
         const mealNumber = log.meal_number;
         const key = `${menuType}-${mealNumber}`;
 
         const existing = deDuplicatedMap.get(key);
+
         if (!existing) {
             deDuplicatedMap.set(key, log);
         } else {
-            // Keep the one with the later update time
-            const existingDate = new Date(existing.updated_at || existing.created_at || 0).getTime();
-            const currentDate = new Date(log.updated_at || log.created_at || 0).getTime();
-            
-            if (currentDate > existingDate) {
+            // Compare ISO strings directly (lexicographic comparison works for ISO format)
+            const existingTime = existing.updated_at || existing.created_at || '';
+            const currentTime = log.updated_at || log.created_at || '';
+
+            if (currentTime > existingTime) {
                 deDuplicatedMap.set(key, log);
             }
         }
-    });
+    }
 
-    const uniqueLogs = Array.from(deDuplicatedMap.values());
-
-    // 2. Group by menu_type and calculate calorie sums
-    const groups = new Map<string, { logs: any[], totalCalories: number }>();
-
-    uniqueLogs.forEach(log => {
-        const menuType = log.menu_type || 'weekday';
-        if (!groups.has(menuType)) {
-            groups.set(menuType, { logs: [], totalCalories: 0 });
-        }
-        
-        const group = groups.get(menuType)!;
-        group.logs.push(log);
-        group.totalCalories += (log.total_calories || 0);
-    });
-
-    // 3. Find active menu_type (the one with the highest calorie sum)
-    let activeMenuType = 'weekday';
-    let maxCalories = -1;
-
-    groups.forEach((data, menuType) => {
-        if (data.totalCalories > maxCalories) {
-            maxCalories = data.totalCalories;
-            activeMenuType = menuType;
-        }
-    });
-
-    // 4. Return logs from the active menu type, sorted by meal_number
-    return (groups.get(activeMenuType)?.logs || [])
+    // Return ALL logs from all menu types, sorted by meal_number
+    return Array.from(deDuplicatedMap.values())
         .sort((a, b) => (a.meal_number || 0) - (b.meal_number || 0));
+};
+
+/**
+ * Calculate daily nutrition totals from all consumed meals.
+ *
+ * One daily target, multiple meal templates, one total sum.
+ * This sums ALL meals regardless of which template they came from.
+ */
+export const calculateDailyTotals = (logs: any[]): NutritionTotals => {
+    const normalized = normalizeNutritionLogs(logs);
+
+    return normalized.reduce(
+        (acc, log) => ({
+            calories: acc.calories + (log.total_calories || 0),
+            protein: acc.protein + (log.protein || 0),
+            carbs: acc.carbs + (log.carbs || 0),
+            fat: acc.fat + (log.fat || 0),
+        }),
+        { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+};
+
+/**
+ * Get logs filtered by menu type (for UI display purposes).
+ * Use this when you need to show only one template's meals.
+ */
+export const getLogsByMenuType = (logs: any[], menuType: 'weekday' | 'shabbat'): any[] => {
+    const normalized = normalizeNutritionLogs(logs);
+    return normalized.filter(log => (log.menu_type || 'weekday') === menuType);
 };
