@@ -4,17 +4,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Dumbbell, Utensils, Scale, Calendar as CalendarIcon, Droplet, Moon, Heart, ExternalLink } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { WorkoutLog, NutritionLog, WeightLog, WaterLog, SleepLog } from '@/entities';
+import { WorkoutLog, NutritionLog, WeightLog, WaterLog, SleepLog, UserProfile } from '@/entities';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useDate } from '@/contexts/DateContext';
 import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
 
-// יעדים יומיים
-const DAILY_CALORIE_TARGET = 2410;
-const DAILY_PROTEIN_TARGET = 145;
+// יעדים יומיים ברירת מחדל
+const DEFAULT_DAILY_CALORIE_TARGET = 2410;
+const DEFAULT_DAILY_PROTEIN_TARGET = 145;
 const DAILY_CARDIO_TARGET_MIN = 20;
-const DAILY_WATER_TARGET_GLASSES = 12;
+const DEFAULT_DAILY_WATER_TARGET_GLASSES = 12;
 const SLEEP_TARGET_MIN = 7;
 const SLEEP_TARGET_MAX = 9;
 
@@ -30,6 +30,25 @@ const Calendar = () => {
     const { setSelectedDate: setGlobalDate } = useDate();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+    const { data: userProfile } = useQuery({
+        queryKey: ['user-profile-calendar'],
+        queryFn: async () => {
+            try {
+                const profiles = await UserProfile.list();
+                return profiles?.[0] ?? null;
+            } catch (error) {
+                console.error('Error fetching user profile for calendar:', error);
+                return null;
+            }
+        },
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+    });
+
+    const dailyCalorieTarget = userProfile?.daily_calorie_target ?? DEFAULT_DAILY_CALORIE_TARGET;
+    const dailyProteinTarget = userProfile?.daily_protein_target ?? DEFAULT_DAILY_PROTEIN_TARGET;
+    const dailyWaterTargetGlasses = userProfile?.daily_water_target_glasses ?? DEFAULT_DAILY_WATER_TARGET_GLASSES;
 
     const { data: workoutLogs } = useQuery({
         queryKey: ['workout-logs-calendar'],
@@ -156,11 +175,11 @@ const Calendar = () => {
         const totalProtein = meals.reduce((sum, m) => sum + (m.protein || 0), 0);
         const hasWorkoutCompleted = workouts.some(w => w.completed);
         
-        const nutritionCaloriesRatio = DAILY_CALORIE_TARGET > 0 ? totalCalories / DAILY_CALORIE_TARGET : 0;
-        const nutritionGood = totalCalories > 0 && nutritionCaloriesRatio >= 0.85 && nutritionCaloriesRatio <= 1.15 && totalProtein >= DAILY_PROTEIN_TARGET * 0.8;
+        const nutritionCaloriesRatio = dailyCalorieTarget > 0 ? totalCalories / dailyCalorieTarget : 0;
+        const nutritionGood = totalCalories > 0 && nutritionCaloriesRatio >= 0.85 && nutritionCaloriesRatio <= 1.15 && totalProtein >= dailyProteinTarget * 0.8;
         const cardioGood = totalCardioMinutes >= DAILY_CARDIO_TARGET_MIN;
         const workoutGood = hasWorkoutCompleted || cardioGood;
-        const waterGood = waterGlasses >= DAILY_WATER_TARGET_GLASSES;
+        const waterGood = waterGlasses >= dailyWaterTargetGlasses;
         const sleepGood = sleepHours >= SLEEP_TARGET_MIN && sleepHours <= SLEEP_TARGET_MAX;
         
         const goodFactors = [workoutGood, nutritionGood, waterGood, sleepGood].filter(Boolean).length;
@@ -399,10 +418,10 @@ const Calendar = () => {
                                         <div className="space-y-1 mt-2">
                                             <p className="text-xs text-muted-foreground">סה"כ היום:</p>
                                             <p className="text-sm text-muted-foreground">
-                                                קלוריות: {Math.round(totalCalories)} / {DAILY_CALORIE_TARGET} (כ-{Math.round((totalCalories / DAILY_CALORIE_TARGET) * 100) || 0}%)
+                                                קלוריות: {Math.round(totalCalories)} / {dailyCalorieTarget} (כ-{Math.round((totalCalories / dailyCalorieTarget) * 100) || 0}%)
                                             </p>
                                             <p className="text-sm text-muted-foreground">
-                                                חלבון: {Math.round(totalProtein)}g / {DAILY_PROTEIN_TARGET}g
+                                                חלבון: {Math.round(totalProtein)}g / {dailyProteinTarget}g
                                             </p>
                                             <p className="text-[11px] text-muted-foreground mt-2 opacity-70">
                                                 המטרה היא להתקרב ליעד, לא להיות מושלם
@@ -418,12 +437,12 @@ const Calendar = () => {
                                             <h4 className="text-white font-semibold">שתיית מים</h4>
                                         </div>
                                         <p className="text-2xl text-white font-bold">
-                                            {selectedDayData.waterGlasses} / {DAILY_WATER_TARGET_GLASSES} <span className="text-lg">כוסות</span>
+                                            {selectedDayData.waterGlasses} / {dailyWaterTargetGlasses} <span className="text-lg">כוסות</span>
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            ({(selectedDayData.waterGlasses * 0.25).toFixed(1)} ליטר מתוך {(DAILY_WATER_TARGET_GLASSES * 0.25).toFixed(1)} ליטר)
+                                            ({(selectedDayData.waterGlasses * 0.25).toFixed(1)} ליטר מתוך {(dailyWaterTargetGlasses * 0.25).toFixed(1)} ליטר)
                                         </p>
-                                        {selectedDayData.waterGlasses >= DAILY_WATER_TARGET_GLASSES && (
+                                        {selectedDayData.waterGlasses >= dailyWaterTargetGlasses && (
                                             <p className="text-xs text-green-400 mt-1">✓ יעד יומי הושג</p>
                                         )}
                                     </div>
