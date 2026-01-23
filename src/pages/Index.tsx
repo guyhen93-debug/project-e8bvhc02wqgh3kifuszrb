@@ -12,7 +12,7 @@ import { WeighInReminder } from '@/components/WeighInReminder';
 import { SleepTracker } from '@/components/SleepTracker';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { WorkoutLog, NutritionLog, WaterLog } from '@/entities';
+import { WorkoutLog, NutritionLog, WaterLog, UserProfile } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
 import { useMemo } from 'react';
 import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
@@ -21,9 +21,9 @@ import { toast } from 'sonner';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Settings } from 'lucide-react';
 
-const DAILY_CALORIE_TARGET = 2410;
-const DAILY_PROTEIN_TARGET = 145;
-const DAILY_WATER_TARGET_GLASSES = 12;
+const DEFAULT_DAILY_CALORIE_TARGET = 2410;
+const DEFAULT_DAILY_PROTEIN_TARGET = 145;
+const DEFAULT_DAILY_WATER_TARGET_GLASSES = 12;
 const LAST_SYNC_KEY = 'oxygym_last_sync_date';
 
 const Index = () => {
@@ -34,6 +34,19 @@ const Index = () => {
     const [lastSyncDate, setLastSyncDate] = useState<string | null>(null);
     const [isSyncedToday, setIsSyncedToday] = useState(false);
     const { settings } = useNotifications();
+
+    const { data: userProfile } = useQuery({
+        queryKey: ['user-profile'],
+        queryFn: async () => {
+            const profiles = await UserProfile.list();
+            return profiles?.[0] || null;
+        }
+    });
+
+    const dailyCalorieTarget = userProfile?.daily_calorie_target ?? DEFAULT_DAILY_CALORIE_TARGET;
+    const dailyProteinTarget = userProfile?.daily_protein_target ?? DEFAULT_DAILY_PROTEIN_TARGET;
+    const dailyWaterTargetGlasses = userProfile?.daily_water_target_glasses ?? DEFAULT_DAILY_WATER_TARGET_GLASSES;
+    const weeklyWorkoutTarget = userProfile?.weekly_workout_target ?? 3;
 
     const getDelaySecondsForToday = (hours: number, minutes: number) => {
         const now = new Date();
@@ -238,8 +251,8 @@ const Index = () => {
     const mealsToday = normalizedNutrition?.length || 0;
     const waterGlasses = waterLogSummary?.glasses || 0;
 
-    const caloriePercent = Math.round((totalCalories / DAILY_CALORIE_TARGET) * 100);
-    const proteinPercent = Math.round((totalProtein / DAILY_PROTEIN_TARGET) * 100);
+    const caloriePercent = Math.round((totalCalories / dailyCalorieTarget) * 100);
+    const proteinPercent = Math.round((totalProtein / dailyProteinTarget) * 100);
 
     return (
         <div className="min-h-screen bg-oxygym-dark pb-20">
@@ -326,7 +339,7 @@ const Index = () => {
                             <span className="text-oxygym-yellow">{mealsToday}/4</span> ארוחות ·{' '}
                             <span className="text-oxygym-yellow">{caloriePercent}%</span> קלוריות ·{' '}
                             <span className="text-oxygym-yellow">{proteinPercent}%</span> חלבון ·{' '}
-                            <span className="text-oxygym-yellow">{waterGlasses}/{DAILY_WATER_TARGET_GLASSES}</span> כוסות מים
+                            <span className="text-oxygym-yellow">{waterGlasses}/{dailyWaterTargetGlasses}</span> כוסות מים
                         </p>
                     </CardContent>
                 </Card>
@@ -402,7 +415,7 @@ const Index = () => {
                     <StatsCard
                         icon={Dumbbell}
                         title="אימונים השבוע"
-                        value={`${completedWorkouts}/3`}
+                        value={`${completedWorkouts}/${weeklyWorkoutTarget}`}
                         subtitle="יעד שבועי"
                         color="text-blue-400"
                     />
@@ -416,14 +429,14 @@ const Index = () => {
                         icon={Flame}
                         title={isToday ? "קלוריות היום" : "קלוריות"}
                         value={`${Math.round(totalCalories)}`}
-                        subtitle="מתוך 2,410"
+                        subtitle={`מתוך ${dailyCalorieTarget.toLocaleString()}`}
                         color="text-oxygym-yellow"
                     />
                     <StatsCard
                         icon={Egg}
                         title={isToday ? "חלבון היום" : "חלבון"}
                         value={`${Math.round(totalProtein)}g`}
-                        subtitle="מתוך 145g"
+                        subtitle={`מתוך ${dailyProteinTarget}g`}
                         color="text-purple-400"
                     />
                 </div>

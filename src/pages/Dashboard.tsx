@@ -19,11 +19,23 @@ import { WeeklyReportInsights } from '@/components/dashboard/WeeklyReportInsight
 import { MonthlyProgressCard } from '@/components/dashboard/MonthlyProgressCard';
 import { generateWeeklyReport, analyzeProgress } from '@/functions';
 
-const DAILY_CALORIE_TARGET = 2410;
-const DAILY_PROTEIN_TARGET = 145;
-const WORKOUT_TARGET = 3;
+const DEFAULT_DAILY_CALORIE_TARGET = 2410;
+const DEFAULT_DAILY_PROTEIN_TARGET = 145;
+const DEFAULT_WORKOUT_TARGET = 3;
 
 const Dashboard = () => {
+    const { data: userProfile } = useQuery({
+        queryKey: ['user-profile'],
+        queryFn: async () => {
+            const profiles = await UserProfile.list();
+            return profiles?.[0] || null;
+        }
+    });
+
+    const dailyCalorieTarget = userProfile?.daily_calorie_target ?? DEFAULT_DAILY_CALORIE_TARGET;
+    const dailyProteinTarget = userProfile?.daily_protein_target ?? DEFAULT_DAILY_PROTEIN_TARGET;
+    const workoutTarget = userProfile?.weekly_workout_target ?? DEFAULT_WORKOUT_TARGET;
+
     const startOfWeekStr = useMemo(() => getStartOfWeek(), []);
     const endOfWeekDate = new Date(startOfWeekStr);
     endOfWeekDate.setDate(endOfWeekDate.getDate() + 6);
@@ -63,7 +75,7 @@ const Dashboard = () => {
                     nutritionData: normalizeNutritionLogs(monthlyRawData.nutrition30),
                     weightData: monthlyRawData.weights30,
                     userGoal,
-                    targetCalories: DAILY_CALORIE_TARGET,
+                    targetCalories: dailyCalorieTarget,
                 });
             } catch (error) {
                 console.error('Error analyzing 30-day progress:', error);
@@ -131,7 +143,7 @@ const Dashboard = () => {
             // Sleep
             const daySleep = logs.sleep.find(l => l.date === dateStr)?.hours || 0;
 
-            const diffPercent = Math.abs(dayCals - DAILY_CALORIE_TARGET) / DAILY_CALORIE_TARGET;
+            const diffPercent = Math.abs(dayCals - dailyCalorieTarget) / dailyCalorieTarget;
             let dayStatus: 'green' | 'yellow' | 'red' = 'red';
             
             if (dayCals > 0) {
@@ -150,7 +162,7 @@ const Dashboard = () => {
                 date: dateStr,
                 label: dayLabels[i],
                 calories: dayCals,
-                calorieTarget: DAILY_CALORIE_TARGET,
+                calorieTarget: dailyCalorieTarget,
                 workouts: dayWorkouts,
                 waterGlasses: dayWater,
                 sleepHours: daySleep,
@@ -180,7 +192,7 @@ const Dashboard = () => {
             weightDelta = (latest - previous).toFixed(1);
         }
 
-        const completionScore = (totalWorkouts / WORKOUT_TARGET) * 0.5 + (avgCals / DAILY_CALORIE_TARGET) * 0.5;
+        const completionScore = (totalWorkouts / workoutTarget) * 0.5 + (avgCals / dailyCalorieTarget) * 0.5;
         let completionLevel: 'low' | 'medium' | 'high' = 'low';
         let statusColor: 'green' | 'yellow' | 'red' = 'red';
 
@@ -217,7 +229,7 @@ const Dashboard = () => {
                     workouts: logs.workouts,
                     nutrition: normalizeNutritionLogs(logs.nutrition),
                     weights: logs.weights,
-                    targetCalories: DAILY_CALORIE_TARGET
+                    targetCalories: dailyCalorieTarget
                 });
             } catch (error) {
                 console.error('Error generating weekly report:', error);
@@ -243,7 +255,7 @@ const Dashboard = () => {
                 <WeeklySummaryHeader 
                     weekLabel={weekLabel}
                     workoutsDone={weeklyStats.totalWorkouts}
-                    workoutTarget={WORKOUT_TARGET}
+                    workoutTarget={workoutTarget}
                     completionLevel={weeklyStats.completionLevel}
                     statusColor={weeklyStats.statusColor}
                 />
@@ -252,7 +264,7 @@ const Dashboard = () => {
                     <WeeklyStatCard 
                         icon={Dumbbell}
                         label="אימונים"
-                        value={`${weeklyStats.totalWorkouts}/${WORKOUT_TARGET}`}
+                        value={`${weeklyStats.totalWorkouts}/${workoutTarget}`}
                         subtitle="השבוע"
                         accentColorClass="text-blue-400"
                     />
