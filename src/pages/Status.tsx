@@ -11,12 +11,16 @@ import {
     ShieldCheck,
     Scale,
     Bell,
-    Clock
+    Clock,
+    Flame,
+    Target,
+    TrendingUp
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserProfile, NutritionLog, WorkoutLog, WeightLog } from '@/entities';
+import { UserProfile, NutritionLog, WorkoutLog, WeightLog, WaterLog, SleepLog } from '@/entities';
 import { useNotifications } from '@/hooks/useNotifications';
+import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
 
 interface StatusResult {
     ok: boolean;
@@ -25,7 +29,109 @@ interface StatusResult {
     loading?: boolean;
 }
 
+const WeeklyTargetStatus = ({ label, value, target, onTrack, icon: Icon, subtitle }: any) => {
+    let statusColor = "bg-white/5 text-muted-foreground border-white/10";
+    let statusText = "אין מידע";
+
+    if (value > 0 || (label === "יעד אימונים" && target > 0)) {
+        if (onTrack) {
+            statusColor = "bg-green-500/10 text-green-400 border-green-500/20";
+            statusText = "במסלול";
+        } else {
+            statusColor = "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+            statusText = "טעון שיפור";
+        }
+    }
+
+    return (
+        <Card className="bg-oxygym-darkGrey border-oxygym-yellow/10">
+            <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                    <div className="p-2 bg-oxygym-dark rounded-lg text-oxygym-yellow shrink-0">
+                        <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                            <h3 className="font-bold text-white text-sm truncate">{label}</h3>
+                            <Badge variant="outline" className={`${statusColor} text-[10px] py-0 px-1.5 h-5 whitespace-nowrap`}>
+                                {statusText}
+                            </Badge>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-black text-white">{value}</span>
+                            <span className="text-xs text-muted-foreground">/ {target}</span>
+                        </div>
+                        {subtitle && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{subtitle}</p>}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
 const Status = () => {
+    // Dates for last 7 days
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 6);
+    const todayStr = today.toISOString().split('T')[0];
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+
+    const goalsStatus = useQuery({
+        queryKey: ['goals-status-7d'],
+        queryFn: async () => {
+            const [profiles, workouts, nutrition, weights] = await Promise.all([
+                UserProfile.list(),
+                WorkoutLog.query().gte('date', sevenDaysAgoStr).lte('date', todayStr).exec(),
+                NutritionLog.query().gte('date', sevenDaysAgoStr).lte('date', todayStr).exec(),
+                WeightLog.query().gte('date', sevenDaysAgoStr).lte('date', todayStr).exec()
+            ]);
+
+            const profile = profiles?.[0];
+            const weeklyWorkoutTarget = profile?.weekly_workout_target ?? 3;
+            const dailyCalorieTarget = profile?.daily_calorie_target ?? 2410;
+
+            const completedWorkouts = workouts.filter(w => w.completed).length;
+            
+            // Nutrition aggregation
+            const nutritionByDate = nutrition.reduce((acc: any, log: any) => {
+                if (!acc[log.date]) acc[log.date] = [];
+                acc[log.date].push(log);
+                return acc;
+            }, {});
+
+            let totalCals = 0;
+            let activeDays = 0;
+            Object.values(nutritionByDate).forEach((dayLogs: any) => {
+                const normalized = normalizeNutritionLogs(dayLogs);
+                const dayCals = normalized.reduce((sum, l) => sum + (l.total_calories || 0), 0);
+                if (dayCals > 0) {
+                    totalCals += dayCals;
+                    activeDays++;
+                }
+            });
+
+            const avgCalories = activeDays > 0 ? Math.round(totalCals / activeDays) : 0;
+            
+            return {
+                workouts: {
+                    value: completedWorkouts,
+                    target: weeklyWorkoutTarget,
+                    onTrack: completedWorkouts >= weeklyWorkoutTarget
+                },
+                calories: {
+                    value: avgCalories,
+                    target: dailyCalorieTarget,
+                    onTrack: avgCalories >= dailyCalorieTarget * 0.85 && avgCalories <= dailyCalorieTarget * 1.15
+                },
+                weight: {
+                    count: weights.length,
+                    hasData: weights.length > 0
+                }
+            };
+        }
+    });
+
     const profileCheck = useQuery({
         queryKey: ['status-profile-check'],
         queryFn: async () => {
@@ -151,6 +257,56 @@ const Status = () => {
                         <span className="text-sm font-medium">בודק חיבורים...</span>
                     </div>
                 )}
+
+                <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Target className="w-5 h-5 text-oxygym-yellow" />
+                        <h2 className="text-xl font-bold text-white">סטטוס יעדים – 7 ימים אחרונים</h2>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {goalsStatus.isLoading ? (
+                            <>
+                                <div className="h-24 bg-oxygym-darkGrey/50 animate-pulse rounded-xl border border-white/5" />
+                                <div className="h-24 bg-oxygym-darkGrey/50 animate-pulse rounded-xl border border-white/5" />
+                            </>
+                        ) : (
+                            <>
+                                <WeeklyTargetStatus 
+                                    label="יעד אימונים"
+                                    icon={Dumbbell}
+                                    value={goalsStatus.data?.workouts.value || 0}
+                                    target={goalsStatus.data?.workouts.target || 0}
+                                    onTrack={goalsStatus.data?.workouts.onTrack}
+                                />
+                                <WeeklyTargetStatus 
+                                    label="יעד קלוריות"
+                                    icon={Flame}
+                                    value={goalsStatus.data?.calories.value || 0}
+                                    target={goalsStatus.data?.calories.target || 0}
+                                    onTrack={goalsStatus.data?.calories.onTrack}
+                                    subtitle="ממוצע יומי (מימים שדווחו)"
+                                />
+                            </>
+                        )}
+                    </div>
+                    
+                    {!goalsStatus.isLoading && goalsStatus.data && (
+                        <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground bg-oxygym-darkGrey/30 py-2 rounded-lg border border-dashed border-white/5">
+                            <Scale className="w-3.5 h-3.5" />
+                            <span>
+                                {goalsStatus.data.weight.hasData 
+                                    ? `בוצעו ${goalsStatus.data.weight.count} שקילות בשבוע האחרון` 
+                                    : "טרם בוצעו שקילות בשבוע האחרון"}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-2 mb-4">
+                    <ShieldCheck className="w-5 h-5 text-oxygym-yellow" />
+                    <h2 className="text-xl font-bold text-white">בדיקת תקינות נתונים</h2>
+                </div>
 
                 <div className="grid grid-cols-1 gap-4">
                     <StatusIndicator 
