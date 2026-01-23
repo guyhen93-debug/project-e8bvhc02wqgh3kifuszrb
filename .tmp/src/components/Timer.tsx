@@ -1,9 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Clock } from 'lucide-react';
 
-// Silent audio hack for background performance on iOS
-const SILENT_AUDIO_SRC = "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA";
-
 interface TimerProps {
     isActive: boolean;
     onComplete?: () => void;
@@ -14,37 +11,6 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
     const [remainingSeconds, setRemainingSeconds] = useState(90);
     const targetTimeRef = useRef<number | null>(null);
     const hasFiredRef = useRef(false);
-    const silentAudioRef = useRef<HTMLAudioElement | null>(null);
-    const isAudioSupportedRef = useRef(true);
-
-    const isIOS = () => {
-        if (typeof window === 'undefined' || !navigator) return false;
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-               (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
-    };
-
-    const ensureSilentAudio = () => {
-        if (typeof window === 'undefined') return null;
-        if (!isAudioSupportedRef.current) return null;
-
-        if (!silentAudioRef.current) {
-            try {
-                if (typeof Audio === 'undefined') {
-                    isAudioSupportedRef.current = false;
-                    return null;
-                }
-                const audio = new Audio(SILENT_AUDIO_SRC);
-                audio.loop = true;
-                audio.volume = 0.01;
-                silentAudioRef.current = audio;
-            } catch (err) {
-                console.debug('Silent audio initialization failed:', err);
-                isAudioSupportedRef.current = false;
-                return null;
-            }
-        }
-        return silentAudioRef.current;
-    };
 
     const playSound = () => {
         try {
@@ -78,34 +44,6 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
     };
 
     useEffect(() => {
-        if (isActive) {
-            // Start silent audio to keep the app alive in background ONLY on iOS
-            if (isIOS()) {
-                const audio = ensureSilentAudio();
-                if (audio && typeof audio.play === 'function') {
-                    audio.play().catch(err => {
-                        // Suppress specific errors that are expected when no user interaction has occurred
-                        if (err?.name === 'NotSupportedError' || err?.name === 'NotAllowedError') {
-                            return;
-                        }
-                        console.debug('Failed to play silent audio', err);
-                    });
-                }
-            }
-        } else {
-            // Stop silent audio when timer is not active
-            if (silentAudioRef.current) {
-                try {
-                    silentAudioRef.current.pause();
-                    silentAudioRef.current.currentTime = 0;
-                } catch (e) {
-                    // Ignore errors during stop
-                }
-            }
-        }
-    }, [isActive]);
-
-    useEffect(() => {
         if (!isActive) {
             setRemainingSeconds(90);
             targetTimeRef.current = null;
@@ -128,16 +66,6 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
                 setRemainingSeconds(0);
                 clearInterval(interval);
                 
-                // Stop silent audio when timer finishes
-                if (silentAudioRef.current) {
-                    try {
-                        silentAudioRef.current.pause();
-                        silentAudioRef.current.currentTime = 0;
-                    } catch (e) {
-                        // Ignore
-                    }
-                }
-                
                 if (!hasFiredRef.current) {
                     hasFiredRef.current = true;
                     playSound();
@@ -150,15 +78,6 @@ export const Timer = ({ isActive, onComplete, restartToken }: TimerProps) => {
 
         return () => {
             clearInterval(interval);
-            // Cleanup: stop silent audio if component unmounts while timer is running
-            if (silentAudioRef.current) {
-                try {
-                    silentAudioRef.current.pause();
-                    silentAudioRef.current.currentTime = 0;
-                } catch (e) {
-                    // Ignore
-                }
-            }
         };
     }, [isActive, restartToken, onComplete]);
 

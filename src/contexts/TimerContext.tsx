@@ -20,40 +20,31 @@ export const TimerProvider = ({ children }: { children: ReactNode }) => {
     const startTimer = () => {
         console.log('Starting timer and unlocking audio...');
 
-        // Background audio for keeping app alive
-        const audio = new Audio();
-        audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-        audio.loop = true;
-        audio.volume = 0.01;
-        audio.play().catch(err => console.log('Audio play failed:', err));
-
         if (typeof window !== 'undefined') {
-            (window as any).timerAudio = audio;
-        }
-        
-        // Create AudioContext if it doesn't exist
-        if (!audioContextRef.current) {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-            console.log('AudioContext created');
-        }
+            // Create AudioContext if it doesn't exist
+            if (!audioContextRef.current) {
+                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                console.log('AudioContext created');
+            }
 
-        // Unlock audio by playing a silent sound immediately (Safari fix)
-        try {
-            const oscillator = audioContextRef.current.createOscillator();
-            const gainNode = audioContextRef.current.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContextRef.current.destination);
-            
-            // Silent sound (volume = 0)
-            gainNode.gain.setValueAtTime(0, audioContextRef.current.currentTime);
-            
-            oscillator.start(audioContextRef.current.currentTime);
-            oscillator.stop(audioContextRef.current.currentTime + 0.01);
-            
-            console.log('Audio unlocked successfully for Safari');
-        } catch (error) {
-            console.error('Error unlocking audio:', error);
+            // Unlock audio by playing a silent sound immediately (Safari fix)
+            try {
+                const oscillator = audioContextRef.current.createOscillator();
+                const gainNode = audioContextRef.current.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContextRef.current.destination);
+                
+                // Silent sound (volume = 0)
+                gainNode.gain.setValueAtTime(0, audioContextRef.current.currentTime);
+                
+                oscillator.start(audioContextRef.current.currentTime);
+                oscillator.stop(audioContextRef.current.currentTime + 0.01);
+                
+                console.log('Audio unlocked successfully for Safari');
+            } catch (error) {
+                console.error('Error unlocking audio:', error);
+            }
         }
 
         // Store planned end time for fallback check

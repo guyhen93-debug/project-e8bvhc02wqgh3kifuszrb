@@ -70,7 +70,16 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
         onDataChange(payload);
     }, [setData, weight, name, isAbsExercise, onDataChange]);
 
-    const handleWeightChange = (newWeight: number) => {
+    const handleWeightChange = (raw: string) => {
+        const normalized = raw.replace(',', '.').trim();
+        if (normalized === '') {
+            setWeight(0);
+            return;
+        }
+        const newWeight = parseFloat(normalized);
+        if (!Number.isFinite(newWeight)) {
+            return;
+        }
         setWeight(newWeight);
     };
 
@@ -107,7 +116,7 @@ export const ExerciseRow = ({ name, sets, reps, workoutType = '', initialData, o
                             type="tel"
                             inputMode="decimal"
                             value={weight || ''}
-                            onChange={(e) => handleWeightChange(Number(e.target.value))}
+                            onChange={(e) => handleWeightChange(e.target.value)}
                             onWheel={(e) => e.currentTarget.blur()}
                             placeholder="0"
                             className="bg-black border-border text-white w-24 h-9"
