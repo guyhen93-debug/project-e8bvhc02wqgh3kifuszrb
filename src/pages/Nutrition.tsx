@@ -107,10 +107,26 @@ const Nutrition = () => {
     const [isShabbatMenu, setIsShabbatMenu] = useState(false);
     const [saving, setSaving] = useState(false);
     const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
-    const saveTimeoutRef = useRef<NodeJS.Timeout>();
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
     const lastToastRef = useRef<number | null>(null);
+
+    // New refs for robust auto-save
+    const activeSavesRef = useRef(0);
+    const needsServerSyncRef = useRef(false);
+    const weekdayMealsRef = useRef<Record<number, MealState>>({
+        1: { ...emptyMealState },
+        2: { ...emptyMealState },
+        3: { ...emptyMealState },
+        4: { ...emptyMealState },
+    });
+    const shabbatMealsRef = useRef<Record<number, MealState>>({
+        1: { ...emptyMealState },
+        2: { ...emptyMealState },
+        3: { ...emptyMealState },
+        4: { ...emptyMealState },
+    });
 
     // Simplified state - one object per menu type
     const [weekdayMeals, setWeekdayMeals] = useState<Record<number, MealState>>({
@@ -246,6 +262,10 @@ const Nutrition = () => {
         setWeekdayMeals(newWeekdayMeals);
         setShabbatMeals(newShabbatMeals);
 
+        // Update refs for robust auto-save
+        weekdayMealsRef.current = newWeekdayMeals;
+        shabbatMealsRef.current = newShabbatMeals;
+
         setTimeout(() => {
             isInitialLoadRef.current = false;
         }, 100);
@@ -272,30 +292,49 @@ const Nutrition = () => {
         return { calories, protein, carbs, fat };
     }, [weekdayMeals, shabbatMeals]);
 
-    const autoSave = useCallback(async () => {
-        if (isInitialLoadRef.current || !userMadeChangeRef.current) {
+    const performAutoSave = useCallback(async () => {
+        if (isInitialLoadRef.current || !needsServerSyncRef.current) {
+            return;
+        }
+
+        // Avoid overlapping saves
+        if (activeSavesRef.current > 0) {
+            console.log('Skip nutrition auto-save: another save is in progress');
             return;
         }
 
         try {
+            activeSavesRef.current++;
             setSaving(true);
-            const existingLogs = await NutritionLog.filter({ date: selectedDate });
-            const logsToDelete = existingLogs.filter((log: any) => log.menu_type === currentMenuType);
 
-            for (const log of logsToDelete) {
-                await NutritionLog.delete(log.id);
-            }
+            const weekdayMealsSnapshot = weekdayMealsRef.current;
+            const shabbatMealsSnapshot = shabbatMealsRef.current;
 
-            for (let mealNum = 1; mealNum <= 4; mealNum++) {
-                const meal = currentMeals[mealNum];
-                if (meal.data.calories > 0) {
+            // Helper to save one menu type
+            const saveMenuType = async (menuType: 'weekday' | 'shabbat', meals: Record<number, MealState>) => {
+                const hasAnyCalories = Object.values(meals).some(meal => meal.data.calories > 0);
+                const existingLogs = await NutritionLog.filter({ date: selectedDate });
+                const logsToDelete = existingLogs.filter((log: any) => 
+                    log.menu_type === menuType || (!log.menu_type && menuType === 'weekday')
+                );
+
+                for (const log of logsToDelete) {
+                    await NutritionLog.delete(log.id);
+                }
+
+                if (!hasAnyCalories) return;
+
+                for (let mealNum = 1; mealNum <= 4; mealNum++) {
+                    const meal = meals[mealNum];
+                    if (!meal || meal.data.calories <= 0) continue;
+
                     const itemsConsumed = Object.values(meal.items)
                         .filter(item => item.checked)
                         .map(item => ({ name: item.name, amount: item.amount }));
 
                     await NutritionLog.create({
                         date: selectedDate,
-                        menu_type: currentMenuType,
+                        menu_type: menuType,
                         meal_number: mealNum,
                         items_consumed: itemsConsumed,
                         total_calories: meal.data.calories,
@@ -304,7 +343,10 @@ const Nutrition = () => {
                         fat: meal.data.fat,
                     });
                 }
-            }
+            };
+
+            await saveMenuType('weekday', weekdayMealsSnapshot);
+            await saveMenuType('shabbat', shabbatMealsSnapshot);
 
             // Update React Query cache immediately with fresh data
             const freshLogs = await NutritionLog.filter({ date: selectedDate });
@@ -312,6 +354,7 @@ const Nutrition = () => {
             
             // Mark changes as saved
             userMadeChangeRef.current = false;
+            needsServerSyncRef.current = false;
             setLastSavedAt(Date.now());
 
             if (!lastToastRef.current || Date.now() - lastToastRef.current > 8000) {
@@ -325,44 +368,49 @@ const Nutrition = () => {
         } catch (error) {
             console.error('Error auto-saving nutrition:', error);
         } finally {
-            setSaving(false);
+            activeSavesRef.current = Math.max(0, activeSavesRef.current - 1);
+            if (activeSavesRef.current === 0) {
+                // Smooth the transition out
+                setTimeout(() => {
+                    if (activeSavesRef.current === 0) {
+                        setSaving(false);
+                    }
+                }, 600);
+            }
         }
-    }, [selectedDate, currentMenuType, currentMeals]);
+    }, [selectedDate, queryClient, toast]);
 
-    const handleMenuToggle = async (nextIsShabbat: boolean) => {
-        // Flush pending changes for the current menu type before switching
-        if (userMadeChangeRef.current && !isInitialLoadRef.current) {
-            await autoSave();
+    const scheduleAutoSave = useCallback((immediate = false) => {
+        if (!needsServerSyncRef.current) return;
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
         }
+
+        if (immediate) {
+            performAutoSave();
+        } else {
+            saveTimeoutRef.current = setTimeout(() => {
+                performAutoSave();
+                saveTimeoutRef.current = null;
+            }, 3000);
+        }
+    }, [performAutoSave]);
+
+    const handleMenuToggle = (nextIsShabbat: boolean) => {
         setIsShabbatMenu(nextIsShabbat);
     };
 
     useEffect(() => {
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-
-        saveTimeoutRef.current = setTimeout(() => {
-            autoSave();
-        }, 300);
-
-        return () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-                autoSave(); // Call autoSave on unmount/dependency change to flush changes
-            }
-        };
-    }, [autoSave]);
-
-    useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden') {
-                autoSave();
+                scheduleAutoSave(true);
             }
         };
 
         const handlePageHide = () => {
-            autoSave();
+            scheduleAutoSave(true);
         };
 
         window.addEventListener('visibilitychange', handleVisibilityChange);
@@ -371,20 +419,57 @@ const Nutrition = () => {
         return () => {
             window.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('pagehide', handlePageHide);
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
         };
-    }, [autoSave]);
+    }, [scheduleAutoSave]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (userMadeChangeRef.current && needsServerSyncRef.current && !isInitialLoadRef.current) {
+                console.log('Nutrition screen unmounting - triggering final save');
+                performAutoSave();
+            }
+        };
+    }, [performAutoSave]);
 
     const updateMeal = (mealNum: number, updates: Partial<MealState>) => {
         userMadeChangeRef.current = true;
-        setCurrentMeals(prev => ({
-            ...prev,
-            [mealNum]: {
-                ...prev[mealNum],
-                ...updates,
-                data: updates.data ? { ...prev[mealNum].data, ...updates.data } : prev[mealNum].data,
-                items: updates.items ? { ...prev[mealNum].items, ...updates.items } : prev[mealNum].items,
-            }
-        }));
+        needsServerSyncRef.current = true;
+
+        if (isShabbatMenu) {
+            setShabbatMeals(prev => {
+                const updated = {
+                    ...prev,
+                    [mealNum]: {
+                        ...prev[mealNum],
+                        ...updates,
+                        data: updates.data ? { ...prev[mealNum].data, ...updates.data } : prev[mealNum].data,
+                        items: updates.items ? { ...prev[mealNum].items, ...updates.items } : prev[mealNum].items,
+                    },
+                };
+                shabbatMealsRef.current = updated;
+                return updated;
+            });
+        } else {
+            setWeekdayMeals(prev => {
+                const updated = {
+                    ...prev,
+                    [mealNum]: {
+                        ...prev[mealNum],
+                        ...updates,
+                        data: updates.data ? { ...prev[mealNum].data, ...updates.data } : prev[mealNum].data,
+                        items: updates.items ? { ...prev[mealNum].items, ...updates.items } : prev[mealNum].items,
+                    },
+                };
+                weekdayMealsRef.current = updated;
+                return updated;
+            });
+        }
+
+        scheduleAutoSave(false);
     };
 
     const handleMealItemToggle = (
