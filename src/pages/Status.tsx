@@ -64,6 +64,11 @@ const WeeklyTargetStatus = ({ label, value, target, onTrack, icon: Icon, subtitl
                             <span className="text-xs text-muted-foreground">/ {target}</span>
                         </div>
                         {subtitle && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{subtitle}</p>}
+                        {(value > 0 || (label === "יעד אימונים" && target > 0)) && (
+                            <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                                הצבע משקף אם אתה ביעד לפי הממוצע ב־7 הימים האחרונים.
+                            </p>
+                        )}
                     </div>
                 </div>
             </CardContent>
@@ -309,10 +314,13 @@ const Status = () => {
                 )}
 
                 <div className="mb-8">
-                    <div className="flex items-center gap-2 mb-4">
+                    <div className="flex items-center gap-2 mb-1">
                         <Target className="w-5 h-5 text-oxygym-yellow" />
                         <h2 className="text-xl font-bold text-white">סטטוס יעדים – 7 ימים אחרונים</h2>
                     </div>
+                    <p className="text-xs text-muted-foreground mb-4">
+                        הסיכום מתבסס על 7 הימים האחרונים בלבד. ירוק = ביעד, צהוב = צריך שיפור, אפור = עדיין אין מספיק נתונים.
+                    </p>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {goalsStatus.isLoading ? (
@@ -369,6 +377,9 @@ const Status = () => {
                             </span>
                         </div>
                     )}
+                    <p className="mt-4 text-[11px] text-muted-foreground text-center">
+                        לרזולוציה יומית מפורטת (אימונים, תזונה, מים ושינה) אפשר להיכנס למסך "לוח שנה".
+                    </p>
                 </div>
 
                 <div className="flex items-center gap-2 mb-4">
