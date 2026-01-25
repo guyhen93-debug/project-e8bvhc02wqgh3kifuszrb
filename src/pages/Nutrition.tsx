@@ -100,6 +100,53 @@ const emptyMealState: MealState = {
     items: {}
 };
 
+// LocalStorage helpers for PWA offline support
+const NUTRITION_DRAFT_KEY_PREFIX = 'oxygym_nutrition_draft_';
+
+const getNutritionDraftKey = (date: string) => `${NUTRITION_DRAFT_KEY_PREFIX}${date}`;
+
+interface NutritionDraft {
+    date: string;
+    weekdayMeals: Record<number, MealState>;
+    shabbatMeals: Record<number, MealState>;
+    timestamp: number;
+}
+
+const saveNutritionDraft = (draft: NutritionDraft) => {
+    try {
+        const key = getNutritionDraftKey(draft.date);
+        localStorage.setItem(key, JSON.stringify(draft));
+        console.log('Nutrition draft saved to localStorage for date:', draft.date);
+    } catch (error) {
+        console.error('Failed to save nutrition draft to localStorage:', error);
+    }
+};
+
+const loadNutritionDraft = (date: string): NutritionDraft | null => {
+    try {
+        const key = getNutritionDraftKey(date);
+        const data = localStorage.getItem(key);
+        if (data) {
+            const draft = JSON.parse(data) as NutritionDraft;
+            console.log('Nutrition draft loaded from localStorage for date:', date);
+            return draft;
+        }
+    } catch (error) {
+        console.error('Failed to load nutrition draft from localStorage:', error);
+    }
+    return null;
+};
+
+const clearNutritionDraft = (date: string) => {
+    try {
+        const key = getNutritionDraftKey(date);
+        localStorage.removeItem(key);
+        console.log('Nutrition draft cleared from localStorage for date:', date);
+    } catch (error) {
+        console.error('Failed to clear nutrition draft from localStorage:', error);
+    }
+};
+
 const Nutrition = () => {
     const { toast } = useToast();
     const queryClient = useQueryClient();
@@ -178,11 +225,35 @@ const Nutrition = () => {
     }, [lastSavedAt]);
 
     // Load data when date changes or data is fetched
+    // Priority: localStorage draft > server data (for PWA offline support)
     useEffect(() => {
         if (!allDateMeals) return;
-        
+
         if (userMadeChangeRef.current) {
             console.log('Skipping data load as user has pending changes');
+            return;
+        }
+
+        // Check for localStorage draft first (PWA offline support)
+        const draft = loadNutritionDraft(selectedDate);
+        if (draft && draft.timestamp) {
+            console.log('Found localStorage draft for date:', selectedDate, 'Loading draft instead of server data');
+            isInitialLoadRef.current = true;
+
+            setWeekdayMeals(draft.weekdayMeals);
+            setShabbatMeals(draft.shabbatMeals);
+            weekdayMealsRef.current = draft.weekdayMeals;
+            shabbatMealsRef.current = draft.shabbatMeals;
+
+            // Mark that we need to sync this draft to server
+            needsServerSyncRef.current = true;
+            userMadeChangeRef.current = true;
+
+            setTimeout(() => {
+                isInitialLoadRef.current = false;
+                // Trigger server sync for the draft
+                scheduleAutoSave(false);
+            }, 100);
             return;
         }
 
@@ -390,6 +461,9 @@ const Nutrition = () => {
             needsServerSyncRef.current = false;
             setLastSavedAt(Date.now());
 
+            // Clear localStorage draft after successful server sync (PWA offline support)
+            clearNutritionDraft(selectedDate);
+
             if (!lastToastRef.current || Date.now() - lastToastRef.current > 8000) {
                 toast({
                     title: 'התזונה נשמרה',
@@ -482,6 +556,15 @@ const Nutrition = () => {
                     },
                 };
                 shabbatMealsRef.current = updated;
+
+                // Save to localStorage immediately (PWA offline support)
+                saveNutritionDraft({
+                    date: selectedDate,
+                    weekdayMeals: weekdayMealsRef.current,
+                    shabbatMeals: updated,
+                    timestamp: Date.now(),
+                });
+
                 return updated;
             });
         } else {
@@ -496,6 +579,15 @@ const Nutrition = () => {
                     },
                 };
                 weekdayMealsRef.current = updated;
+
+                // Save to localStorage immediately (PWA offline support)
+                saveNutritionDraft({
+                    date: selectedDate,
+                    weekdayMeals: updated,
+                    shabbatMeals: shabbatMealsRef.current,
+                    timestamp: Date.now(),
+                });
+
                 return updated;
             });
         }
