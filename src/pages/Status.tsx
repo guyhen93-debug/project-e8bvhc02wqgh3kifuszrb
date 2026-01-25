@@ -14,7 +14,9 @@ import {
     Clock,
     Flame,
     Target,
-    TrendingUp
+    TrendingUp,
+    Droplets,
+    Moon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -80,16 +82,19 @@ const Status = () => {
     const goalsStatus = useQuery({
         queryKey: ['goals-status-7d'],
         queryFn: async () => {
-            const [profiles, workouts, nutrition, weights] = await Promise.all([
+            const [profiles, workouts, nutrition, weights, waterLogs, sleepLogs] = await Promise.all([
                 UserProfile.list(),
                 WorkoutLog.query().gte('date', sevenDaysAgoStr).lte('date', todayStr).exec(),
                 NutritionLog.query().gte('date', sevenDaysAgoStr).lte('date', todayStr).exec(),
-                WeightLog.query().gte('date', sevenDaysAgoStr).lte('date', todayStr).exec()
+                WeightLog.query().gte('date', sevenDaysAgoStr).lte('date', todayStr).exec(),
+                WaterLog.query().gte('date', sevenDaysAgoStr).lte('date', todayStr).exec(),
+                SleepLog.query().gte('date', sevenDaysAgoStr).lte('date', todayStr).exec()
             ]);
 
             const profile = profiles?.[0];
             const weeklyWorkoutTarget = profile?.weekly_workout_target ?? 3;
             const dailyCalorieTarget = profile?.daily_calorie_target ?? 2410;
+            const dailyWaterTargetGlasses = profile?.daily_water_target_glasses ?? 12;
 
             const completedWorkouts = workouts.filter(w => w.completed).length;
             
@@ -112,6 +117,41 @@ const Status = () => {
             });
 
             const avgCalories = activeDays > 0 ? Math.round(totalCals / activeDays) : 0;
+
+            // Water aggregation
+            const waterByDate = waterLogs.reduce((acc: any, log: any) => {
+                acc[log.date] = (acc[log.date] || 0) + (log.glasses || 0);
+                return acc;
+            }, {});
+            
+            let totalWater = 0;
+            let waterDays = 0;
+            Object.values(waterByDate).forEach((glasses: any) => {
+                if (glasses > 0) {
+                    totalWater += glasses;
+                    waterDays++;
+                }
+            });
+            const avgWater = waterDays > 0 ? Math.round(totalWater / waterDays) : 0;
+
+            // Sleep aggregation
+            const sleepByDate = sleepLogs.reduce((acc: any, log: any) => {
+                acc[log.date] = (acc[log.date] || 0) + (log.hours || 0);
+                return acc;
+            }, {});
+            
+            let totalSleep = 0;
+            let sleepDays = 0;
+            Object.values(sleepByDate).forEach((hours: any) => {
+                if (hours > 0) {
+                    totalSleep += hours;
+                    sleepDays++;
+                }
+            });
+            const avgSleep = sleepDays > 0 ? totalSleep / sleepDays : 0;
+
+            const SLEEP_MIN = 7;
+            const SLEEP_MAX = 9;
             
             return {
                 workouts: {
@@ -123,6 +163,16 @@ const Status = () => {
                     value: avgCalories,
                     target: dailyCalorieTarget,
                     onTrack: avgCalories >= dailyCalorieTarget * 0.85 && avgCalories <= dailyCalorieTarget * 1.15
+                },
+                water: {
+                    value: avgWater,
+                    target: dailyWaterTargetGlasses,
+                    onTrack: avgWater >= dailyWaterTargetGlasses
+                },
+                sleep: {
+                    value: avgSleep ? Number(avgSleep.toFixed(1)) : 0,
+                    target: 8,
+                    onTrack: avgSleep >= SLEEP_MIN && avgSleep <= SLEEP_MAX
                 },
                 weight: {
                     count: weights.length,
@@ -269,6 +319,8 @@ const Status = () => {
                             <>
                                 <div className="h-24 bg-oxygym-darkGrey/50 animate-pulse rounded-xl border border-white/5" />
                                 <div className="h-24 bg-oxygym-darkGrey/50 animate-pulse rounded-xl border border-white/5" />
+                                <div className="h-24 bg-oxygym-darkGrey/50 animate-pulse rounded-xl border border-white/5" />
+                                <div className="h-24 bg-oxygym-darkGrey/50 animate-pulse rounded-xl border border-white/5" />
                             </>
                         ) : (
                             <>
@@ -286,6 +338,22 @@ const Status = () => {
                                     target={goalsStatus.data?.calories.target || 0}
                                     onTrack={goalsStatus.data?.calories.onTrack}
                                     subtitle="ממוצע יומי (מימים שדווחו)"
+                                />
+                                <WeeklyTargetStatus
+                                    label="יעד מים"
+                                    icon={Droplets}
+                                    value={goalsStatus.data?.water.value || 0}
+                                    target={goalsStatus.data?.water.target || 0}
+                                    onTrack={goalsStatus.data?.water.onTrack}
+                                    subtitle="ממוצע כוסות ביום (מימים שדווחו)"
+                                />
+                                <WeeklyTargetStatus
+                                    label="יעד שינה"
+                                    icon={Moon}
+                                    value={goalsStatus.data?.sleep.value || 0}
+                                    target={goalsStatus.data?.sleep.target || 0}
+                                    onTrack={goalsStatus.data?.sleep.onTrack}
+                                    subtitle="שעות בממוצע ללילה"
                                 />
                             </>
                         )}
