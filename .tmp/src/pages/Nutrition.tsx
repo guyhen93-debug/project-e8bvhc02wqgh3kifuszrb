@@ -110,6 +110,7 @@ const Nutrition = () => {
     const saveTimeoutRef = useRef<NodeJS.Timeout>();
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
+    const lastToastRef = useRef<number | null>(null);
 
     // Simplified state - one object per menu type
     const [weekdayMeals, setWeekdayMeals] = useState<Record<number, MealState>>({
@@ -308,7 +309,19 @@ const Nutrition = () => {
             // Update React Query cache immediately with fresh data
             const freshLogs = await NutritionLog.filter({ date: selectedDate });
             queryClient.setQueryData(['nutrition-logs', selectedDate], freshLogs || []);
+            
+            // Mark changes as saved
+            userMadeChangeRef.current = false;
             setLastSavedAt(Date.now());
+
+            if (!lastToastRef.current || Date.now() - lastToastRef.current > 8000) {
+                toast({
+                    title: 'התזונה נשמרה',
+                    description: 'השינויים בתפריט נשמרו בהצלחה.',
+                    duration: 2500,
+                });
+                lastToastRef.current = Date.now();
+            }
         } catch (error) {
             console.error('Error auto-saving nutrition:', error);
         } finally {
