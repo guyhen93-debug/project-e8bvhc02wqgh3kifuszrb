@@ -338,9 +338,14 @@ const Calendar = () => {
                                 <span>שינה</span>
                             </div>
                             <div className="w-full h-0 sm:hidden" /> {/* Divider for mobile */}
-                            <div className="flex items-center gap-2 mr-auto sm:mr-0">
-                                <div className="px-1.5 py-0.5 rounded border border-green-400 bg-green-500/10 text-green-400 scale-90">מעולה</div>
-                                <div className="px-1.5 py-0.5 rounded border border-oxygym-yellow bg-oxygym-yellow/5 text-oxygym-yellow scale-90">טוב</div>
+                            <div className="flex flex-col sm:flex-row items-center gap-1.5 mr-auto sm:mr-0 text-[10px] sm:text-xs">
+                                <div className="flex items-center gap-2">
+                                    <div className="px-1.5 py-0.5 rounded border border-green-400 bg-green-500/10 text-green-400 scale-90">מעולה</div>
+                                    <div className="px-1.5 py-0.5 rounded border border-oxygym-yellow bg-oxygym-yellow/5 text-oxygym-yellow scale-90">טוב</div>
+                                </div>
+                                <p className="text-[10px] sm:text-[11px] text-muted-foreground/80">
+                                    אוקיי = רק חלק מהיעדים הושגו, ללא צבע מיוחד = עדיין אין מספיק נתונים לאותו יום.
+                                </p>
                             </div>
                         </div>
                     </CardContent>
