@@ -12,7 +12,7 @@ import { WeighInReminder } from '@/components/WeighInReminder';
 import { SleepTracker } from '@/components/SleepTracker';
 import { WaterTracker } from '@/components/WaterTracker';
 import { DateSelector } from '@/components/DateSelector';
-import { WorkoutLog, NutritionLog, WaterLog, UserProfile } from '@/entities';
+import { WorkoutLog, NutritionLog, WaterLog, SleepLog, UserProfile } from '@/entities';
 import { useDate } from '@/contexts/DateContext';
 import { useMemo } from 'react';
 import { normalizeNutritionLogs } from '@/lib/nutrition-utils';
@@ -242,6 +242,19 @@ const Index = () => {
         },
     });
 
+    const { data: sleepLog } = useQuery({
+        queryKey: ['sleep-log-summary', selectedDate],
+        queryFn: async () => {
+            try {
+                const logs = await SleepLog.filter({ date: selectedDate });
+                return logs?.[0] || null;
+            } catch (error) {
+                console.error('Error fetching sleep log summary:', error);
+                return null;
+            }
+        },
+    });
+
     const totalCalories = normalizedNutrition?.reduce((sum, log) => sum + (log.total_calories || 0), 0) || 0;
     const totalProtein = normalizedNutrition?.reduce((sum, log) => sum + (log.protein || 0), 0) || 0;
     const totalCarbs = normalizedNutrition?.reduce((sum, log) => sum + (log.carbs || 0), 0) || 0;
@@ -250,6 +263,7 @@ const Index = () => {
     const completedWorkouts = weekWorkouts?.filter(w => w.completed).length || 0;
     const mealsToday = normalizedNutrition?.length || 0;
     const waterGlasses = waterLogSummary?.glasses || 0;
+    const sleepHours = sleepLog?.hours || 0;
 
     const caloriePercent = Math.round((totalCalories / dailyCalorieTarget) * 100);
     const proteinPercent = Math.round((totalProtein / dailyProteinTarget) * 100);
@@ -339,7 +353,8 @@ const Index = () => {
                             <span className="text-oxygym-yellow">{mealsToday}/4</span> ארוחות ·{' '}
                             <span className="text-oxygym-yellow">{caloriePercent}%</span> קלוריות ·{' '}
                             <span className="text-oxygym-yellow">{proteinPercent}%</span> חלבון ·{' '}
-                            <span className="text-oxygym-yellow">{waterGlasses}/{dailyWaterTargetGlasses}</span> כוסות מים
+                            <span className="text-oxygym-yellow">{waterGlasses}/{dailyWaterTargetGlasses}</span> כוסות מים ·{' '}
+                            <span className="text-oxygym-yellow">{sleepHours}</span> שעות שינה
                         </p>
                     </CardContent>
                 </Card>
