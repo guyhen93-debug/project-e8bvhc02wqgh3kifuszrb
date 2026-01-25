@@ -428,10 +428,8 @@ const Nutrition = () => {
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (userMadeChangeRef.current && needsServerSyncRef.current && !isInitialLoadRef.current) {
-                console.log('Nutrition screen unmounting - triggering final save');
-                performAutoSave();
-            }
+            console.log('Nutrition screen unmounting - attempting final save');
+            void performAutoSave();
         };
     }, [performAutoSave]);
 
