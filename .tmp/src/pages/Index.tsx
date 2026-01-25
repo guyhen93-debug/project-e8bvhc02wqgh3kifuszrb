@@ -25,6 +25,7 @@ const DEFAULT_DAILY_CALORIE_TARGET = 2410;
 const DEFAULT_DAILY_PROTEIN_TARGET = 145;
 const DEFAULT_DAILY_WATER_TARGET_GLASSES = 12;
 const LAST_SYNC_KEY = 'oxygym_last_sync_date';
+const APP_VERSION = "v2026.01.25-2";
 
 const Index = () => {
     const navigate = useNavigate();
@@ -305,7 +306,10 @@ const Index = () => {
                     />
                 </div>
                 <h1 className="text-4xl font-bold text-center text-white mb-2">OXYGYM Tracker</h1>
-                <p className="text-center text-muted-foreground mb-6">סטטיסטיקות והתקדמות</p>
+                <p className="text-center text-muted-foreground mb-1">סטטיסטיקות והתקדמות</p>
+                <p className="text-center text-[10px] text-muted-foreground/60 mb-6">
+                    גרסת אפליקציה: {APP_VERSION}
+                </p>
 
                 <div className="mb-6 flex justify-center">
                     <Button
