@@ -158,7 +158,8 @@ const Nutrition = () => {
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
-        staleTime: 5 * 60 * 1000,
+        refetchOnMount: 'always', // Always fetch fresh data when returning to page (fixes PWA cache issue)
+        staleTime: 30 * 1000, // Reduced to 30 seconds to ensure fresher data
     });
 
     // Reset change flag when date changes so we can load fresh data for the new date
@@ -309,6 +310,38 @@ const Nutrition = () => {
 
             const weekdayMealsSnapshot = weekdayMealsRef.current;
             const shabbatMealsSnapshot = shabbatMealsRef.current;
+
+            // Build optimistic cache data from current refs (before server operations)
+            // This ensures cache is updated even if page hides during save (PWA issue)
+            const buildLogsFromMeals = (menuType: 'weekday' | 'shabbat', meals: Record<number, MealState>) => {
+                const logs: any[] = [];
+                for (let mealNum = 1; mealNum <= 4; mealNum++) {
+                    const meal = meals[mealNum];
+                    if (meal && meal.data.calories > 0) {
+                        const itemsConsumed = Object.values(meal.items)
+                            .filter(item => item.checked)
+                            .map(item => ({ name: item.name, amount: item.amount }));
+                        logs.push({
+                            date: selectedDate,
+                            menu_type: menuType,
+                            meal_number: mealNum,
+                            items_consumed: itemsConsumed,
+                            total_calories: meal.data.calories,
+                            protein: meal.data.protein,
+                            carbs: meal.data.carbs,
+                            fat: meal.data.fat,
+                        });
+                    }
+                }
+                return logs;
+            };
+
+            // Optimistic cache update - do this BEFORE server calls
+            const optimisticLogs = [
+                ...buildLogsFromMeals('weekday', weekdayMealsSnapshot),
+                ...buildLogsFromMeals('shabbat', shabbatMealsSnapshot),
+            ];
+            queryClient.setQueryData(['nutrition-logs', selectedDate], optimisticLogs);
 
             // Helper to save one menu type
             const saveMenuType = async (menuType: 'weekday' | 'shabbat', meals: Record<number, MealState>) => {
