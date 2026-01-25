@@ -268,6 +268,32 @@ const Index = () => {
     const caloriePercent = Math.round((totalCalories / dailyCalorieTarget) * 100);
     const proteinPercent = Math.round((totalProtein / dailyProteinTarget) * 100);
 
+    const calorieRatio = dailyCalorieTarget ? totalCalories / dailyCalorieTarget : 0;
+    const proteinRatio = dailyProteinTarget ? totalProtein / dailyProteinTarget : 0;
+    const waterRatio = dailyWaterTargetGlasses ? waterGlasses / dailyWaterTargetGlasses : 0;
+    const hasAnyData = totalCalories > 0 || mealsToday > 0 || waterGlasses > 0 || sleepHours > 0;
+
+    let dayStatusLabel = 'אין מספיק נתונים';
+    let dayStatusClass = 'border-muted text-muted-foreground/80 bg-muted/10';
+
+    if (hasAnyData) {
+        const inCalorieRange = calorieRatio >= 0.85 && calorieRatio <= 1.15;
+        const goodProtein = proteinRatio >= 0.7;
+        const okWater = waterRatio >= 0.5;
+        const okSleep = sleepHours === 0 ? true : sleepHours >= 7; // אם אין שינה מדווחת עדיין, לא נפסול
+
+        if (inCalorieRange && goodProtein && okWater && okSleep) {
+            dayStatusLabel = 'במסלול';
+            dayStatusClass = 'border-green-400/40 text-green-300 bg-green-400/10';
+        } else if ((calorieRatio > 0 || proteinRatio > 0 || waterRatio > 0) && (goodProtein || okWater)) {
+            dayStatusLabel = 'בדרך';
+            dayStatusClass = 'border-oxygym-yellow/40 text-oxygym-yellow bg-oxygym-yellow/10';
+        } else {
+            dayStatusLabel = 'רחוק מהיעד';
+            dayStatusClass = 'border-red-400/40 text-red-300 bg-red-400/10';
+        }
+    }
+
     return (
         <div className="min-h-screen bg-oxygym-dark pb-20">
             <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -348,13 +374,22 @@ const Index = () => {
 
                 <Card className="bg-oxygym-darkGrey border-oxygym-yellow/20 mb-4">
                     <CardContent className="p-3 text-center">
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                            <span className="text-white font-medium">{isToday ? 'היום' : 'סיכום יום'}:</span>{' '}
-                            <span className="text-oxygym-yellow">{mealsToday}/4</span> ארוחות ·{' '}
-                            <span className="text-oxygym-yellow">{caloriePercent}%</span> קלוריות ·{' '}
-                            <span className="text-oxygym-yellow">{proteinPercent}%</span> חלבון ·{' '}
-                            <span className="text-oxygym-yellow">{waterGlasses}/{dailyWaterTargetGlasses}</span> כוסות מים ·{' '}
-                            <span className="text-oxygym-yellow">{sleepHours}</span> שעות שינה
+                        <p className="text-xs sm:text-sm text-muted-foreground flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
+                            <span className="flex items-center gap-1">
+                                <span className="text-white font-medium">{isToday ? 'היום' : 'סיכום יום'}:</span>
+                                {hasAnyData && (
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] border ${dayStatusClass}`}>
+                                        {dayStatusLabel}
+                                    </span>
+                                )}
+                            </span>
+                            <span>
+                                <span className="text-oxygym-yellow">{mealsToday}/4</span> ארוחות ·{' '}
+                                <span className="text-oxygym-yellow">{caloriePercent}%</span> קלוריות ·{' '}
+                                <span className="text-oxygym-yellow">{proteinPercent}%</span> חלבון ·{' '}
+                                <span className="text-oxygym-yellow">{waterGlasses}/{dailyWaterTargetGlasses}</span> כוסות מים ·{' '}
+                                <span className="text-oxygym-yellow">{sleepHours}</span> שעות שינה
+                            </span>
                         </p>
                     </CardContent>
                 </Card>
