@@ -107,14 +107,10 @@ const Nutrition = () => {
     const [isShabbatMenu, setIsShabbatMenu] = useState(false);
     const [saving, setSaving] = useState(false);
     const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
-    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
     const lastToastRef = useRef<number | null>(null);
 
-    // New refs for robust auto-save
-    const activeSavesRef = useRef(0);
-    const needsServerSyncRef = useRef(false);
     const weekdayMealsRef = useRef<Record<number, MealState>>({
         1: { ...emptyMealState },
         2: { ...emptyMealState },
@@ -292,28 +288,24 @@ const Nutrition = () => {
         return { calories, protein, carbs, fat };
     }, [weekdayMeals, shabbatMeals]);
 
-    const performAutoSave = useCallback(async () => {
-        if (isInitialLoadRef.current || !needsServerSyncRef.current) {
-            return;
-        }
-
-        // Avoid overlapping saves
-        if (activeSavesRef.current > 0) {
-            console.log('Skip nutrition auto-save: another save is in progress');
+    const saveNutritionNow = async (
+        weekdayMealsSnapshot: Record<number, MealState>,
+        shabbatMealsSnapshot: Record<number, MealState>
+    ) => {
+        if (isInitialLoadRef.current) {
             return;
         }
 
         try {
-            activeSavesRef.current++;
             setSaving(true);
-
-            const weekdayMealsSnapshot = weekdayMealsRef.current;
-            const shabbatMealsSnapshot = shabbatMealsRef.current;
+            
+            // Fetch existing logs for the selected date once
+            const existingLogs = await NutritionLog.filter({ date: selectedDate });
 
             // Helper to save one menu type
             const saveMenuType = async (menuType: 'weekday' | 'shabbat', meals: Record<number, MealState>) => {
                 const hasAnyCalories = Object.values(meals).some(meal => meal.data.calories > 0);
-                const existingLogs = await NutritionLog.filter({ date: selectedDate });
+                
                 const logsToDelete = existingLogs.filter((log: any) => 
                     log.menu_type === menuType || (!log.menu_type && menuType === 'weekday')
                 );
@@ -354,7 +346,6 @@ const Nutrition = () => {
             
             // Mark changes as saved
             userMadeChangeRef.current = false;
-            needsServerSyncRef.current = false;
             setLastSavedAt(Date.now());
 
             if (!lastToastRef.current || Date.now() - lastToastRef.current > 8000) {
@@ -366,76 +357,21 @@ const Nutrition = () => {
                 lastToastRef.current = Date.now();
             }
         } catch (error) {
-            console.error('Error auto-saving nutrition:', error);
+            console.error('Error saving nutrition:', error);
         } finally {
-            activeSavesRef.current = Math.max(0, activeSavesRef.current - 1);
-            if (activeSavesRef.current === 0) {
-                // Smooth the transition out
-                setTimeout(() => {
-                    if (activeSavesRef.current === 0) {
-                        setSaving(false);
-                    }
-                }, 600);
-            }
+            // Smooth the transition out
+            setTimeout(() => {
+                setSaving(false);
+            }, 600);
         }
-    }, [selectedDate, queryClient, toast]);
-
-    const scheduleAutoSave = useCallback((immediate = false) => {
-        if (!needsServerSyncRef.current) return;
-
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-            saveTimeoutRef.current = null;
-        }
-
-        if (immediate) {
-            performAutoSave();
-        } else {
-            saveTimeoutRef.current = setTimeout(() => {
-                performAutoSave();
-                saveTimeoutRef.current = null;
-            }, 3000);
-        }
-    }, [performAutoSave]);
+    };
 
     const handleMenuToggle = (nextIsShabbat: boolean) => {
         setIsShabbatMenu(nextIsShabbat);
     };
 
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
-                scheduleAutoSave(true);
-            }
-        };
-
-        const handlePageHide = () => {
-            scheduleAutoSave(true);
-        };
-
-        window.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('pagehide', handlePageHide);
-
-        return () => {
-            window.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('pagehide', handlePageHide);
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
-        };
-    }, [scheduleAutoSave]);
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            console.log('Nutrition screen unmounting - attempting final save');
-            void performAutoSave();
-        };
-    }, [performAutoSave]);
-
     const updateMeal = (mealNum: number, updates: Partial<MealState>) => {
         userMadeChangeRef.current = true;
-        needsServerSyncRef.current = true;
 
         if (isShabbatMenu) {
             setShabbatMeals(prev => {
@@ -449,6 +385,7 @@ const Nutrition = () => {
                     },
                 };
                 shabbatMealsRef.current = updated;
+                void saveNutritionNow(weekdayMealsRef.current, updated);
                 return updated;
             });
         } else {
@@ -463,11 +400,10 @@ const Nutrition = () => {
                     },
                 };
                 weekdayMealsRef.current = updated;
+                void saveNutritionNow(updated, shabbatMealsRef.current);
                 return updated;
             });
         }
-
-        scheduleAutoSave(true);
     };
 
     const handleMealItemToggle = (
