@@ -467,7 +467,7 @@ const Nutrition = () => {
             });
         }
 
-        scheduleAutoSave(false);
+        scheduleAutoSave(true);
     };
 
     const handleMealItemToggle = (

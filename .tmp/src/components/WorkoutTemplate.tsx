@@ -373,7 +373,7 @@ export const WorkoutTemplate = ({
             userMadeChangeRef.current = true;
             needsServerSyncRef.current = true;
             saveWorkoutLocallyWithFeedback();
-            scheduleAutoSave(false);
+            scheduleAutoSave(true);
         }
     };
 
@@ -385,7 +385,7 @@ export const WorkoutTemplate = ({
         
         needsServerSyncRef.current = true;
         saveWorkoutLocallyWithFeedback();
-        scheduleAutoSave(false);
+        scheduleAutoSave(true);
     };
 
     // Store the latest version of saveWorkout in a ref so the unmount cleanup
