@@ -25,7 +25,7 @@ const DEFAULT_DAILY_CALORIE_TARGET = 2410;
 const DEFAULT_DAILY_PROTEIN_TARGET = 145;
 const DEFAULT_DAILY_WATER_TARGET_GLASSES = 12;
 const LAST_SYNC_KEY = 'oxygym_last_sync_date';
-const APP_VERSION = "v2026.01.26-1";
+const APP_VERSION = "v2026.01.26-2";
 
 const Index = () => {
     const navigate = useNavigate();
