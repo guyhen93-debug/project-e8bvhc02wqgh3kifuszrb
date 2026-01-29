@@ -24,7 +24,7 @@ import { ChickenDrumstickIcon } from '@/components/icons/ChickenDrumstickIcon';
 import { BulgurSaladIcon } from '@/components/icons/BulgurSaladIcon';
 import { SirloinSteakIcon } from '@/components/icons/SirloinSteakIcon';
 import { useToast } from '@/hooks/use-toast';
-import { NutritionLog } from '@/entities';
+import { NutritionLog, User } from '@/entities';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDate } from '@/contexts/DateContext';
 
@@ -107,6 +107,7 @@ const Nutrition = () => {
     const [isShabbatMenu, setIsShabbatMenu] = useState(false);
     const [saving, setSaving] = useState(false);
     const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+    const [authError, setAuthError] = useState(false);
     const isInitialLoadRef = useRef(true);
     const userMadeChangeRef = useRef(false);
     const lastToastRef = useRef<number | null>(null);
@@ -161,6 +162,7 @@ const Nutrition = () => {
     useEffect(() => {
         userMadeChangeRef.current = false;
         setLastSavedAt(null);
+        setAuthError(false);
     }, [selectedDate]);
 
     useEffect(() => {
@@ -347,6 +349,7 @@ const Nutrition = () => {
             // Mark changes as saved
             userMadeChangeRef.current = false;
             setLastSavedAt(Date.now());
+            setAuthError(false);
 
             if (!lastToastRef.current || Date.now() - lastToastRef.current > 8000) {
                 toast({
@@ -358,6 +361,22 @@ const Nutrition = () => {
             }
         } catch (error) {
             console.error('Error saving nutrition:', error);
+            const message = (error as any)?.message ?? String(error);
+            
+            if (message.includes('Authentication required') || message.includes('401')) {
+                setAuthError(true);
+                toast({
+                    title: 'שמירת התזונה נכשלה',
+                    description: 'כדי לשמור תזונה צריך להתחבר למערכת. לחץ על כפתור ההתחברות למעלה.',
+                    variant: 'destructive',
+                });
+            } else {
+                toast({
+                    title: 'שמירת התזונה נכשלה',
+                    description: 'אירעה שגיאה בשמירת התזונה. נסה שוב מאוחר יותר.',
+                    variant: 'destructive',
+                });
+            }
         } finally {
             // Smooth the transition out
             setTimeout(() => {
@@ -368,6 +387,14 @@ const Nutrition = () => {
 
     const handleMenuToggle = (nextIsShabbat: boolean) => {
         setIsShabbatMenu(nextIsShabbat);
+    };
+
+    const handleLoginClick = async () => {
+        try {
+            await User.login();
+        } catch (err) {
+            console.error('Error during login redirect:', err);
+        }
     };
 
     const updateMeal = (mealNum: number, updates: Partial<MealState>) => {
@@ -526,6 +553,25 @@ const Nutrition = () => {
                         ) : null}
                     </div>
                 </div>
+
+                {authError && (
+                    <div className="mb-6">
+                        <Card className="bg-red-900/40 border-red-500/70 text-right">
+                            <CardContent className="py-3 flex items-center gap-3">
+                                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                                <div className="flex-1">
+                                    <p className="text-sm font-semibold text-white mb-1">לא ניתן לשמור את התזונה</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        כדי לשמור שינויים בתפריט, צריך להתחבר למערכת. לחץ על "התחברות" ותנסה שוב.
+                                    </p>
+                                </div>
+                                <Button size="sm" variant="outline" className="border-oxygym-yellow text-oxygym-yellow hover:bg-oxygym-yellow hover:text-black" onClick={handleLoginClick}>
+                                    התחברות
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
                 <div className="mb-4 sm:mb-6">
                     <DateSelector />
